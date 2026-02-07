@@ -1,0 +1,21 @@
+# MAVEN
+**/target/
+
+# IDE
+.idea/
+.vscode/
+
+# LOGS
+*.log
+
+# ANGULAR
+**/node_modules/
+dist/
+.angular/
+
+# ENV
+.env
+
+# OS
+.DS_Store
+Thumbs.db

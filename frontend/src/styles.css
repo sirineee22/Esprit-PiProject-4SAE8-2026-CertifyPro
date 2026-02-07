@@ -1,0 +1,116 @@
+:root {
+    /* Color Template */
+    --primary: hsl(222, 47%, 20%);
+    /* Deep navy blue for headings, buttons */
+    --accent: hsl(38, 92%, 50%);
+    /* Warm amber/gold for CTAs, highlights */
+    --success: hsl(152, 69%, 31%);
+    /* Emerald green for badges, confirmations */
+    --background: hsl(40, 20%, 98%);
+    /* Warm off-white cream */
+    --foreground: hsl(222, 47%, 11%);
+    /* Dark navy for text */
+    --muted: hsl(220, 14%, 96%);
+    /* Light gray for subtle backgrounds */
+    --card-bg: #ffffff;
+    --border-color: #e5e7eb;
+
+    /* Legacy support */
+    --primary-color: var(--primary);
+    --bg-color: var(--background);
+    --text-color: var(--foreground);
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    --font-family: 'Inter', sans-serif;
+}
+
+body.dark-theme {
+    --primary: hsl(222, 47%, 90%);
+    --accent: hsl(38, 92%, 50%);
+    --success: hsl(152, 69%, 41%);
+    --background: hsl(222, 47%, 11%);
+    --foreground: hsl(210, 40%, 98%);
+    --muted: hsl(222, 47%, 15%);
+    --card-bg: hsl(222, 47%, 14%);
+    --border-color: hsl(222, 47%, 20%);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background);
+    color: var(--foreground);
+    line-height: 1.5;
+}
+
+/* Utilities */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* Layout Specifics */
+.user-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.content {
+    flex: 1;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: white;
+    border-right: 1px solid #e5e7eb;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-header {
+    height: var(--header-height);
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+}
+
+.admin-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}

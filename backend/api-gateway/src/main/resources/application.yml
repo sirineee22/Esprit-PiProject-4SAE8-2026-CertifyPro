@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**,/api/roles/**
+        - id: auth-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/auth/**
+        - id: trainer-requests-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/trainer-requests/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
