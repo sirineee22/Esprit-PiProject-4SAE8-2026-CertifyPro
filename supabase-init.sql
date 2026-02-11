@@ -11,7 +11,8 @@ create table if not exists users (
   password varchar(120) not null,
   phone_number varchar(255),
   active boolean not null default true,
-  role_id bigint references roles(id)
+  role_id bigint references roles(id)  
+  
 );
 
 insert into roles (name) values ('ADMIN') on conflict (name) do nothing;
