@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -9,10 +10,16 @@ import { CommonModule } from '@angular/common';
   template: `
     <!-- Hero Section -->
     <section class="hero-wrapper">
+      <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+      <div class="grain-overlay"></div>
       <div class="container">
         <div class="row align-items-center">
           
-          <!-- Left Column: Content -->
+          <!-- Left Column -->
           <div class="col-lg-6 hero-content">
             <span class="hero-badge">
               <i class="bi bi-award-fill"></i> Industry-Recognized Certifications
@@ -28,7 +35,7 @@ import { CommonModule } from '@angular/common';
             </p>
             
             <div class="hero-actions">
-              <a routerLink="/courses" class="btn-hero-primary">
+              <a [routerLink]="isLoggedIn ? '/courses' : '/login'" class="btn-hero-primary">
                 Explore Courses
                 <i class="bi bi-arrow-right"></i>
               </a>
@@ -37,120 +44,119 @@ import { CommonModule } from '@angular/common';
               </a>
             </div>
 
-            <!-- Integrated Stats Section -->
              <div class="hero-stats">
               <div class="row">
                 <div class="col-md-4 col-12">
                   <div class="stat-item">
-                    <div class="stat-icon-box">
-                      <i class="bi bi-journal-bookmark-fill"></i>
-                    </div>
+                    <div class="stat-icon-box blue-stat"><i class="bi bi-journal-bookmark-fill"></i></div>
                     <div class="stat-info">
                       <span class="stat-value">500+</span>
                       <p class="stat-label">Online Courses</p>
                     </div>
                   </div>
                 </div>
-                
                 <div class="col-md-4 col-12">
                   <div class="stat-item">
-                    <div class="stat-icon-box">
-                      <i class="bi bi-patch-check-fill"></i>
-                    </div>
+                    <div class="stat-icon-box amber-stat"><i class="bi bi-patch-check-fill"></i></div>
                     <div class="stat-info">
                       <span class="stat-value">50+</span>
                       <p class="stat-label">Certifications</p>
                     </div>
                   </div>
                 </div>
-                
                 <div class="col-md-4 col-12">
                   <div class="stat-item">
-                    <div class="stat-icon-box">
-                      <i class="bi bi-people-fill"></i>
-                    </div>
+                    <div class="stat-icon-box purple-stat"><i class="bi bi-people-fill"></i></div>
                     <div class="stat-info">
                       <span class="stat-value">100K+</span>
-                      <p class="stat-label">Happy Learners</p>
+                      <p class="stat-label">Learners</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
 
-          <!-- Right Column: Illustration -->
+          <!-- Right Column: Small Hero Visual -->
           <div class="col-lg-6">
             <div class="hero-visual">
-              <div class="abstract-shape shape-1"></div>
-              <div class="abstract-shape shape-2"></div>
-              
               <div class="hero-img-container">
-                <!-- SVG Illustration - Flowing Waves and Growth Bars -->
-                <svg viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- SVG Illustration - The Credential Architecture (Modern Glassmorphism) -->
+                <svg viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <defs>
-                    <!-- Orange gradient for bars -->
-                    <linearGradient id="barGrad1" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" style="stop-color:#d97706;stop-opacity:0.8" />
-                      <stop offset="50%" style="stop-color:#e67e00;stop-opacity:0.9" />
-                      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+                    <linearGradient id="mainBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:hsl(222, 47%, 25%)" />
+                      <stop offset="100%" style="stop-color:hsl(222, 47%, 15%)" />
                     </linearGradient>
-                    <linearGradient id="barGrad2" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" style="stop-color:#b45309;stop-opacity:0.7" />
-                      <stop offset="50%" style="stop-color:#d97706;stop-opacity:0.85" />
-                      <stop offset="100%" style="stop-color:#e67e00;stop-opacity:0.95" />
+                    <linearGradient id="accentGold" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style="stop-color:hsl(38, 92%, 55%)" />
+                      <stop offset="100%" style="stop-color:hsl(38, 92%, 45%)" />
                     </linearGradient>
-                    <!-- Wave gradient -->
-                    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" style="stop-color:#e67e00;stop-opacity:0.3" />
-                      <stop offset="50%" style="stop-color:#f59e0b;stop-opacity:0.5" />
-                      <stop offset="100%" style="stop-color:#e67e00;stop-opacity:0.3" />
+                    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:rgba(255,255,255,0.2)" />
+                      <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)" />
                     </linearGradient>
+                    <filter id="glassBlur">
+                      <feGaussianBlur stdDeviation="8" />
+                    </filter>
+                    <filter id="softDrop">
+                      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity="0.15" />
+                    </filter>
                   </defs>
-                  
-                  <!-- Growth Bars (columns) -->
-                  <rect x="150" y="350" width="80" height="200" rx="8" fill="url(#barGrad1)" opacity="0.85"/>
-                  <rect x="280" y="280" width="80" height="270" rx="8" fill="url(#barGrad2)" opacity="0.9"/>
-                  <rect x="410" y="200" width="80" height="350" rx="8" fill="url(#barGrad1)" opacity="0.95"/>
-                  <rect x="540" y="120" width="80" height="430" rx="8" fill="url(#barGrad2)" opacity="1"/>
-                  
-                  <!-- Flowing wave lines -->
-                  <path d="M 50 450 Q 150 420, 250 440 T 450 430 T 650 450 T 850 440" 
-                        stroke="url(#waveGrad)" stroke-width="2" fill="none" opacity="0.6"/>
-                  <path d="M 50 470 Q 150 440, 250 460 T 450 450 T 650 470 T 850 460" 
-                        stroke="url(#waveGrad)" stroke-width="2" fill="none" opacity="0.5"/>
-                  <path d="M 50 490 Q 150 460, 250 480 T 450 470 T 650 490 T 850 480" 
-                        stroke="url(#waveGrad)" stroke-width="2" fill="none" opacity="0.4"/>
-                  
-                  <!-- Subtle flowing curves -->
-                  <path d="M 0 350 Q 200 300, 400 350 T 800 350" 
-                        stroke="#e67e00" stroke-width="1.5" fill="none" opacity="0.2"/>
-                  <path d="M 0 380 Q 200 330, 400 380 T 800 380" 
-                        stroke="#f59e0b" stroke-width="1.5" fill="none" opacity="0.15"/>
+
+                  <!-- Background structural elements -->
+                  <rect x="40" y="40" width="320" height="240" rx="20" fill="url(#mainBlue)" opacity="0.03" />
+                  <path d="M40 100 L360 100" stroke="hsl(222, 47%, 25%)" stroke-opacity="0.05" stroke-width="1" />
+                  <path d="M120 40 L120 280" stroke="hsl(222, 47%, 25%)" stroke-opacity="0.05" stroke-width="1" />
+
+                  <!-- Floating Glass Card 1 (Behind) -->
+                  <g filter="url(#softDrop)">
+                    <rect x="60" y="80" width="220" height="140" rx="12" fill="url(#glassGrad)" stroke="white" stroke-opacity="0.3" />
+                    <rect x="80" y="105" width="100" height="6" rx="3" fill="white" opacity="0.4" />
+                    <rect x="80" y="120" width="140" height="4" rx="2" fill="white" opacity="0.2" />
+                    <rect x="80" y="130" width="120" height="4" rx="2" fill="white" opacity="0.2" />
+                  </g>
+
+                  <!-- Secondary Geometric Accents -->
+                  <circle cx="300" cy="180" r="40" fill="url(#accentGold)" opacity="0.1" />
+                  <circle cx="300" cy="180" r="25" stroke="url(#accentGold)" stroke-width="2" stroke-dasharray="4 4" opacity="0.3" />
+
+                  <!-- Floating Glass Card 2 (Front) -->
+                  <g filter="url(#softDrop)">
+                    <rect x="140" y="130" width="200" height="130" rx="16" fill="white" fill-opacity="0.7" stroke="white" stroke-width="2" />
+                    <!-- Ribbon detail on card -->
+                    <rect x="140" y="150" width="200" height="25" fill="url(#mainBlue)" opacity="0.05" />
+                    <!-- Seal Icon -->
+                    <circle cx="290" cy="205" r="22" fill="url(#accentGold)" opacity="0.9" />
+                    <path d="M282 205 L288 211 L298 199" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    
+                    <!-- Text placeholders -->
+                    <rect x="165" y="165" width="80" height="8" rx="4" fill="url(#mainBlue)" opacity="0.2" />
+                    <rect x="165" y="185" width="100" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
+                    <rect x="165" y="195" width="90" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
+                    <rect x="165" y="205" width="70" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
+                  </g>
+
+                  <!-- Connection Line -->
+                  <path d="M100 220 Q 140 280, 240 260" stroke="url(#accentGold)" stroke-width="2" stroke-dasharray="6 6" opacity="0.4" />
                 </svg>
               </div>
             </div>
           </div>
-          
         </div>
       </div>
     </section>
 
-    <!-- Path to Certification Section -->
+    <!-- Content Sections (Path to Certification, Featured Courses etc) -->
     <section class="certification-path-section">
       <div class="container">
         <h2 class="section-title">Your Path to Certification</h2>
-        <p class="section-description">
-          Our streamlined process makes it easy to start learning, track your progress, and achieve your professional goals.
-        </p>
+        <p class="section-description">Our streamlined process makes it easy to start learning and achieve your goals.</p>
         <div class="row g-4 mt-4">
           <div class="col-md-6 col-lg-3" *ngFor="let step of certificationSteps; let i = index">
             <div class="step-card">
               <div class="step-number">{{ i + 1 }}</div>
-              <div class="step-icon-container">
-                <div class="step-icon" [innerHTML]="step.icon"></div>
-              </div>
+              <div class="step-icon-container"><div class="step-icon" [innerHTML]="step.icon"></div></div>
               <h3 class="step-title">{{ step.title }}</h3>
               <p class="step-description">{{ step.description }}</p>
             </div>
@@ -159,11 +165,11 @@ import { CommonModule } from '@angular/common';
       </div>
     </section>
 
-    <!-- Featured Courses Section -->
+    <!-- Featured Courses -->
     <section class="featured-courses-section">
       <div class="container">
         <h3 class="section-title">Featured Courses</h3>
-        <p class="section-description">Expand your expertise with our curated selection of professional courses.</p>
+        <p class="section-description">Expand your expertise with our curated selection.</p>
         <div class="row g-4 mt-4">
           <div class="col-md-4" *ngFor="let course of featuredCourses">
             <div class="course-card">
@@ -178,46 +184,36 @@ import { CommonModule } from '@angular/common';
                 <span class="course-price">{{course.price | number}}</span>
               </div>
               <div class="course-card-footer">
-                <a routerLink="/courses/{{course.slug}}" class="btn btn-outline-primary w-100">View Course</a>
+                <a [routerLink]="isLoggedIn ? '/courses/' + course.slug : '/login'" class="btn btn-outline-primary w-100">View Course</a>
               </div>
             </div>
           </div>
         </div>
         <div class="text-center mt-5">
-          <a routerLink="/courses" class="btn btn-primary">Browse All Courses</a>
+          <a [routerLink]="isLoggedIn ? '/courses' : '/login'" class="btn btn-primary">Browse All Courses</a>
         </div>
       </div>
     </section>
-    `,
+  `,
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
+  private authService = inject(AuthService);
+
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
   certificationSteps = [
-    {
-      title: 'Create Your Account',
-      description: 'Sign up in seconds and set up your personalized learning profile with your goals and interests.',
-      icon: `<i class="bi bi-person-plus"></i>`
-    },
-    {
-      title: 'Enroll in Courses',
-      description: 'Browse our catalog and enroll in courses that align with your career objectives and skill gaps.',
-      icon: `<i class="bi bi-book"></i>`
-    },
-    {
-      title: 'Complete Assessments',
-      description: 'Test your knowledge with interactive quizzes and practical evaluations throughout your journey.',
-      icon: `<i class="bi bi-clipboard-check"></i>`
-    },
-    {
-      title: 'Earn Certifications',
-      description: 'Receive industry-recognized certificates upon completion to showcase your new expertise.',
-      icon: `<i class="bi bi-patch-check"></i>`
-    }
+    { title: 'Create Account', description: 'Sign up in seconds and set up your goals.', icon: '<i class="bi bi-person-plus"></i>' },
+    { title: 'Enroll', description: 'Browse and enroll in industry-standard modules.', icon: '<i class="bi bi-book"></i>' },
+    { title: 'Assessment', description: 'Test your knowledge with practical quizzes.', icon: '<i class="bi bi-clipboard-check"></i>' },
+    { title: 'Certify', description: 'Earn globally recognized certificates.', icon: '<i class="bi bi-patch-check"></i>' }
   ];
 
   featuredCourses = [
-    { category: 'Management', level: 'Advanced', title: 'Project Management Professional', description: 'Master project management methodologies and earn your PMP certification.', hours: 40, price: 12500, slug: 'pmp' },
-    { category: 'Technology', level: 'Beginner', title: 'Data Analytics Fundamentals', description: 'Learn to analyze data, create visualizations, and drive business decisions.', hours: 32, price: 8700, slug: 'data-analytics' },
-    { category: 'Leadership', level: 'Intermediate', title: 'Leadership Excellence', description: 'Develop essential leadership skills to inspire and guide high-performing teams.', hours: 24, price: 6300, slug: 'leadership-excellence' },
+    { category: 'Management', level: 'Advanced', title: 'Project Management Pro', description: 'Master methodologies and earn your PMP.', hours: 40, price: 12500, slug: 'pmp' },
+    { category: 'Technology', level: 'Beginner', title: 'Data Analytics', description: 'Learn data analysis and visualization.', hours: 32, price: 8700, slug: 'data-analytics' },
+    { category: 'Leadership', level: 'Intermediate', title: 'Leadership Excellence', description: 'Lead high-performing teams.', hours: 24, price: 6300, slug: 'leadership' },
   ];
 }

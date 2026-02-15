@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-footer',
@@ -14,13 +15,9 @@ import { CommonModule } from '@angular/common';
           <div class="col-lg-4 col-md-6">
             <div class="footer-brand">
               <div class="footer-logo-container">
-                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="50" height="50" rx="10" fill="hsl(38, 92%, 50%)"/>
-                  <path d="M25 12L10 20L25 28L40 20L25 12Z" fill="white" opacity="0.95"/>
-                  <path d="M10 20V30C10 35.5228 16.4772 40 25 40C33.5228 40 40 35.5228 40 30V20L25 28L10 20Z" fill="white" opacity="0.95"/>
-                  <circle cx="10" cy="20" r="2" fill="white"/>
-                  <line x1="10" y1="20" x2="10" y2="25" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                </svg>
+                <div class="logo-box-footer">
+                  <i class="bi bi-mortarboard-fill footer-logo-icon"></i>
+                </div>
                 <span class="footer-brand-name">CertifyPro</span>
               </div>
               <p class="footer-description">
@@ -50,7 +47,7 @@ import { CommonModule } from '@angular/common';
           <div class="col-lg-2 col-md-6">
             <h4 class="footer-heading">Platform</h4>
             <ul class="footer-links">
-              <li><a routerLink="/courses">Browse Courses</a></li>
+              <li><a [routerLink]="isLoggedIn ? '/courses' : '/login'">Browse Courses</a></li>
               <li><a routerLink="/certifications">Certifications</a></li>
               <li><a routerLink="/learning-paths">Learning Paths</a></li>
               <li><a routerLink="/forum">Community Forum</a></li>
@@ -128,6 +125,22 @@ import { CommonModule } from '@angular/common';
         align-items: center;
         gap: 1rem;
         margin-bottom: 1.5rem;
+      }
+
+      .logo-box-footer {
+        width: 45px;
+        height: 45px;
+        background: hsl(38, 92%, 50%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+      }
+
+      .footer-logo-icon {
+        font-size: 1.5rem;
+        color: white;
       }
 
       .footer-brand-name {
@@ -277,4 +290,10 @@ import { CommonModule } from '@angular/common';
       }
     `]
 })
-export class FooterComponent { }
+export class FooterComponent {
+  private authService = inject(AuthService);
+
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+}

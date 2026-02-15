@@ -13,11 +13,11 @@ import { User } from '../../models/user.model';
     <aside class="sidebar-content">
       <div class="logo-section">
         <div class="logo-icon">
-          <i class="bi bi-shield-check"></i>
+          <i class="bi bi-shield-lock-fill"></i>
         </div>
         <div class="logo-text">
-          <h2>Admin Panel</h2>
-          <p>CertifyPro Management</p>
+          <h2>CertifyPro</h2>
+          <p>Admin Control Center</p>
         </div>
       </div>
 
@@ -25,7 +25,7 @@ import { User } from '../../models/user.model';
         <div class="nav-section">
           <span class="section-label">MAIN</span>
           <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-speedometer2"></i>
+            <i class="bi bi-grid-1x2-fill"></i>
             <span>Dashboard</span>
           </a>
         </div>
@@ -33,226 +33,265 @@ import { User } from '../../models/user.model';
         <div class="nav-section">
           <span class="section-label">MANAGEMENT</span>
           <a routerLink="/admin/trainer-requests" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-person-check"></i>
+            <i class="bi bi-person-badge-fill"></i>
             <span>Trainer Requests</span>
           </a>
           <a routerLink="/admin/users" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-people"></i>
-            <span>Users</span>
+            <i class="bi bi-people-fill"></i>
+            <span>User Management</span>
           </a>
         </div>
         
         <div class="nav-section">
-          <span class="section-label">CONTENT</span>
+          <span class="section-label">PLATFORM</span>
           <a class="nav-link disabled">
-            <i class="bi bi-book"></i>
+            <i class="bi bi-journal-check"></i>
             <span>Trainings</span>
           </a>
           <a class="nav-link disabled">
-            <i class="bi bi-award"></i>
+            <i class="bi bi-shield-lock-fill"></i>
             <span>Certifications</span>
           </a>
         </div>
       </nav>
 
       <div class="sidebar-footer">
-        <div class="admin-profile-info">
-          <div class="admin-avatar">
-            <i class="bi bi-person-circle"></i>
+        <div class="admin-profile-card">
+          <div class="admin-avatar-wrapper">
+            <div class="admin-avatar">
+              <i class="bi bi-person-workspace"></i>
+            </div>
+            <div class="status-indicator"></div>
           </div>
           <div class="admin-details">
             <p class="admin-name">{{currentUser?.firstName}} {{currentUser?.lastName}}</p>
-            <p class="admin-role">{{currentUser?.role?.name}}</p>
+            <p class="admin-role">Super {{currentUser?.role?.name}}</p>
           </div>
         </div>
         <button (click)="logout()" class="logout-btn">
-          <i class="bi bi-box-arrow-left"></i>
-          <span>Logout</span>
+          <i class="bi bi-power"></i>
+          <span>System Logout</span>
         </button>
       </div>
     </aside>
-    <style>
-      .sidebar-content { 
-        padding: 2rem 1.5rem;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        background: #0b1120;
-        color: white;
-      }
+  `,
+  styles: [`
+    :host {
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: rgba(255, 255, 255, 0.05);
+      --primary: #f59e0b;
+      --primary-glow: rgba(245, 158, 11, 0.15);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
 
-      .logo-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 2rem;
-      }
+    .sidebar-content { 
+      padding: 2rem 1.25rem;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--sidebar-bg);
+      color: var(--text-main);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    }
 
-      .logo-icon {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: white;
-      }
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 2rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
 
-      .logo-text h2 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0;
-        color: white;
-      }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #4a3427, #8b6e4e);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      box-shadow: 0 4px 15px rgba(74, 52, 39, 0.2);
+    }
 
-      .logo-text p {
-        font-size: 0.75rem;
-        color: rgba(255, 255, 255, 0.5);
-        margin: 0;
-      }
+    .logo-text h2 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+      color: white;
+    }
 
-      .nav { 
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-        overflow-y: auto;
-      }
+    .logo-text p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin: 0;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
 
-      .nav-section {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
+    .nav { 
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      overflow-y: auto;
+    }
 
-      .section-label {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.4);
-        letter-spacing: 0.1em;   
-        padding: 0 1rem;
-        margin-bottom: 0.5rem;
-      }
+    .nav-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
 
-      .nav-link { 
-        display: flex;
-        align-items: center;     
-        gap: 0.75rem;
-        padding: 0.875rem 1rem;  
-        text-decoration: none;   
-        color: rgba(255, 255, 255, 0.7);
-        border-radius: 10px;     
-        transition: all 0.2s;    
-        font-weight: 500;        
-      }
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #475569;
+      letter-spacing: 0.15em;   
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
 
-      .nav-link i {
-        font-size: 1.1rem;       
-        width: 20px;
-      }
+    .nav-link { 
+      display: flex;
+      align-items: center;     
+      gap: 0.875rem;
+      padding: 0.875rem 1rem;  
+      text-decoration: none;   
+      color: var(--text-muted);
+      border-radius: 12px;     
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);    
+      font-weight: 500;        
+    }
 
-      .nav-link:hover:not(.disabled) { 
-        background: rgba(255, 255, 255, 0.08);
-        color: white;
-      }
+    .nav-link i {
+      font-size: 1.2rem;       
+      transition: transform 0.2s;
+    }
 
-      .nav-link.active { 
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        color: white;
-        font-weight: 600;        
-      }
+    .nav-link:hover:not(.disabled) { 
+      background: var(--sidebar-hover);
+      color: white;
+      transform: translateX(4px);
+    }
 
-      .nav-link.disabled {
-        opacity: 0.4;
-        cursor: not-allowed;     
-      }
+    .nav-link.active { 
+      background: linear-gradient(135deg, var(--primary), #d97706);
+      color: white;
+      font-weight: 600;        
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
 
-      .sidebar-footer {
-        padding-top: 1.5rem;     
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 1rem;        
-        display: flex;
-        flex-direction: column;  
-        gap: 1rem;
-      }
+    .nav-link.active i {
+      transform: scale(1.1);
+    }
 
-      .admin-profile-info {
-        display: flex;
-        align-items: center;     
-        gap: 0.75rem;
-        padding: 0.75rem;        
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;     
-      }
+    .nav-link.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;     
+    }
 
-      .admin-avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        border-radius: 50%;      
-        display: flex;
-        align-items: center;     
-        justify-content: center; 
-        flex-shrink: 0;
-      }
+    .sidebar-footer {
+      padding-top: 1.5rem;     
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: 1rem;        
+      display: flex;
+      flex-direction: column;  
+      gap: 1.25rem;
+    }
 
-      .admin-avatar i {
-        font-size: 1.5rem;       
-        color: white;
-      }
+    .admin-profile-card {
+      display: flex;
+      align-items: center;     
+      gap: 0.875rem;
+      padding: 1rem;        
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;     
+    }
 
-      .admin-details {
-        flex: 1;
-        min-width: 0;
-      }
+    .admin-avatar-wrapper {
+      position: relative;
+    }
 
-      .admin-name {
-        font-size: 0.9rem;       
-        font-weight: 600;        
-        color: white;
-        margin: 0;
-        white-space: nowrap;     
-        overflow: hidden;        
-        text-overflow: ellipsis; 
-      }
+    .admin-avatar {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #334155, #1e293b);
+      border-radius: 10px;      
+      display: flex;
+      align-items: center;     
+      justify-content: center; 
+      flex-shrink: 0;
+      color: var(--primary);
+      font-size: 1.25rem;
+    }
 
-      .admin-role {
-        font-size: 0.75rem;      
-        color: rgba(255, 255, 255, 0.5);
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;  
-      }
+    .status-indicator {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 12px;
+      height: 12px;
+      background: #10b981;
+      border: 2px solid var(--sidebar-bg);
+      border-radius: 50%;
+    }
 
-      .logout-btn {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.875rem 1rem;  
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        color: #f87171;
-        border-radius: 10px;     
-        cursor: pointer;
-        transition: all 0.2s;    
-        font-weight: 600;        
-      }
+    .admin-details {
+      flex: 1;
+      min-width: 0;
+    }
 
-      .logout-btn:hover {        
-        background: rgba(239, 68, 68, 0.2);
-        border-color: rgba(239, 68, 68, 0.5);
-      }
+    .admin-name {
+      font-size: 0.9rem;       
+      font-weight: 700;        
+      color: white;
+      margin: 0;
+      white-space: nowrap;     
+      overflow: hidden;        
+      text-overflow: ellipsis; 
+    }
 
-      .logout-btn i {
-        font-size: 1.1rem;       
-      }
-    </style>
-  `
+    .admin-role {
+      font-size: 0.7rem;      
+      color: var(--primary);
+      margin: 0;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;  
+    }
+
+    .logout-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 0.875rem;  
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border-radius: 12px;     
+      cursor: pointer;
+      transition: all 0.2s;    
+      font-weight: 700;        
+      font-size: 0.9rem;
+    }
+
+    .logout-btn:hover {        
+      background: #ef4444;
+      color: white;
+      border-color: #ef4444;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+  `]
+
 })
 export class SidebarComponent implements OnInit {
   currentUser: User | null = null;

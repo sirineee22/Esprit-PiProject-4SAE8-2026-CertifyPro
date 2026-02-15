@@ -707,16 +707,31 @@ export class RegisterComponent {
   }
 
   private registerAsLearner() {
+    const form = this.registerForm.value;
     const user: User = {
-      ...this.registerForm.value,
+      ...form,
+      email: (form.email ?? '').trim().toLowerCase(),
+      password: (form.password ?? '').trim(),
       active: true
     };
 
     this.userService.create(user).subscribe({
       next: (createdUser: User) => {
-        console.log('Learner registered successfully:', createdUser);
-        this.authService.setSession(createdUser);
-        this.router.navigate(['/']);
+        // Auto-login to get JWT token (email is already lowercase)
+        const email = (user.email ?? '').trim();
+        const password = (user.password ?? '').trim();
+        this.authService.login(email, password).subscribe({
+          next: (loginRes) => {
+            this.authService.setSession(loginRes.user, loginRes.token);
+            this.isSubmitting = false;
+            this.router.navigate(['/']);
+          },
+          error: () => {
+            this.authService.setSession(createdUser);
+            this.isSubmitting = false;
+            this.router.navigate(['/']);
+          }
+        });
       },
       error: (e: unknown) => {
         this.isSubmitting = false;
@@ -731,12 +746,13 @@ export class RegisterComponent {
   }
 
   private registerAsTrainer() {
+    const form = this.registerForm.value;
     const user: User = {
-      firstName: this.registerForm.value.firstName,
-      lastName: this.registerForm.value.lastName,
-      email: this.registerForm.value.email,
-      phoneNumber: this.registerForm.value.phoneNumber,
-      password: this.registerForm.value.password,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: (form.email ?? '').trim().toLowerCase(),
+      phoneNumber: form.phoneNumber,
+      password: (form.password ?? '').trim(),
       active: false
     };
 
@@ -766,10 +782,8 @@ export class RegisterComponent {
           certificatesLink: this.registerForm.value.certificatesLink
         };
 
-        console.log('Submitting trainer request...', request);
         this.trainerRequestService.submitRequest(request).subscribe({
-          next: (response) => {
-            console.log('Trainer request submitted', response);
+          next: () => {
           },
           error: (e: unknown) => {
             console.error('Trainer request failed', e);

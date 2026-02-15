@@ -35,25 +35,20 @@ export class UsersListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        console.log('UsersListComponent initialized');
         this.isLoading = true;
         this.loadData();
     }
 
     loadData(): void {
-        console.log('loadData() called - fetching users and roles in parallel');
-
         forkJoin({
             users: this.userService.getAll(),
             roles: this.http.get<Role[]>(`${API_BASE_URL}/api/roles`)
         }).subscribe({
             next: (result) => {
-                console.log('Data loaded successfully:', result);
                 this.users = result.users;
                 this.roles = result.roles;
                 this.isLoading = false;
                 this.cdr.detectChanges();
-                console.log('isLoading set to false, users count:', this.users.length);
             },
             error: (e: unknown) => {
                 console.error('Error loading data:', e);
@@ -64,10 +59,8 @@ export class UsersListComponent implements OnInit {
     }
 
     loadUsers(): void {
-        console.log('loadUsers() called');
         this.userService.getAll().subscribe({
             next: (data: User[]) => {
-                console.log('Users loaded successfully:', data);
                 this.users = data;
             },
             error: (e: unknown) => {
@@ -77,10 +70,8 @@ export class UsersListComponent implements OnInit {
     }
 
     loadRoles(): void {
-        console.log('loadRoles() called');
         this.http.get<Role[]>(`${API_BASE_URL}/api/roles`).subscribe({
             next: (data: Role[]) => {
-                console.log('Roles loaded:', data);
                 this.roles = data;
             },
             error: (e: unknown) => console.error('Error loading roles:', e)
@@ -89,7 +80,6 @@ export class UsersListComponent implements OnInit {
 
     // MODAL METHODS
     openAddModal(): void {
-        console.log('Opening Add User modal');
         this.isAddMode = true;
         this.selectedUser = null;
         this.editedUser = {
@@ -105,7 +95,6 @@ export class UsersListComponent implements OnInit {
     }
 
     openEditModal(user: User): void {
-        console.log('Opening edit modal for:', user);
         this.selectedUser = user;
         this.editedUser = {
             id: user.id,
@@ -135,8 +124,6 @@ export class UsersListComponent implements OnInit {
     }
 
     saveUser(): void {
-        console.log('saveUser() called, isAddMode:', this.isAddMode);
-
         if (this.isAddMode) {
             this.createUser();
         } else {
@@ -150,10 +137,8 @@ export class UsersListComponent implements OnInit {
             return;
         }
 
-        console.log('Creating user:', this.editedUser);
         this.userService.create(this.editedUser as User).subscribe({
-            next: (response) => {
-                console.log('User created successfully!', response);
+            next: () => {
                 alert('✅ User created successfully!');
                 this.loadData();
                 this.closeEditModal();
@@ -171,10 +156,8 @@ export class UsersListComponent implements OnInit {
             return;
         }
 
-        console.log('Updating user:', this.editedUser);
         this.userService.update(this.editedUser.id, this.editedUser as User).subscribe({
-            next: (response) => {
-                console.log('Update successful!', response);
+            next: () => {
                 alert('✅ User updated successfully!');
                 this.loadData();
                 this.closeEditModal();
@@ -187,7 +170,6 @@ export class UsersListComponent implements OnInit {
     }
 
     deleteUser(id: number, userName: string): void {
-        console.log('Delete user called:', id, userName);
         if (confirm(`Delete ${userName}?`)) {
             this.userService.delete(id).subscribe({
                 next: () => {

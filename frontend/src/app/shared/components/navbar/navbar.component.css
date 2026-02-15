@@ -347,3 +347,11 @@
 .mobile-menu-overlay.show {
   display: flex;
 }
+
+/* Welcome text for logged-in users on home page */
+.welcome-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(222, 47%, 20%);
+  padding: 0.5rem 1rem;
+}
