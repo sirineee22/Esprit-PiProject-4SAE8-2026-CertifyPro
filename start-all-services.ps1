@@ -37,17 +37,22 @@ Write-Host "Maven found: $($mvnCmd.Source)" -ForegroundColor Green
 Write-Host ""
 
 # Start Discovery Server
-Write-Host "[1/3] Starting Discovery Server (Eureka) on port 8761..." -ForegroundColor Yellow
+Write-Host "[1/4] Starting Discovery Server (Eureka) on port 8761..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-File", "$PSScriptRoot\start-discovery-server.ps1"
 Start-Sleep -Seconds 3
 
 # Start User Service
-Write-Host "[2/3] Starting User Service on port 8083..." -ForegroundColor Yellow
+Write-Host "[2/4] Starting User Service on port 8083..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-File", "$PSScriptRoot\start-user-service.ps1"
 Start-Sleep -Seconds 3
 
+# Start Forum Service
+Write-Host "[3/4] Starting Forum Service on port 8084..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-File", "$PSScriptRoot\start-forum-service.ps1"
+Start-Sleep -Seconds 3
+
 # Start API Gateway
-Write-Host "[3/3] Starting API Gateway on port 8081..." -ForegroundColor Yellow
+Write-Host "[4/4] Starting API Gateway on port 8081..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-File", "$PSScriptRoot\start-api-gateway.ps1"
 
 Write-Host ""

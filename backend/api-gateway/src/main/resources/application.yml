@@ -40,6 +40,10 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+        - id: forum-service
+          uri: lb://FORUM-SERVICE
+          predicates:
+            - Path=/api/forum/**
 
 eureka:
   client:

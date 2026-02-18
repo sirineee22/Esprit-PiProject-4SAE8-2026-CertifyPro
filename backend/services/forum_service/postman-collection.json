@@ -1,0 +1,361 @@
+{
+	"info": {
+		"_postman_id": "forum-service-crud",
+		"name": "Forum Service CRUD",
+		"description": "Collection complète pour tester tous les CRUD du Forum Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Posts",
+			"item": [
+				{
+					"name": "1. CREATE POST",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"title\": \"Comment bien démarrer avec Spring Boot ?\",\n  \"content\": \"Je cherche des conseils pour bien commencer avec Spring Boot. Quels sont les meilleures pratiques à suivre ?\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts"
+							]
+						},
+						"description": "Créer un nouveau post dans le forum"
+					}
+				},
+				{
+					"name": "2. GET ALL POSTS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts"
+							]
+						},
+						"description": "Récupérer tous les posts"
+					}
+				},
+				{
+					"name": "3. GET POST BY ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1"
+							]
+						},
+						"description": "Récupérer un post par son ID"
+					}
+				},
+				{
+					"name": "4. UPDATE POST",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Comment bien démarrer avec Spring Boot ? (Mis à jour)\",\n  \"content\": \"J'ai trouvé de bonnes ressources. Voici ce que j'ai appris jusqu'à présent...\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1"
+							]
+						},
+						"description": "Mettre à jour un post existant"
+					}
+				},
+				{
+					"name": "5. DELETE POST",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1"
+							]
+						},
+						"description": "Supprimer un post (supprime aussi tous ses commentaires)"
+					}
+				},
+				{
+					"name": "11. CREATE POST - Validation Error",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"content\": \"Contenu sans titre\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts"
+							]
+						},
+						"description": "Test de validation - Post sans titre (doit retourner 400)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "6. CREATE COMMENT",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 2,\n  \"content\": \"Excellent post ! Je recommande de commencer par la documentation officielle de Spring Boot.\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1/comments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1",
+								"comments"
+							]
+						},
+						"description": "Créer un commentaire sur un post"
+					}
+				},
+				{
+					"name": "7. GET COMMENTS BY POST",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1/comments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1",
+								"comments"
+							]
+						},
+						"description": "Récupérer tous les commentaires d'un post"
+					}
+				},
+				{
+					"name": "8. GET COMMENT BY ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/comments/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"comments",
+								"1"
+							]
+						},
+						"description": "Récupérer un commentaire par son ID"
+					}
+				},
+				{
+					"name": "9. UPDATE COMMENT",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Excellent post ! Je recommande de commencer par la documentation officielle de Spring Boot. Voici le lien: https://spring.io/projects/spring-boot\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/comments/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"comments",
+								"1"
+							]
+						},
+						"description": "Mettre à jour un commentaire"
+					}
+				},
+				{
+					"name": "10. DELETE COMMENT",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/api/forum/comments/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"comments",
+								"1"
+							]
+						},
+						"description": "Supprimer un commentaire"
+					}
+				},
+				{
+					"name": "12. CREATE COMMENT - Validation Error",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 2\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8084/api/forum/posts/1/comments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"api",
+								"forum",
+								"posts",
+								"1",
+								"comments"
+							]
+						},
+						"description": "Test de validation - Commentaire sans contenu (doit retourner 400)"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url_direct",
+			"value": "http://localhost:8084",
+			"type": "string"
+		},
+		{
+			"key": "base_url_gateway",
+			"value": "http://localhost:8081",
+			"type": "string"
+		},
+		{
+			"key": "post_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "comment_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
+
