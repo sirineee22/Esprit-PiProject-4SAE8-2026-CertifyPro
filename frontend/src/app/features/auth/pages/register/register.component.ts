@@ -3,16 +3,17 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { NgxIntlTelInputModule, CountryISO, SearchCountryField } from 'ngx-intl-tel-input';
 import { UserService } from '../../../users/services/users.api';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
-import { catchError, finalize, switchMap, throwError, timeout } from 'rxjs';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
+import { passwordStrengthValidator } from '../../../../core/validators/password-strength.validator';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgxIntlTelInputModule],
   template: `
     <div class="page-container">
       <!-- Back to Home -->
@@ -90,13 +91,25 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">FIRST NAME</label>
-                        <input type="text" formControlName="firstName" placeholder="sirine" class="auth-input no-icon">
+                        <input type="text" formControlName="firstName" placeholder="sirine" class="auth-input no-icon" [class.input-error]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+                        @if (registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched) {
+                          <span class="error-message">
+                            @if (registerForm.get('firstName')?.errors?.['required']) { First name is required. }
+                            @if (registerForm.get('firstName')?.errors?.['minlength']) { First name must be at least 2 characters. }
+                          </span>
+                        }
                       </div>
                    </div>
                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">LAST NAME</label>
-                        <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon">
+                        <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon" [class.input-error]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+                        @if (registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched) {
+                          <span class="error-message">
+                            @if (registerForm.get('lastName')?.errors?.['required']) { Last name is required. }
+                            @if (registerForm.get('lastName')?.errors?.['minlength']) { Last name must be at least 2 characters. }
+                          </span>
+                        }
                       </div>
                    </div>
                 </div>
@@ -105,24 +118,81 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                   <label class="input-label">EMAIL ADDRESS</label>
                   <div class="input-container">
                     <i class="bi bi-envelope"></i>
-                    <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input">
+                    <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input" [class.input-error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
                   </div>
+                  @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
+                    <span class="error-message">
+                      @if (registerForm.get('email')?.errors?.['required']) { Email is required. }
+                      @if (registerForm.get('email')?.errors?.['email']) { Please enter a valid email address. }
+                    </span>
+                  }
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">PHONE NUMBER</label>
-                  <div class="input-container">
-                    <i class="bi bi-telephone"></i>
-                    <input type="tel" formControlName="phoneNumber" placeholder="+216 12 345 678" class="auth-input">
+                  <div class="phone-input-wrapper">
+                    <ngx-intl-tel-input
+                      formControlName="phoneNumber"
+                      [preferredCountries]="[CountryISO.Tunisia, CountryISO.France]"
+                      [searchCountryFlag]="true"
+                      [searchCountryField]="[SearchCountryField.All]"
+                      [searchCountryPlaceholder]="'Search country'"
+                      [phoneValidation]="true"
+                      cssClass="auth-input auth-phone-input"
+                      inputId="register-phone"
+                    ></ngx-intl-tel-input>
                   </div>
+                  @if (registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched && registerForm.get('phoneNumber')?.value) {
+                    <span class="error-message">Please enter a valid phone number for the selected country.</span>
+                  }
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">SET PASSWORD</label>
                   <div class="input-container">
                     <i class="bi bi-shield-lock"></i>
-                    <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input">
+                    <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.input-error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
                   </div>
+                  <p class="password-hint">Password must contain: at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character (e.g. !@#$%^&*).</p>
+                  @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+                    <div class="error-message">
+                      @if (registerForm.get('password')?.errors?.['required']) {
+                        <span>Password is required.</span>
+                      }
+                      @if (registerForm.get('password')?.errors?.['passwordStrength']) {
+                        <div class="password-requirements">
+                          <span class="requirement-label">Password must contain:</span>
+                          <ul class="requirement-list">
+                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['minLength']) {
+                              <li class="requirement-item invalid">At least 8 characters</li>
+                            } @else {
+                              <li class="requirement-item valid">At least 8 characters</li>
+                            }
+                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasUppercase']) {
+                              <li class="requirement-item invalid">One uppercase letter (A-Z)</li>
+                            } @else {
+                              <li class="requirement-item valid">One uppercase letter (A-Z)</li>
+                            }
+                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasLowercase']) {
+                              <li class="requirement-item invalid">One lowercase letter (a-z)</li>
+                            } @else {
+                              <li class="requirement-item valid">One lowercase letter (a-z)</li>
+                            }
+                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasDigit']) {
+                              <li class="requirement-item invalid">One digit (0-9)</li>
+                            } @else {
+                              <li class="requirement-item valid">One digit (0-9)</li>
+                            }
+                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasSpecialChar']) {
+                              <li class="requirement-item invalid">One special character (!@#$%^&*...)</li>
+                            } @else {
+                              <li class="requirement-item valid">One special character (!@#$%^&*...)</li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    </div>
+                  }
                 </div>
 
                 <!-- Next Button (Trainer Step 1) -->
@@ -148,13 +218,19 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                 
                 <div class="form-group">
                   <label class="input-label">SUBJECTS YOU CAN TEACH</label>
-                  <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon">
+                  <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon" [class.input-error]="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">
+                  @if (registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched) {
+                    <span class="error-message">Subjects are required.</span>
+                  }
                   <small class="field-hint">Separate multiple subjects with commas</small>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">YEARS OF EXPERIENCE</label>
-                  <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon">
+                  <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon" [class.input-error]="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">
+                  @if (registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched) {
+                    <span class="error-message">Years of experience is required.</span>
+                  }
                 </div>
 
                 <div class="form-group">
@@ -165,7 +241,13 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
 
                 <div class="form-group">
                   <label class="input-label">WHY DO YOU WANT TO BE A TRAINER?</label>
-                  <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea"></textarea>
+                  <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea" [class.input-error]="registerForm.get('message')?.invalid && registerForm.get('message')?.touched"></textarea>
+                  @if (registerForm.get('message')?.invalid && registerForm.get('message')?.touched) {
+                    <span class="error-message">
+                      @if (registerForm.get('message')?.errors?.['required']) { This field is required. }
+                      @if (registerForm.get('message')?.errors?.['minlength']) { Message must be at least 20 characters. }
+                    </span>
+                  }
                 </div>
 
                 <div class="step-actions">
@@ -432,6 +514,116 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
       box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
 
+    .auth-input.input-error, .auth-textarea.input-error { border-color: #dc2626; }
+    .error-message {
+      display: block;
+      font-size: 0.8rem;
+      color: #dc2626;
+      margin-top: 0.35rem;
+    }
+
+    .password-hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin: 0.5rem 0 0;
+      line-height: 1.4;
+    }
+
+    .password-requirements {
+      margin-top: 0.5rem;
+    }
+
+    .requirement-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .requirement-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.75rem;
+    }
+
+    .requirement-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.25rem;
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .requirement-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .requirement-item.invalid {
+      color: #dc2626;
+    }
+
+    .requirement-item.invalid::before {
+      content: '✗';
+      background: #fee2e2;
+      color: #dc2626;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .requirement-item.valid {
+      color: #059669;
+    }
+
+    .requirement-item.valid::before {
+      content: '✓';
+      background: #d1fae5;
+      color: #059669;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .phone-input-wrapper {
+      width: 100%;
+    }
+    .phone-input-wrapper ::ng-deep .iti {
+      width: 100%;
+    }
+    .phone-input-wrapper ::ng-deep .iti__flag-container {
+      border-radius: 10px 0 0 10px;
+      border: 1px solid #e5e7eb;
+      border-right: none;
+      background: #f9fafb;
+    }
+    .phone-input-wrapper ::ng-deep .iti__selected-flag {
+      padding: 0 0 0 12px;
+    }
+    .phone-input-wrapper ::ng-deep input.auth-phone-input {
+      padding-left: 52px;
+      border-radius: 0 10px 10px 0;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      width: 100%;
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+      font-size: 0.95rem;
+    }
+    .phone-input-wrapper ::ng-deep input.auth-phone-input:focus {
+      outline: none;
+      border-color: #f59e0b;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
     .field-hint {
       display: block;
       font-size: 0.75rem;
@@ -617,6 +809,8 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
   `]
 })
 export class RegisterComponent {
+  readonly CountryISO = CountryISO;
+  readonly SearchCountryField = SearchCountryField;
   registerForm: FormGroup;
   selectedRole: 'LEARNER' | 'TRAINER' | null = null;
   trainerStep: number = 1;
@@ -635,7 +829,7 @@ export class RegisterComponent {
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       phoneNumber: [''],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, passwordStrengthValidator()]],
       // Trainer-specific fields
       subjects: [''],
       experience: [''],
@@ -706,12 +900,40 @@ export class RegisterComponent {
     }
   }
 
+  /**
+   * Normalizes phone from form value. ngx-intl-tel-input sets an object
+   * (e.g. { e164Number, internationalNumber, number, ... }), not a string.
+   * We extract a string from that object or use the value as-is if it's already a string.
+   */
+  private normalizePhone(val: unknown): string | undefined {
+    if (val == null) return undefined;
+    if (typeof val === 'string') {
+      const cleaned = val.trim().replace(/\s/g, '');
+      return cleaned || undefined;
+    }
+    if (typeof val === 'object' && val !== null) {
+      const o = val as Record<string, unknown>;
+      const str =
+        (typeof o['e164Number'] === 'string' && o['e164Number']) ||
+        (typeof o['internationalNumber'] === 'string' && o['internationalNumber']) ||
+        (typeof o['nationalNumber'] === 'string' && o['nationalNumber']) ||
+        (typeof o['number'] === 'string' && o['number']);
+      if (str) {
+        const cleaned = String(str).trim().replace(/\s/g, '');
+        return cleaned || undefined;
+      }
+    }
+    return undefined;
+  }
+
   private registerAsLearner() {
     const form = this.registerForm.value;
+    const phoneRaw = this.registerForm.get('phoneNumber')?.value;
     const user: User = {
       ...form,
       email: (form.email ?? '').trim().toLowerCase(),
       password: (form.password ?? '').trim(),
+      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined,
       active: true
     };
 
@@ -747,11 +969,12 @@ export class RegisterComponent {
 
   private registerAsTrainer() {
     const form = this.registerForm.value;
+    const phoneRaw = this.registerForm.get('phoneNumber')?.value;
     const user: User = {
       firstName: form.firstName,
       lastName: form.lastName,
       email: (form.email ?? '').trim().toLowerCase(),
-      phoneNumber: form.phoneNumber,
+      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined,
       password: (form.password ?? '').trim(),
       active: false
     };

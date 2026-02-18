@@ -565,7 +565,7 @@ export class TrainerRequestsComponent implements OnInit {
     this.isProcessing = true;
     this.trainerRequestService.approveRequest(request.id).subscribe({
       next: () => {
-        alert(`✅ Success!\n\n${request.user.firstName} ${request.user.lastName} is now an approved trainer.`);
+        alert(`✅ Success!\n\n${request.user.firstName} ${request.user.lastName} is now an approved trainer.\n\nImportant: They must log out and log in again to access trainer features (their session still has the old role).`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },

@@ -5,6 +5,7 @@ import { UserService } from '../../services/users.api';
 import { User } from '../../../../shared/models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../../core/api/api.config';
+import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 
 interface Role {
@@ -131,13 +132,49 @@ export class UsersListComponent implements OnInit {
         }
     }
 
+    private isPasswordStrong(pwd: string): boolean {
+        if (!pwd || pwd.length < 8) return false;
+        return /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /[0-9]/.test(pwd) && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(pwd);
+    }
+
     private createUser(): void {
-        if (!this.editedUser.password) {
-            alert('Password is required for new users!');
+        const fn = (this.editedUser.firstName ?? '').trim();
+        const ln = (this.editedUser.lastName ?? '').trim();
+        const em = (this.editedUser.email ?? '').trim();
+        const pw = this.editedUser.password ?? '';
+
+        if (!fn || fn.length < 2) {
+            alert('First name is required (min 2 characters).');
+            return;
+        }
+        if (!ln || ln.length < 2) {
+            alert('Last name is required (min 2 characters).');
+            return;
+        }
+        if (!em) {
+            alert('Email is required.');
+            return;
+        }
+        if (!pw) {
+            alert('Password is required.');
+            return;
+        }
+        if (!this.isPasswordStrong(pw)) {
+            alert('Password must have: 8+ characters, uppercase, lowercase, digit, and special character (e.g. !@#$%).');
             return;
         }
 
-        this.userService.create(this.editedUser as User).subscribe({
+        const userToCreate: User = {
+            firstName: fn,
+            lastName: ln,
+            email: em.toLowerCase(),
+            password: pw,
+            phoneNumber: this.editedUser.phoneNumber || undefined,
+            active: this.editedUser.active ?? true,
+            role: this.editedUser.role ?? undefined
+        };
+
+        this.userService.create(userToCreate).subscribe({
             next: () => {
                 alert('✅ User created successfully!');
                 this.loadData();
@@ -145,7 +182,12 @@ export class UsersListComponent implements OnInit {
             },
             error: (e: unknown) => {
                 console.error('ERROR creating user:', e);
-                alert('❌ Failed to create user. Check console for details.');
+                let msg = 'Failed to create user.';
+                if (e instanceof HttpErrorResponse) {
+                    if (e.status === 409) msg = 'Email already exists.';
+                    else if (e.error && typeof e.error === 'string') msg = e.error;
+                }
+                alert('❌ ' + msg);
             }
         });
     }
@@ -173,8 +215,9 @@ export class UsersListComponent implements OnInit {
         if (confirm(`Delete ${userName}?`)) {
             this.userService.delete(id).subscribe({
                 next: () => {
+                    this.users = this.users.filter(u => String(u.id) !== String(id));
+                    this.cdr.detectChanges();
                     alert('✅ User deleted successfully!');
-                    this.users = this.users.filter(u => u.id !== id);
                 },
                 error: (e: unknown) => {
                     console.error('Error deleting user:', e);

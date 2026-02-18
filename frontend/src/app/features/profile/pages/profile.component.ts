@@ -710,14 +710,30 @@ export class ProfileComponent implements OnInit {
 
   loadUser() {
     const user = this.authService.getCurrentUser();
-    this.currentUser.set(user);
-    if (user) {
-      this.profileForm.patchValue({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: user.phoneNumber || ''
-      });
+    if (!user?.id) {
+      this.currentUser.set(user);
+      return;
     }
+    this.userService.getById(user.id).subscribe({
+      next: (freshUser) => {
+        this.currentUser.set(freshUser);
+        this.authService.setSession(freshUser);
+        this.profileForm.patchValue({
+          firstName: freshUser.firstName,
+          lastName: freshUser.lastName,
+          phoneNumber: freshUser.phoneNumber || ''
+        });
+        this.cd.detectChanges();
+      },
+      error: () => {
+        this.currentUser.set(user);
+        this.profileForm.patchValue({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phoneNumber: user.phoneNumber || ''
+        });
+      }
+    });
   }
 
   toggleEdit() {

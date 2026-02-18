@@ -72,4 +72,23 @@ public class JwtUtil {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
+
+    /** Validates token signature and expiration (no username check). */
+    public boolean validateToken(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Long extractUserId(String token) {
+        Object v = extractAllClaims(token).get("userId");
+        return v instanceof Number ? ((Number) v).longValue() : null;
+    }
+
+    public String extractRole(String token) {
+        Object r = extractAllClaims(token).get("role");
+        return r != null ? r.toString() : null;
+    }
 }

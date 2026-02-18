@@ -74,16 +74,25 @@ import { User } from '../../../../shared/models/user.model';
                 <label class="input-label">WORK EMAIL ADDRESS</label>
                 <div class="input-container">
                   <i class="bi bi-envelope"></i>
-                  <input type="email" formControlName="email" placeholder="sirine@organization.com" class="auth-input">
+                  <input type="email" formControlName="email" placeholder="sirine@organization.com" class="auth-input" [class.input-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
                 </div>
+                @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+                  <span class="error-message">
+                    @if (loginForm.get('email')?.errors?.['required']) { Email is required. }
+                    @if (loginForm.get('email')?.errors?.['email']) { Please enter a valid email address. }
+                  </span>
+                }
               </div>
 
               <div class="form-group">
                 <label class="input-label">SECURE CREDENTIAL</label>
                 <div class="input-container">
                   <i class="bi bi-shield-lock"></i>
-                  <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input">
+                  <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.input-error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
                 </div>
+                @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+                  <span class="error-message">Password is required.</span>
+                }
                 <button type="button" class="forgot-btn">FORGOT ACCESS?</button>
               </div>
 
@@ -374,6 +383,14 @@ import { User } from '../../../../shared/models/user.model';
       border-color: #f59e0b;
       background: white;
       box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
+    .auth-input.input-error { border-color: #dc2626; }
+    .error-message {
+      display: block;
+      font-size: 0.8rem;
+      color: #dc2626;
+      margin-top: 0.35rem;
     }
 
     .forgot-btn {

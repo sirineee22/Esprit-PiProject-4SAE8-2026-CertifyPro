@@ -1,5 +1,6 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.UpdateUserRequest;
 import com.training.platform.entity.User;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.UserRepository;
@@ -65,33 +66,30 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
         return userRepository.findById(id)
                 .map(user -> {
-                    if (userDetails.getFirstName() != null && !userDetails.getFirstName().isBlank()) {
-                        user.setFirstName(userDetails.getFirstName());
+                    if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+                        user.setFirstName(request.getFirstName());
                     }
-                    if (userDetails.getLastName() != null && !userDetails.getLastName().isBlank()) {
-                        user.setLastName(userDetails.getLastName());
+                    if (request.getLastName() != null && !request.getLastName().isBlank()) {
+                        user.setLastName(request.getLastName());
                     }
-                    if (userDetails.getEmail() != null && !userDetails.getEmail().isBlank()) {
-                        user.setEmail(userDetails.getEmail());
+                    if (request.getEmail() != null && !request.getEmail().isBlank()) {
+                        user.setEmail(request.getEmail().trim().toLowerCase());
                     }
-                    if (userDetails.getPhoneNumber() != null) {
-                        user.setPhoneNumber(userDetails.getPhoneNumber());
+                    if (request.getPhoneNumber() != null) {
+                        user.setPhoneNumber(request.getPhoneNumber());
                     }
-                    user.setActive(userDetails.isActive());
-                    
-                    // Update role if provided
-                    if (userDetails.getRole() != null) {
-                        user.setRole(userDetails.getRole());
+                    if (request.getActive() != null) {
+                        user.setActive(request.getActive());
                     }
-                    
-                    // Only update password if provided
-                    if (userDetails.getPassword() != null && !userDetails.getPassword().isBlank()) {
-                        user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+                    if (request.getRole() != null) {
+                        user.setRole(request.getRole());
                     }
-                    
+                    if (request.getPassword() != null && !request.getPassword().isBlank()) {
+                        user.setPassword(passwordEncoder.encode(request.getPassword()));
+                    }
                     return ResponseEntity.ok(userRepository.save(user));
                 })
                 .orElse(ResponseEntity.notFound().build());

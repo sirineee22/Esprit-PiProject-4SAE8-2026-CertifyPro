@@ -6,14 +6,15 @@ Training platform: certifications, courses, user and admin flows.
 
 - **Frontend:** Angular (port 4200)
 - **Backend:** Spring Boot – user-service (port 8083)
-- **DB:** PostgreSQL
+- **DB:** PostgreSQL (local)
 
 ## Run
 
 **PostgreSQL**
 
 - Create DB: `CREATE DATABASE userdb;`
-- Start PostgreSQL (e.g. service or `pg_ctl`).
+- Default: `localhost:5432`, user `postgres`, password `sisina`.
+- Hibernate creates/updates tables on startup.
 
 **Backend**
 
@@ -22,7 +23,10 @@ cd backend/services/user-service
 mvn spring-boot:run
 ```
 
-Uses `application.properties`; override with env: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`.
+Use profile `local` for same config as `.env`:  
+`mvn spring-boot:run -Dspring-boot.run.profiles=local`
+
+Override via env: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`.
 
 **Frontend**
 
@@ -41,12 +45,8 @@ On first run, an admin user is created if missing:
 - **Email:** `admin@platform.com`
 - **Password:** `Admin123!`
 
-## Env (production)
+## Env
 
-Set in `.env` or environment:
+Copy `.env.example` to `.env` and set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. For production, set `JWT_SECRET` (min 256 bits).
 
-- `DB_URL` – JDBC URL (e.g. `jdbc:postgresql://host:5432/userdb`)
-- `DB_USERNAME` / `DB_PASSWORD`
-- `JWT_SECRET` – long random string (min 256 bits)
-
-Copy `.env.example` to `.env` and fill values.
+---
