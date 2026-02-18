@@ -34,8 +34,8 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // Init Admin User
-        if (userRepository.findByEmail("admin@platform.com").isEmpty()) {
+        // Init Admin User (created on first run if not present)
+        if (userRepository.findByEmailIgnoreCase("admin@platform.com").isEmpty()) {
             Role adminRole = roleRepository.findByName("ADMIN").orElseThrow();
             User admin = new User();
             admin.setFirstName("Admin");
@@ -45,7 +45,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRole(adminRole);
             admin.setActive(true);
             userRepository.save(admin);
-            System.out.println("Admin user created: admin@platform.com / Admin123!");
+            System.out.println(">>> Admin user created. Login: admin@platform.com / Admin123!");
         }
     }
 }

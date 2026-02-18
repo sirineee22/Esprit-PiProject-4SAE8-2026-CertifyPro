@@ -25,14 +25,10 @@ import { User } from '../../models/user.model';
         </div>
       </a>
 
-      <!-- Desktop Navigation -->
-      <div class="nav-links-desktop d-none d-md-flex">
-        <a class="nav-link-modern" routerLink="/courses" routerLinkActive="active">Courses</a>
-        <a class="nav-link-modern" routerLink="/certifications" routerLinkActive="active">Certifications</a>
-        <a class="nav-link-modern" routerLink="/events" routerLinkActive="active">Events</a>
-        <a class="nav-link-modern" routerLink="/jobs" routerLinkActive="active">Stage & Jobs</a>
-        <a class="nav-link-modern" routerLink="/messages" routerLinkActive="active">Messagerie</a>
-        <a class="nav-link-modern" routerLink="/community" routerLinkActive="active">Community</a>
+      <!-- Desktop Navigation - Minimal for logged in users -->
+      <div class="nav-links-desktop d-none d-md-flex" *ngIf="!isLoggedIn">
+        <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" routerLinkActive="active">Courses</a>
+        <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">À propos</a>
       </div>
       
       <!-- Right Side Actions -->
@@ -43,6 +39,7 @@ import { User } from '../../models/user.model';
         </ng-container>
         
         <ng-template #userLoggedIn>
+          <div class="welcome-text">Bienvenue, {{currentUser?.firstName}}!</div>
           <div class="user-profile-nav-wrapper">
             <div class="user-profile-nav-modern" (click)="toggleDropdown($event)">
                <i class="bi bi-person-circle"></i>
@@ -97,12 +94,17 @@ import { User } from '../../models/user.model';
     <!-- Mobile Menu Overlay -->
     <div class="mobile-menu-overlay" [class.show]="isMenuOpen">
       <div class="mobile-nav-links">
-        <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Courses</a>
-        <a class="nav-link-modern" routerLink="/certifications" (click)="isMenuOpen = false">Certifications</a>
-        <a class="nav-link-modern" routerLink="/events" (click)="isMenuOpen = false">Events</a>
-        <a class="nav-link-modern" routerLink="/jobs" (click)="isMenuOpen = false">Stage & Jobs</a>
-        <a class="nav-link-modern" routerLink="/messages" (click)="isMenuOpen = false">Messagerie</a>
-        <a class="nav-link-modern" routerLink="/community" (click)="isMenuOpen = false">Community</a>
+        <ng-container *ngIf="!isLoggedIn">
+          <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" (click)="isMenuOpen = false">Courses</a>
+          <a class="nav-link-modern" routerLink="/about" (click)="isMenuOpen = false">À propos</a>
+        </ng-container>
+        <ng-container *ngIf="isLoggedIn">
+          <a class="nav-link-modern" routerLink="/" (click)="isMenuOpen = false">Accueil</a>
+          <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">Mon Profil</a>
+          <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">Mes Cours</a>
+          <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">Mes Certifications</a>
+          <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Parcourir les Cours</a>
+        </ng-container>
         <hr class="mobile-divider">
         <ng-container *ngIf="!isLoggedIn; else mobileUserLoggedIn">
           <a routerLink="/login" class="btn-ghost-modern w-100 mb-2" (click)="isMenuOpen = false">Sign In</a>

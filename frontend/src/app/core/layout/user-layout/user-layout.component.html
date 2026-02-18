@@ -1,7 +1,17 @@
-<div class="user-layout">
-    <app-navbar></app-navbar>
-    <main class="content">
-        <router-outlet></router-outlet>
-    </main>
-    <app-footer></app-footer>
+<div class="user-layout" [class.with-sidebar]="showSidebar" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <!-- Sidebar for logged-in users (NOT on home page) -->
+    <app-user-sidebar *ngIf="showSidebar" (sidebarToggled)="onSidebarToggled($event)"></app-user-sidebar>
+    
+    <!-- Main content area -->
+    <div class="main-wrapper">
+        <!-- Navbar on home page OR for guests on other pages -->
+        <app-navbar *ngIf="isHomePage || !isLoggedIn"></app-navbar>
+        
+        <main class="content">
+            <router-outlet></router-outlet>
+        </main>
+        
+        <!-- Footer on home page OR for guests on other pages -->
+        <app-footer *ngIf="isHomePage || !isLoggedIn"></app-footer>
+    </div>
 </div>

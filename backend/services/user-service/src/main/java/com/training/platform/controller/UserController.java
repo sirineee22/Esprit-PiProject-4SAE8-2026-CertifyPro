@@ -40,19 +40,24 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@Valid @RequestBody User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
+        String email = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : null;
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body("Email is required");
+        }
+        user.setEmail(email);
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
         try {
             // Hash password before saving
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-            
+
             // Assign default LEARNER role if no role provided
             if (user.getRole() == null) {
                 user.setRole(roleRepository.findByName("LEARNER")
                     .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             }
-            
+
             return ResponseEntity.ok(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");

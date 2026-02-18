@@ -87,8 +87,9 @@ import { User } from '../../../../shared/models/user.model';
                 <button type="button" class="forgot-btn">FORGOT ACCESS?</button>
               </div>
 
-              <button type="submit" class="submit-btn" [disabled]="loginForm.invalid">
-                Access Portal <i class="bi bi-chevron-right"></i>
+              <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isSubmitting">
+                <span *ngIf="!isSubmitting">Access Portal <i class="bi bi-chevron-right"></i></span>
+                <span *ngIf="isSubmitting">Signing in…</span>
               </button>
 
               <div class="divider">
@@ -505,6 +506,7 @@ import { User } from '../../../../shared/models/user.model';
 })
 export class LoginComponent {
   loginForm: FormGroup;
+  isSubmitting = false;
 
   constructor(
     private fb: FormBuilder,
@@ -518,16 +520,17 @@ export class LoginComponent {
   }
 
   onSubmit() {
-    if (!this.loginForm.valid) {
+    if (!this.loginForm.valid || this.isSubmitting) {
       return;
     }
 
-    const { email, password } = this.loginForm.value as { email: string; password: string };
+    this.isSubmitting = true;
+    const raw = this.loginForm.value as { email: string; password: string };
+    const email = (raw.email ?? '').trim().toLowerCase();
+    const password = (raw.password ?? '').trim();
     this.authService.login(email, password).subscribe({
       next: (response: LoginResponse) => {
         this.authService.setSession(response.user, response.token);
-
-        // Redirect based on user role
         if (response.user.role?.name === 'ADMIN') {
           this.router.navigate(['/admin/dashboard']);
         } else {
@@ -535,8 +538,15 @@ export class LoginComponent {
         }
       },
       error: (e: unknown) => {
+        this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 401) {
-          alert('Invalid email or password.');
+          const message = typeof e.error === 'string' && e.error ? e.error : 'Invalid email or password.';
+          alert(message);
+          return;
+        }
+        if (e instanceof HttpErrorResponse && e.status === 500) {
+          const message = typeof e.error === 'string' && e.error ? e.error : 'Server error. Please try again or contact support.';
+          alert(message);
           return;
         }
         alert('Login failed. Please try again.');

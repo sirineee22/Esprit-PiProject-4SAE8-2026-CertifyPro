@@ -1,0 +1,93 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
+@Component({
+  selector: 'app-my-courses',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  template: `
+    <div class="my-courses-container">
+      <div class="page-header">
+        <h1>Mes Cours</h1>
+        <p>Suivez votre progression et continuez votre apprentissage</p>
+      </div>
+
+      <div class="empty-state">
+        <i class="bi bi-book"></i>
+        <h2>Aucun cours inscrit</h2>
+        <p>Vous n'êtes inscrit à aucun cours pour le moment.</p>
+        <a routerLink="/courses" class="btn-browse">Parcourir les cours</a>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .my-courses-container {
+      padding: 3rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: hsl(222, 47%, 20%);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      font-size: 1.1rem;
+      color: #64748b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+    }
+
+    .empty-state h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+
+    .btn-browse {
+      display: inline-block;
+      padding: 0.875rem 2rem;
+      background: hsl(222, 47%, 20%);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-browse:hover {
+      background: hsl(222, 47%, 15%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+  `]
+})
+export class MyCoursesComponent {}
