@@ -164,3 +164,4 @@ Write-Host "  - Forum Service: Cherchez 'Communication inter-microservices réus
 Write-Host "  - API Gateway: Cherchez les requêtes vers /api/users/$userId" -ForegroundColor Gray
 Write-Host ""
 
+

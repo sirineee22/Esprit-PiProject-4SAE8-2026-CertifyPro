@@ -2,6 +2,7 @@ package com.training.forum.controller;
 
 import com.training.forum.dto.CommentResponse;
 import com.training.forum.dto.CreateCommentRequest;
+import com.training.forum.dto.UpdateCommentRequest;
 import com.training.forum.entity.Comment;
 import com.training.forum.entity.Post;
 import com.training.forum.repository.CommentRepository;
@@ -11,9 +12,11 @@ import com.training.forum.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -89,6 +92,123 @@ public class PostCommentController {
         comment.setContent(req.content());
         Comment saved = commentRepository.save(comment);
         return ResponseEntity.ok(toResponse(saved));
+    }
+
+    @PutMapping("/{commentId}")
+    public ResponseEntity<?> updateCommentOnPost(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestBody UpdateCommentRequest req,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        
+        // Vérifier que le post existe
+        if (!postRepository.existsById(postId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Post with ID " + postId + " does not exist");
+        }
+        
+        // Trouver le commentaire
+        Comment comment = commentRepository.findById(commentId).orElse(null);
+        if (comment == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Comment with ID " + commentId + " does not exist");
+        }
+        
+        // Vérifier que le commentaire appartient au post
+        if (comment.getPost() == null || !comment.getPost().getId().equals(postId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Comment does not belong to the specified post");
+        }
+        
+        // Extraire le token JWT du header Authorization
+        String token = extractTokenFromHeader(authHeader);
+        
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Authorization token is required. Please login first.");
+        }
+        
+        // Extraire le userId du token JWT
+        Long userId = jwtUtil.extractUserId(token);
+        
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired token. Please login again.");
+        }
+        
+        // Vérifier les permissions : ADMIN peut modifier n'importe quel commentaire, 
+        // sinon l'utilisateur doit être le propriétaire du commentaire
+        boolean isAdmin = jwtUtil.isAdmin(token);
+        boolean isOwner = comment.getUserId().equals(userId);
+        
+        if (!isAdmin && !isOwner) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only update your own comments");
+        }
+        
+        // Mettre à jour le contenu du commentaire
+        if (req.content() != null && !req.content().isBlank()) {
+            comment.setContent(req.content());
+        }
+        
+        Comment updated = commentRepository.save(comment);
+        return ResponseEntity.ok(toResponse(updated));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<?> deleteCommentOnPost(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        
+        // Vérifier que le post existe
+        if (!postRepository.existsById(postId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Post with ID " + postId + " does not exist");
+        }
+        
+        // Trouver le commentaire
+        Comment comment = commentRepository.findById(commentId).orElse(null);
+        if (comment == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Comment with ID " + commentId + " does not exist");
+        }
+        
+        // Vérifier que le commentaire appartient au post
+        if (comment.getPost() == null || !comment.getPost().getId().equals(postId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Comment does not belong to the specified post");
+        }
+        
+        // Extraire le token JWT du header Authorization
+        String token = extractTokenFromHeader(authHeader);
+        
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Authorization token is required. Please login first.");
+        }
+        
+        // Extraire le userId du token JWT
+        Long userId = jwtUtil.extractUserId(token);
+        
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired token. Please login again.");
+        }
+        
+        // Vérifier les permissions : ADMIN peut supprimer n'importe quel commentaire, 
+        // sinon l'utilisateur doit être le propriétaire du commentaire
+        boolean isAdmin = jwtUtil.isAdmin(token);
+        boolean isOwner = comment.getUserId().equals(userId);
+        
+        if (!isAdmin && !isOwner) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only delete your own comments");
+        }
+        
+        // Supprimer le commentaire
+        commentRepository.deleteById(commentId);
+        return ResponseEntity.ok().build();
     }
 
     private static CommentResponse toResponse(Comment comment) {

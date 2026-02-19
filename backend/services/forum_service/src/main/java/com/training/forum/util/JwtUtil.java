@@ -76,5 +76,43 @@ public class JwtUtil {
             return null;
         }
     }
+
+    /**
+     * Extrait le role du token JWT
+     * @param token Le token JWT
+     * @return Le role extrait du token, ou null si le token est invalide ou n'a pas de role
+     */
+    public String extractRole(String token) {
+        try {
+            if (token == null || token.isEmpty()) {
+                return null;
+            }
+            
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            
+            Object roleObj = claims.get("role");
+            if (roleObj != null) {
+                return roleObj.toString();
+            }
+            
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Vérifie si l'utilisateur est un ADMIN
+     * @param token Le token JWT
+     * @return true si l'utilisateur est ADMIN, false sinon
+     */
+    public boolean isAdmin(String token) {
+        String role = extractRole(token);
+        return role != null && role.equalsIgnoreCase("ADMIN");
+    }
 }
 

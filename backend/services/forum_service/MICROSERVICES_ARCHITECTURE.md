@@ -87,3 +87,4 @@ http://USER-SERVICE/api/users/{id}
 
 C'est la **bonne pratique** dans une architecture microservices moderne.
 
+
