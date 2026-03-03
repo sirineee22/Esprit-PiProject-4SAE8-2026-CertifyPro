@@ -1,0 +1,133 @@
+<div class="dashboard-page">
+    <div class="container py-5">
+        <header class="mb-5">
+            <h1 class="display-5 fw-bold text-slate-900">Training <span class="text-gradient">Analytics</span></h1>
+            <p class="text-muted">Monitor your performance and student success across all your formations.</p>
+        </header>
+
+        <div *ngIf="isLoading()"
+            class="loading-state h-400 d-flex flex-column align-items-center justify-content-center">
+            <div class="spinner-modern mb-3"></div>
+            <p class="text-muted">Calculating your impact...</p>
+        </div>
+
+        <div *ngIf="!isLoading() && hasError()"
+            class="error-state h-400 d-flex flex-column align-items-center justify-content-center text-center">
+            <i class="bi bi-exclamation-triangle text-danger display-1 mb-3"></i>
+            <h2 class="h4">Oops! Something went wrong.</h2>
+            <p class="text-muted">The statistics module is temporarily unavailable.<br>Please ensure your backend is
+                running.</p>
+            <button class="btn btn-primary mt-3" (click)="loadStats()">Try Again</button>
+        </div>
+
+        <div *ngIf="!isLoading() && !hasError() && !stats()"
+            class="empty-state h-400 d-flex flex-column align-items-center justify-content-center text-center">
+            <i class="bi bi-bar-chart text-muted display-1 mb-3"></i>
+            <h2 class="h4">No Data Yet</h2>
+            <p class="text-muted">You don't have any evaluations for your formations yet.</p>
+        </div>
+
+        <div *ngIf="!isLoading() && !hasError() && stats()" class="animate-fade-in">
+            <!-- Summary Stats Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="stat-card-premium">
+                        <div class="icon-box bg-soft-primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="info">
+                            <span class="value">{{ stats()?.totalStudents }}</span>
+                            <span class="label">Total Students</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-premium">
+                        <div class="icon-box bg-soft-success">
+                            <i class="bi bi-journal-check"></i>
+                        </div>
+                        <div class="info">
+                            <span class="value">{{ stats()?.totalEvaluations }}</span>
+                            <span class="label">Total Evals</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-premium">
+                        <div class="icon-box bg-soft-warning">
+                            <i class="bi bi-trophy-fill"></i>
+                        </div>
+                        <div class="info">
+                            <span class="value">{{ stats()?.averageScore }}%</span>
+                            <span class="label">Avg Score</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-premium">
+                        <div class="icon-box bg-soft-danger">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <div class="info">
+                            <span class="value">{{ stats()?.successRate }}%</span>
+                            <span class="label">Success Rate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formation Breakdown -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-card animate-slide-up">
+                        <div class="card-header-premium">
+                            <h3 class="h5 mb-0 fw-bold">Performance by Formation</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Formation</th>
+                                        <th class="text-center">Students</th>
+                                        <th class="text-center">Avg Score</th>
+                                        <th class="text-center">Success Rate</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let f of stats()?.formationStats">
+                                        <td class="fw-bold text-slate-900">{{ f.formationTitle }}</td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill bg-light text-dark px-3">{{ f.studentCount
+                                                }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                                <div class="progress w-100" style="height: 6px; max-width: 100px;">
+                                                    <div class="progress-bar" [style.width.%]="f.averageScore"
+                                                        [style.background-color]="getScoreColor(f.averageScore)"></div>
+                                                </div>
+                                                <span class="small fw-bold">{{ f.averageScore }}%</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold" [style.color]="getScoreColor(f.successRate)">{{
+                                                f.successRate }}%</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge-status"
+                                                [ngClass]="f.successRate > 70 ? 'excellent' : (f.successRate > 50 ? 'good' : 'needs-improvement')">
+                                                {{ f.successRate > 70 ? 'Excellent' : (f.successRate > 50 ? 'Steady' :
+                                                'Action Required') }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
