@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CertificationRepository extends JpaRepository<Certification, Long> {
-    List<Certification> findByCategory(String category);
+    List<Certification> findByIsActive(Boolean isActive);
 }
