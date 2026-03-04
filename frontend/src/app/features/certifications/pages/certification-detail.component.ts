@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 
@@ -478,6 +478,7 @@ export class CertificationDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) { }
@@ -559,6 +560,8 @@ export class CertificationDetailComponent implements OnInit {
   }
 
   registerForExam() {
-    this.registered = true;
+    if (this.cert) {
+      this.router.navigate(['/certifications', this.cert.id, 'exam']);
+    }
   }
 }

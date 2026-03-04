@@ -7,6 +7,7 @@ import { CoursesListComponent } from './features/courses/pages/courses-list.comp
 import { CertificationsListComponent } from './features/certifications/pages/certifications-list.component';
 import { CertificationDetailComponent } from './features/certifications/pages/certification-detail.component';
 import { CreateCertificationComponent } from './features/certifications/pages/create-certification.component';
+import { ExamQuizComponent } from './features/certifications/pages/exam-quiz.component';
 import { MyCoursesComponent } from './features/my-courses/pages/my-courses.component';
 import { AboutComponent } from './features/about/pages/about.component';
 import { authRoutes } from './features/auth/auth.routes';
@@ -30,6 +31,7 @@ export const routes: Routes = [
             { path: 'courses', component: CoursesListComponent },
             { path: 'certifications', component: CertificationsListComponent },
             { path: 'certifications/:id', component: CertificationDetailComponent },
+            { path: 'certifications/:id/exam', component: ExamQuizComponent, canActivate: [authGuard] },
             { path: 'trainer/create-certification', component: CreateCertificationComponent, canActivate: [authGuard, trainerGuard] },
             { path: 'my-courses', component: MyCoursesComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'my-certifications', component: CertificationsListComponent, canActivate: [authGuard, nonAdminGuard] },

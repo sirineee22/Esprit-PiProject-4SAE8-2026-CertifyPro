@@ -7,16 +7,22 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 import { timeout, TimeoutError } from 'rxjs';
 
+interface QuizQuestion {
+  questionText: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+
 interface CreateCertificationForm {
   // --- Certification fields ---
   code: string;
   name: string;
   description: string;
   validityMonths: number | null;
-  requiredScore: number | null;       // cert-level required score
+  requiredScore: number | null;
   criteriaDescription: string;
   isActive: boolean;
-  // Extra display-only metadata (packed into criteriaDescription as JSON)
+  // Metadata packed into criteriaDescription as JSON
   level: string;
   category: string;
   duration: string;
@@ -25,13 +31,16 @@ interface CreateCertificationForm {
   skills: string;
   prerequisites: string;
   language: string;
+  nextExamDate: string;   // date picker value (yyyy-mm-dd)
 
   // --- CertificationExam fields ---
-  examTitle: string;               // CertificationExam.title
-  examDurationMinutes: number | null; // CertificationExam.durationMinutes
-  examPassingScore: number | null;    // CertificationExam.passingScore
-  examMaxAttempts: number | null;     // CertificationExam.maxAttemptsPerUser
-  examIsActive: boolean;              // CertificationExam.isActive
+  examTitle: string;
+  examDurationMinutes: number | null;
+  examPassingScore: number | null;
+  examMaxAttempts: number | null;
+  examIsActive: boolean;
+  examPdfName: string | null;       // stores attached PDF filename
+  quizQuestions: QuizQuestion[];    // array of quiz questions
 }
 
 @Component({
@@ -100,39 +109,47 @@ interface CreateCertificationForm {
           </div>
 
           <div class="form-grid">
+
+            <!-- Certification Code (required) -->
             <div class="field full-width">
               <label>Certification Code <span class="req">*</span></label>
-              <div class="input-wrap">
+              <div class="input-wrap" [class.input-error]="touched && !form.code">
                 <i class="bi bi-hash"></i>
                 <input
                   type="text"
                   placeholder="e.g. AWS-SAA, PMP-2026"
                   [(ngModel)]="form.code"
                   name="code"
-                  required
                   (input)="form.code = form.code.toUpperCase()"
                 >
               </div>
-              <span class="field-hint">A unique short code (will be stored uppercase)</span>
+              <span class="error-msg" *ngIf="touched && !form.code">
+                <i class="bi bi-exclamation-circle"></i> Certification code is required.
+              </span>
+              <span class="field-hint" *ngIf="!touched || form.code">A unique short code (stored uppercase)</span>
             </div>
 
+            <!-- Certification Name (required) -->
             <div class="field full-width">
               <label>Certification Name <span class="req">*</span></label>
-              <div class="input-wrap">
+              <div class="input-wrap" [class.input-error]="touched && !form.name">
                 <i class="bi bi-award"></i>
                 <input
                   type="text"
                   placeholder="e.g. AWS Certified Solutions Architect"
                   [(ngModel)]="form.name"
                   name="name"
-                  required
                 >
               </div>
+              <span class="error-msg" *ngIf="touched && !form.name">
+                <i class="bi bi-exclamation-circle"></i> Certification name is required.
+              </span>
             </div>
 
+            <!-- Category -->
             <div class="field">
-              <label>Category</label>
-              <div class="input-wrap">
+              <label>Category <span class="req">*</span></label>
+              <div class="input-wrap" [class.input-error]="touched && !form.category">
                 <i class="bi bi-tag"></i>
                 <select [(ngModel)]="form.category" name="category">
                   <option value="">Select category...</option>
@@ -143,10 +160,16 @@ interface CreateCertificationForm {
                   <option value="Design">Design</option>
                   <option value="Data Science">Data Science</option>
                   <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Healthcare">Healthcare</option>
                 </select>
               </div>
+              <span class="error-msg" *ngIf="touched && !form.category">
+                <i class="bi bi-exclamation-circle"></i> Please select a category.
+              </span>
             </div>
 
+            <!-- Level -->
             <div class="field">
               <label>Level</label>
               <div class="input-wrap">
@@ -159,41 +182,112 @@ interface CreateCertificationForm {
               </div>
             </div>
 
+            <!-- Duration (numbers only) -->
             <div class="field">
-              <label>Duration</label>
+              <label>Duration (hours)</label>
               <div class="input-wrap">
                 <i class="bi bi-clock"></i>
-                <input type="text" placeholder="e.g. 40 hours, 12 weeks"
-                  [(ngModel)]="form.duration" name="duration">
+                <input
+                  type="number"
+                  placeholder="e.g. 40"
+                  [(ngModel)]="form.duration"
+                  name="duration"
+                  min="0"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
             </div>
 
+            <!-- Price (numbers only) -->
             <div class="field">
-              <label>Price / Fee</label>
+              <label>Price / Fee (USD)</label>
               <div class="input-wrap">
                 <i class="bi bi-currency-dollar"></i>
-                <input type="text" placeholder="e.g. $299, Free, $99/mo"
-                  [(ngModel)]="form.price" name="price">
+                <input
+                  type="number"
+                  placeholder="e.g. 299"
+                  [(ngModel)]="form.price"
+                  name="price"
+                  min="0" step="0.01"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
             </div>
 
+            <!-- Validity months (numbers only) -->
             <div class="field">
               <label>Validity (months)</label>
               <div class="input-wrap">
                 <i class="bi bi-calendar-check"></i>
-                <input type="number" placeholder="e.g. 36"
-                  [(ngModel)]="form.validityMonths" name="validityMonths" min="1">
+                <input
+                  type="number"
+                  placeholder="e.g. 36"
+                  [(ngModel)]="form.validityMonths"
+                  name="validityMonths"
+                  min="1" max="120"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
+              <span class="field-hint">Must be a whole number (1–120)</span>
             </div>
 
+            <!-- Required Score (numbers only) -->
+            <div class="field">
+              <label>Required Score (%)</label>
+              <div class="input-wrap">
+                <i class="bi bi-graph-up"></i>
+                <input
+                  type="number"
+                  placeholder="e.g. 70"
+                  [(ngModel)]="form.requiredScore"
+                  name="requiredScore"
+                  min="0" max="100" step="0.5"
+                  (keypress)="onlyNumbers($event)"
+                >
+              </div>
+              <span class="field-hint">Minimum score to pass (0–100)</span>
+            </div>
+
+            <!-- Language dropdown -->
             <div class="field">
               <label>Language</label>
               <div class="input-wrap">
                 <i class="bi bi-globe"></i>
-                <input type="text" placeholder="e.g. English"
-                  [(ngModel)]="form.language" name="language">
+                <select [(ngModel)]="form.language" name="language">
+                  <option value="English">🇬🇧 English</option>
+                  <option value="French">🇫🇷 French</option>
+                  <option value="Arabic">🇸🇦 Arabic</option>
+                  <option value="Spanish">🇪🇸 Spanish</option>
+                  <option value="German">🇩🇪 German</option>
+                  <option value="Italian">🇮🇹 Italian</option>
+                  <option value="Portuguese">🇵🇹 Portuguese</option>
+                  <option value="Dutch">🇳🇱 Dutch</option>
+                  <option value="Chinese">🇨🇳 Chinese</option>
+                  <option value="Japanese">🇯🇵 Japanese</option>
+                  <option value="Korean">🇰🇷 Korean</option>
+                  <option value="Russian">🇷🇺 Russian</option>
+                  <option value="Turkish">🇹🇷 Turkish</option>
+                  <option value="Hindi">🇮🇳 Hindi</option>
+                  <option value="Indonesian">🇮🇩 Indonesian</option>
+                </select>
               </div>
             </div>
+
+            <!-- Next Exam Date (calendar picker) -->
+            <div class="field">
+              <label>Next Exam Date</label>
+              <div class="input-wrap">
+                <i class="bi bi-calendar-event"></i>
+                <input
+                  type="date"
+                  [(ngModel)]="form.nextExamDate"
+                  name="nextExamDate"
+                  [min]="today"
+                >
+              </div>
+              <span class="field-hint">Leave blank if exam date is not yet scheduled</span>
+            </div>
+
           </div>
 
           <div class="toggle-row">
@@ -212,7 +306,7 @@ interface CreateCertificationForm {
 
           <div class="step-actions">
             <span></span>
-            <button class="btn-next" (click)="nextStep()" [disabled]="!form.code || !form.name">
+            <button class="btn-next" (click)="goNextStep1()">
               Next: Content <i class="bi bi-arrow-right"></i>
             </button>
           </div>
@@ -242,26 +336,74 @@ interface CreateCertificationForm {
 
           <div class="field full-width">
             <label>Topics Covered</label>
-            <textarea rows="4"
-              placeholder="Enter each topic on a new line:&#10;Design Resilient Architectures&#10;AWS Core Services (EC2, S3, VPC)&#10;Security &amp; Identity Management"
-              [(ngModel)]="form.topics" name="topics"></textarea>
-            <span class="field-hint">One topic per line — displayed as a checklist on the detail page</span>
+            <div class="tags-container">
+              <div class="tags-list" *ngIf="selectedTopics.length > 0">
+                <span class="tag-chip" *ngFor="let t of selectedTopics">
+                  {{ t }} <i class="bi bi-x-circle-fill" (click)="removeTopic(t)"></i>
+                </span>
+              </div>
+              <div class="tag-input-row">
+                <div class="input-wrap">
+                  <i class="bi bi-journal-bookmark"></i>
+                  <select #topicSelect (change)="addTopic(topicSelect.value); topicSelect.value=''">
+                    <option value="">-- Select from suggestions --</option>
+                    <option *ngFor="let s of suggestedTopics" [value]="s" [disabled]="selectedTopics.includes(s)">{{ s }}</option>
+                  </select>
+                </div>
+                <div class="input-wrap custom-input">
+                  <input type="text" #customTopic placeholder="Or type a custom topic..." (keyup.enter)="addTopic(customTopic.value); customTopic.value=''">
+                  <button type="button" class="btn-add" (click)="addTopic(customTopic.value); customTopic.value=''">Add</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="field full-width">
             <label>Skills Learners Will Gain</label>
-            <textarea rows="3"
-              placeholder="Comma-separated: Cloud Architecture, AWS EC2, IAM Security, Lambda Functions"
-              [(ngModel)]="form.skills" name="skills"></textarea>
-            <span class="field-hint">Comma-separated list — shown as skill chips</span>
+            <div class="tags-container">
+              <div class="tags-list" *ngIf="selectedSkills.length > 0">
+                <span class="tag-chip skill-color" *ngFor="let s of selectedSkills">
+                  {{ s }} <i class="bi bi-x-circle-fill" (click)="removeSkill(s)"></i>
+                </span>
+              </div>
+              <div class="tag-input-row">
+                <div class="input-wrap">
+                  <i class="bi bi-lightning-charge"></i>
+                  <select #skillSelect (change)="addSkill(skillSelect.value); skillSelect.value=''">
+                    <option value="">-- Select from suggestions --</option>
+                    <option *ngFor="let s of suggestedSkills" [value]="s" [disabled]="selectedSkills.includes(s)">{{ s }}</option>
+                  </select>
+                </div>
+                <div class="input-wrap custom-input">
+                  <input type="text" #customSkill placeholder="Or type a custom skill..." (keyup.enter)="addSkill(customSkill.value); customSkill.value=''">
+                  <button type="button" class="btn-add" (click)="addSkill(customSkill.value); customSkill.value=''">Add</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="field full-width">
             <label>Prerequisites</label>
-            <textarea rows="3"
-              placeholder="Enter each prerequisite on a new line:&#10;1 year of AWS experience&#10;Basic networking knowledge"
-              [(ngModel)]="form.prerequisites" name="prerequisites"></textarea>
-            <span class="field-hint">One prerequisite per line</span>
+            <div class="tags-container">
+              <div class="tags-list" *ngIf="selectedPrereqs.length > 0">
+                <span class="tag-chip prereq-color" *ngFor="let p of selectedPrereqs">
+                  {{ p }} <i class="bi bi-x-circle-fill" (click)="removePrereq(p)"></i>
+                </span>
+              </div>
+              <div class="tag-input-row">
+                <div class="input-wrap">
+                  <i class="bi bi-list-check"></i>
+                  <select #prereqSelect (change)="addPrereq(prereqSelect.value); prereqSelect.value=''">
+                    <option value="">-- Select from suggestions --</option>
+                    <option *ngFor="let s of suggestedPrereqs" [value]="s" [disabled]="selectedPrereqs.includes(s)">{{ s }}</option>
+                  </select>
+                </div>
+                <div class="input-wrap custom-input">
+                  <input type="text" #customPrereq placeholder="Or type custom prerequisite..." (keyup.enter)="addPrereq(customPrereq.value); customPrereq.value=''">
+                  <button type="button" class="btn-add" (click)="addPrereq(customPrereq.value); customPrereq.value=''">Add</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="step-actions">
@@ -282,48 +424,148 @@ interface CreateCertificationForm {
           </div>
 
           <div class="form-grid">
-            <!-- CertificationExam.title -->
+            <!-- CertificationExam.title (required) -->
             <div class="field full-width">
               <label>Exam Title <span class="req">*</span></label>
-              <div class="input-wrap">
+              <div class="input-wrap" [class.input-error]="touchedStep3 && !form.examTitle">
                 <i class="bi bi-journal-check"></i>
                 <input type="text" placeholder="e.g. AWS Solutions Architect Associate Exam"
                   [(ngModel)]="form.examTitle" name="examTitle">
               </div>
-              <span class="field-hint">A descriptive title for this exam session</span>
+              <span class="error-msg" *ngIf="touchedStep3 && !form.examTitle">
+                <i class="bi bi-exclamation-circle"></i> Exam title is required.
+              </span>
+              <span class="field-hint" *ngIf="!touchedStep3 || form.examTitle">A descriptive title for this exam session</span>
             </div>
 
-            <!-- CertificationExam.durationMinutes -->
+            <!-- Exam Duration (numbers only) -->
             <div class="field">
               <label>Duration (minutes)</label>
               <div class="input-wrap">
                 <i class="bi bi-hourglass-split"></i>
-                <input type="number" placeholder="e.g. 130"
-                  [(ngModel)]="form.examDurationMinutes" name="examDurationMinutes" min="1">
+                <input
+                  type="number"
+                  placeholder="e.g. 130"
+                  [(ngModel)]="form.examDurationMinutes"
+                  name="examDurationMinutes"
+                  min="1" max="600"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
+              <span class="field-hint">Whole number of minutes (1–600)</span>
             </div>
 
-            <!-- CertificationExam.passingScore -->
+            <!-- Passing Score (numbers only) -->
             <div class="field">
               <label>Passing Score (%)</label>
               <div class="input-wrap">
                 <i class="bi bi-graph-up"></i>
-                <input type="number" placeholder="e.g. 72"
-                  [(ngModel)]="form.examPassingScore" name="examPassingScore" min="0" max="100">
+                <input
+                  type="number"
+                  placeholder="e.g. 72"
+                  [(ngModel)]="form.examPassingScore"
+                  name="examPassingScore"
+                  min="0" max="100" step="0.5"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
+              <span class="field-hint">0–100%</span>
             </div>
 
-            <!-- CertificationExam.maxAttemptsPerUser -->
+            <!-- Max Attempts (numbers only) -->
             <div class="field">
               <label>Max Attempts per User</label>
               <div class="input-wrap">
                 <i class="bi bi-repeat"></i>
-                <input type="number" placeholder="e.g. 3 (leave blank for unlimited)"
-                  [(ngModel)]="form.examMaxAttempts" name="examMaxAttempts" min="1">
+                <input
+                  type="number"
+                  placeholder="e.g. 3"
+                  [(ngModel)]="form.examMaxAttempts"
+                  name="examMaxAttempts"
+                  min="1" max="10"
+                  (keypress)="onlyNumbers($event)"
+                >
               </div>
               <span class="field-hint">Leave blank for unlimited attempts</span>
             </div>
+          </div>
 
+          <!-- PDF File Upload -->
+          <div class="field full-width" style="margin-top: 1rem;">
+            <label>Upload Exam Document (PDF) <span class="badge-optional">Optional</span></label>
+            <div class="file-upload-box" [class.has-file]="form.examPdfName" (click)="fileInput.click()">
+              <input type="file" #fileInput accept=".pdf" style="display: none" (change)="onFileSelected($event)">
+              
+              <div class="upload-content" *ngIf="!form.examPdfName">
+                <i class="bi bi-cloud-arrow-up"></i>
+                <p>Click to browse and upload a PDF file</p>
+                <span>Maximum size: 10MB</span>
+              </div>
+              
+              <div class="upload-success" *ngIf="form.examPdfName">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                <div class="file-info">
+                  <strong>{{ form.examPdfName }}</strong>
+                  <span>PDF Document attached successfully</span>
+                </div>
+                <button type="button" class="btn-remove-file" (click)="$event.stopPropagation(); removeFile()">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quiz Builder -->
+          <div class="field full-width" style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <div>
+                <label style="margin-bottom: 0;">Quiz / Exam Questions <span class="badge-optional">Optional</span></label>
+                <span class="field-hint" style="display: block; margin-top: 0.2rem;">Add multiple-choice questions for the exam</span>
+              </div>
+              <button class="btn-add-question" (click)="addQuizQuestion()">
+                <i class="bi bi-plus-circle"></i> Add Question
+              </button>
+            </div>
+
+            <div class="quiz-builder">
+              <div class="no-questions" *ngIf="form.quizQuestions.length === 0">
+                <i class="bi bi-clipboard2-x"></i>
+                <p>No questions added yet. Click "Add Question" to build your exam.</p>
+              </div>
+
+              <!-- Question Form List -->
+              <div class="question-card" *ngFor="let q of form.quizQuestions; let qIdx = index">
+                <div class="q-header">
+                  <strong>Question {{ qIdx + 1 }}</strong>
+                  <button type="button" class="btn-delete-q" (click)="removeQuizQuestion(qIdx)" title="Remove Question">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+                
+                <div class="input-wrap full-width" style="margin-bottom: 1rem;">
+                  <input type="text" placeholder="Enter your question here..." [(ngModel)]="q.questionText" [name]="'qtext' + qIdx">
+                </div>
+
+                <div class="options-list">
+                  <div class="option-row" *ngFor="let opt of q.options; let oIdx = index; trackBy: trackByIndex">
+                    <label class="custom-radio" title="Mark as correct answer">
+                      <input type="radio" [name]="'correctOption_' + qIdx" [value]="oIdx" [(ngModel)]="q.correctOptionIndex">
+                      <span class="radio-mark"></span>
+                    </label>
+                    <div class="input-wrap">
+                      <input type="text" placeholder="Option text..." [(ngModel)]="q.options[oIdx]" [name]="'opt_' + qIdx + '_' + oIdx">
+                    </div>
+                    <button type="button" class="btn-remove-opt" (click)="removeQuizOption(qIdx, oIdx)" *ngIf="q.options.length > 2">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button class="btn-add-opt" (click)="addQuizOption(qIdx)">
+                  <i class="bi bi-plus"></i> Add Option
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- CertificationExam.isActive toggle -->
@@ -373,7 +615,7 @@ interface CreateCertificationForm {
             <button class="btn-back" (click)="prevStep()">
               <i class="bi bi-arrow-left"></i> Back
             </button>
-            <button class="btn-next" (click)="nextStep()">
+            <button class="btn-next" (click)="goNextStep3()">
               Review &amp; Submit <i class="bi bi-arrow-right"></i>
             </button>
           </div>
@@ -393,9 +635,11 @@ interface CreateCertificationForm {
               <div class="review-row"><span>Name</span><strong>{{ form.name }}</strong></div>
               <div class="review-row"><span>Category</span><strong>{{ form.category || '—' }}</strong></div>
               <div class="review-row"><span>Level</span><strong>{{ form.level }}</strong></div>
-              <div class="review-row"><span>Duration</span><strong>{{ form.duration || '—' }}</strong></div>
-              <div class="review-row"><span>Price</span><strong>{{ form.price || '—' }}</strong></div>
+              <div class="review-row"><span>Language</span><strong>{{ form.language }}</strong></div>
+              <div class="review-row"><span>Duration</span><strong>{{ form.duration ? form.duration + ' hours' : '—' }}</strong></div>
+              <div class="review-row"><span>Price</span><strong>{{ form.price ? '$' + form.price : '—' }}</strong></div>
               <div class="review-row"><span>Validity</span><strong>{{ form.validityMonths ? form.validityMonths + ' months' : '—' }}</strong></div>
+              <div class="review-row"><span>Next Exam</span><strong>{{ form.nextExamDate || '—' }}</strong></div>
               <div class="review-row"><span>Status</span>
                 <strong [class.active-badge]="form.isActive" [class.inactive-badge]="!form.isActive">
                   {{ form.isActive ? 'Active' : 'Inactive' }}
@@ -414,6 +658,8 @@ interface CreateCertificationForm {
                   {{ form.examIsActive ? 'Active' : 'Inactive' }}
                 </strong>
               </div>
+              <div class="review-row"><span>PDF Attached</span><strong>{{ form.examPdfName || 'None' }}</strong></div>
+              <div class="review-row"><span>Quiz Questions</span><strong>{{ form.quizQuestions.length }} questions</strong></div>
             </div>
 
             <div class="review-section full-review">
@@ -421,9 +667,9 @@ interface CreateCertificationForm {
               <p>{{ form.description || '—' }}</p>
             </div>
 
-            <div class="review-section full-review" *ngIf="form.topics">
+            <div class="review-section full-review" *ngIf="selectedTopics.length">
               <h3><i class="bi bi-journal-bookmark"></i> Topics</h3>
-              <p style="white-space: pre-line">{{ form.topics }}</p>
+              <ul style="padding-left:1.5rem; margin:0.5rem 0 0"><li *ngFor="let t of selectedTopics">{{ t }}</li></ul>
             </div>
           </div>
 
@@ -965,6 +1211,127 @@ interface CreateCertificationForm {
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ===== VALIDATION ===== */
+    .error-msg {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: #ef4444;
+      font-weight: 600;
+      margin-top: 0.3rem;
+      animation: fadeIn 0.2s ease;
+    }
+    .error-msg i { font-size: 0.85rem; }
+
+    .input-wrap.input-error {
+      border-color: #ef4444 !important;
+      background: #fff5f5;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Date input styling */
+    input[type="date"] {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      padding: 0.75rem 0;
+      font-size: 0.95rem;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    /* ===== CHIPS / TAGS ===== */
+    .tags-container {
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .tags-list {
+      display: flex; flex-wrap: wrap; gap: 0.4rem;
+      padding: 0.5rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;
+    }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #e0e7ff; color: #3730a3; padding: 0.35rem 0.85rem;
+      border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    }
+    .tag-chip.skill-color { background: #dbeafe; color: #1e40af; }
+    .tag-chip.prereq-color { background: #ffedd5; color: #9a3412; }
+    .tag-chip i { cursor: pointer; color: #818cf8; transition: color 0.2s; font-size: 1rem; }
+    .tag-chip i:hover { color: #4338ca; }
+    .skill-color i { color: #60a5fa; } .skill-color i:hover { color: #1d4ed8; }
+    .prereq-color i { color: #fdba74; } .prereq-color i:hover { color: #c2410c; }
+
+    .tag-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .custom-input { display: flex; align-items: stretch; padding: 0 !important; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 12px; }
+    .custom-input input { padding: 0.75rem 1rem; flex-grow: 1; border: none; outline: none; }
+    .btn-add {
+      background: #f1f5f9; border: none; border-left: 1px solid #cbd5e1;
+      padding: 0 1.25rem; font-weight: 600; color: #475569; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-add:hover { background: #e2e8f0; color: #1e293b; }
+
+    /* ===== PDF FILE UPLOAD ===== */
+    .file-upload-box {
+      border: 2px dashed #cbd5e1; border-radius: 16px; background: #f8fafc;
+      padding: 2.5rem; text-align: center; cursor: pointer; transition: all 0.2s ease;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .file-upload-box:hover { border-color: #3b82f6; background: #eff6ff; }
+    .file-upload-box.has-file { border-color: #10b981; background: #f0fdf4; border-style: solid; padding: 2rem; }
+    
+    .upload-content i { font-size: 3rem; color: #94a3b8; margin-bottom: 0.75rem; transition: color 0.2s; }
+    .file-upload-box:hover .upload-content i { color: #3b82f6; }
+    .upload-content p { color: #1e293b; font-weight: 600; font-size: 1.1rem; margin: 0 0 0.5rem 0; }
+    .upload-content span { color: #64748b; font-size: 0.85rem; }
+
+    .upload-success { display: flex; align-items: center; gap: 1rem; width: 100%; justify-content: center; }
+    .upload-success i { font-size: 2.5rem; color: #ef4444; }
+    .file-info { display: flex; flex-direction: column; text-align: left; }
+    .file-info strong { color: #1e293b; font-size: 1rem; margin-bottom: 0.2rem; }
+    .file-info span { color: #10b981; font-size: 0.85rem; font-weight: 600; }
+    .btn-remove-file { 
+      background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; 
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+      cursor: pointer; margin-left: 1rem; transition: all 0.2s;
+    }
+    .btn-remove-file:hover { background: #ef4444; color: white; }
+
+    /* ===== QUIZ BUILDER ===== */
+    .badge-optional { background: #e2e8f0; color: #475569; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-left: 0.5rem; }
+    .btn-add-question { background: white; color: #3b82f6; border: 1.5px solid #bfdbfe; font-weight: 700; padding: 0.6rem 1.25rem; border-radius: 50px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-add-question:hover { background: #eff6ff; border-color: #3b82f6; }
+    
+    .quiz-builder { display: flex; flex-direction: column; gap: 1.5rem; }
+    .no-questions { text-align: center; padding: 3rem 2rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px; color: #94a3b8; }
+    .no-questions i { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+    .no-questions p { margin: 0; font-size: 0.95rem; }
+    
+    .question-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .q-header strong { font-size: 1.1rem; color: #1e3a8a; }
+    .btn-delete-q { background: #fee2e2; color: #ef4444; border: none; padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
+    .btn-delete-q:hover { background: #fca5a5; }
+    
+    .options-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+    .option-row { display: flex; align-items: center; gap: 0.75rem; }
+    .custom-radio { display: block; position: relative; padding-left: 28px; cursor: pointer; user-select: none; }
+    .custom-radio input { position: absolute; opacity: 0; cursor: pointer; }
+    .radio-mark { position: absolute; top: 0; left: 0; height: 22px; width: 22px; background-color: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 50%; transition: all 0.2s; }
+    .custom-radio:hover input ~ .radio-mark { background-color: #e2e8f0; }
+    .custom-radio input:checked ~ .radio-mark { background-color: #10b981; border-color: #10b981; }
+    .radio-mark:after { content: ""; position: absolute; display: none; }
+    .custom-radio input:checked ~ .radio-mark:after { display: block; }
+    .custom-radio .radio-mark:after { top: 5px; left: 5px; width: 8px; height: 8px; border-radius: 50%; background: white; }
+    
+    .btn-remove-opt { background: transparent; color: #94a3b8; border: none; font-size: 1.2rem; cursor: pointer; }
+    .btn-remove-opt:hover { color: #ef4444; }
+    
+    .btn-add-opt { background: #f8fafc; color: #475569; border: 1px dashed #cbd5e1; width: 100%; border-radius: 8px; padding: 0.6rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn-add-opt:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
+
     @media (max-width: 700px) {
       .form-grid { grid-template-columns: 1fr; }
       .review-grid { grid-template-columns: 1fr; }
@@ -979,9 +1346,35 @@ export class CreateCertificationComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
+  touched = false;   // becomes true when user tries to advance from step 1
+  touchedStep3 = false; // validation for Step 3
+
+  /** Today's date in yyyy-mm-dd format */
+  today = new Date().toISOString().split('T')[0];
+
+  // Suggestions
+  suggestedTopics = [
+    'Cloud Architecture', 'Security & Compliance', 'Database Design',
+    'Machine Learning', 'API Development', 'CI/CD Pipelines',
+    'Frontend Frameworks', 'UI/UX Principles', 'Agile Methodology'
+  ];
+  suggestedSkills = [
+    'AWS', 'Azure', 'Python', 'Java', 'Docker', 'Kubernetes',
+    'SQL', 'React', 'Angular', 'Node.js', 'Figma'
+  ];
+  suggestedPrereqs = [
+    'No prior experience required',
+    '1+ years of industry experience',
+    'Basic understanding of programming',
+    'Basic networking knowledge',
+    'High school diploma or equivalent'
+  ];
+
+  selectedTopics: string[] = [];
+  selectedSkills: string[] = [];
+  selectedPrereqs: string[] = [];
 
   form: CreateCertificationForm = {
-    // Certification fields
     code: '',
     name: '',
     description: '',
@@ -997,13 +1390,20 @@ export class CreateCertificationComponent implements OnInit {
     skills: '',
     prerequisites: '',
     language: 'English',
-    // CertificationExam fields
+    nextExamDate: '',
     examTitle: '',
     examDurationMinutes: null,
     examPassingScore: null,
     examMaxAttempts: null,
-    examIsActive: true
+    examIsActive: true,
+    examPdfName: null,
+    quizQuestions: []
   };
+
+  /** Used to prevent trackBy focus loss in ngFor inputs */
+  trackByIndex(index: number, obj: any): any {
+    return index;
+  }
 
   constructor(
     private auth: AuthService,
@@ -1018,10 +1418,28 @@ export class CreateCertificationComponent implements OnInit {
     }
   }
 
-  nextStep() {
-    if (this.currentStep < 4) {
-      this.currentStep++;
+  /** Validate Step 1 required fields before advancing */
+  goNextStep1() {
+    this.touched = true;
+    if (!this.form.code.trim() || !this.form.name.trim() || !this.form.category) {
+      return; // stop — errors will show via *ngIf
     }
+    this.touched = false;
+    this.currentStep++;
+  }
+
+  /** Validate Step 3 required fields before advancing */
+  goNextStep3() {
+    this.touchedStep3 = true;
+    if (!this.form.examTitle.trim()) {
+      return; // stop — errors will show via *ngIf
+    }
+    this.touchedStep3 = false;
+    this.currentStep++;
+  }
+
+  nextStep() {
+    if (this.currentStep < 4) this.currentStep++;
   }
 
   prevStep() {
@@ -1029,6 +1447,83 @@ export class CreateCertificationComponent implements OnInit {
       this.currentStep--;
       this.errorMessage = '';
       this.successMessage = '';
+    }
+  }
+
+  // ===== Tags / Suggestions Methods =====
+  addTopic(v: string) {
+    const val = v.trim();
+    if (val && !this.selectedTopics.includes(val)) this.selectedTopics.push(val);
+  }
+  removeTopic(val: string) {
+    this.selectedTopics = this.selectedTopics.filter(t => t !== val);
+  }
+
+  addSkill(v: string) {
+    const val = v.trim();
+    if (val && !this.selectedSkills.includes(val)) this.selectedSkills.push(val);
+  }
+  removeSkill(val: string) {
+    this.selectedSkills = this.selectedSkills.filter(t => t !== val);
+  }
+
+  addPrereq(v: string) {
+    const val = v.trim();
+    if (val && !this.selectedPrereqs.includes(val)) this.selectedPrereqs.push(val);
+  }
+  removePrereq(val: string) {
+    this.selectedPrereqs = this.selectedPrereqs.filter(t => t !== val);
+  }
+
+  /** Block non-numeric keypresses for number inputs */
+  onlyNumbers(event: KeyboardEvent): boolean {
+    const char = String.fromCharCode(event.which ?? event.keyCode);
+    if (!/[0-9.]/.test(char)) {
+      event.preventDefault(); return false;
+    }
+    return true;
+  }
+
+  // ===== PDF File Upload logic =====
+  onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      this.form.examPdfName = file.name;
+    } else {
+      alert('Please select a valid PDF file.');
+    }
+  }
+
+  removeFile() {
+    this.form.examPdfName = null;
+  }
+
+  // ===== Quiz Builder logic =====
+  addQuizQuestion() {
+    this.form.quizQuestions.push({
+      questionText: '',
+      options: ['', ''], // Minimum 2 options
+      correctOptionIndex: 0
+    });
+  }
+
+  removeQuizQuestion(index: number) {
+    this.form.quizQuestions.splice(index, 1);
+  }
+
+  addQuizOption(qIndex: number) {
+    this.form.quizQuestions[qIndex].options.push('');
+  }
+
+  removeQuizOption(qIndex: number, optIndex: number) {
+    // Cannot delete if 2 or fewer options remain
+    if (this.form.quizQuestions[qIndex].options.length <= 2) return;
+
+    this.form.quizQuestions[qIndex].options.splice(optIndex, 1);
+
+    // Fix correctOptionIndex if it exceeds bounds
+    if (this.form.quizQuestions[qIndex].correctOptionIndex >= this.form.quizQuestions[qIndex].options.length) {
+      this.form.quizQuestions[qIndex].correctOptionIndex = 0;
     }
   }
 
@@ -1044,7 +1539,13 @@ export class CreateCertificationComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    // Build metadata blob to store display-only fields inside criteriaDescription
+    // Join arrays into strings using newlines (and commas for skills where appropriate)
+    // The details page expects these formats based on the API JSON parsing.
+    this.form.topics = this.selectedTopics.join('\n');
+    this.form.skills = this.selectedSkills.join(',');
+    this.form.prerequisites = this.selectedPrereqs.join('\n');
+
+    // Build metadata JSON stored in criteriaDescription
     const metaJson = JSON.stringify({
       level: this.form.level,
       category: this.form.category,
@@ -1054,7 +1555,10 @@ export class CreateCertificationComponent implements OnInit {
       skills: this.form.skills,
       prerequisites: this.form.prerequisites,
       language: this.form.language,
-      fullDescription: this.form.criteriaDescription
+      nextExamDate: this.form.nextExamDate || null,
+      fullDescription: this.form.criteriaDescription,
+      examPdfName: this.form.examPdfName,            // Inject PDF name metadata
+      quizQuestions: this.form.quizQuestions           // Inject Quiz Questions metadata
     });
 
     // -- Step 1: Create the Certification --
