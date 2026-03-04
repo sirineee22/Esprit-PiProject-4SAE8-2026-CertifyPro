@@ -93,4 +93,73 @@ public class AiController {
                     .body("Internal error: " + e.getMessage());
         }
     }
+
+    @PostMapping("/generate-quiz")
+    public ResponseEntity<String> generateQuiz(@RequestBody Map<String, String> request) {
+        String description = request.get("description");
+        if (description == null || description.isEmpty()) {
+            return ResponseEntity.badRequest().body("Description is required to generate quiz");
+        }
+
+        String apiUrl = "https://api.openai.com/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", "gpt-4o-mini");
+
+        String prompt = "Generate 5 multiple-choice questions for an exam based on the following certification description:\n\n"
+                +
+                description + "\n\n" +
+                "The output MUST be a valid JSON array of objects. Each object MUST have these fields:\n" +
+                "- questionText: The text of the question\n" +
+                "- options: An array of exactly 4 strings (options)\n" +
+                "- correctOptionIndex: An integer (0-3) indicating the correct answer\n\n" +
+                "Return ONLY the raw JSON array. No explanations or other text.";
+
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content",
+                "You are an expert exam creator. You generate balanced and challenging quiz questions in JSON format."));
+        messages.add(Map.of("role", "user", "content", prompt));
+
+        body.put("messages", messages);
+        body.put("temperature", 0.7);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    entity,
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("OpenAI returned empty response");
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> messageMap = (Map<String, Object>) choices.get(0).get("message");
+            String content = (String) messageMap.get("content");
+
+            // Basic cleanup in case GPT adds markdown wrappers
+            if (content.startsWith("```json")) {
+                content = content.substring(7);
+            }
+            if (content.endsWith("```")) {
+                content = content.substring(0, content.length() - 3);
+            }
+
+            return ResponseEntity.ok(content.trim());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
 }

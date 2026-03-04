@@ -538,9 +538,21 @@ interface CreateCertificationForm {
                 <label style="margin-bottom: 0;">Quiz / Exam Questions <span class="badge-optional">Optional</span></label>
                 <span class="field-hint" style="display: block; margin-top: 0.2rem;">Add multiple-choice questions for the exam</span>
               </div>
-              <button class="btn-add-question" (click)="addQuizQuestion()">
-                <i class="bi bi-plus-circle"></i> Add Question
-              </button>
+              <div style="display: flex; gap: 0.75rem;">
+                <button 
+                  type="button" 
+                  class="btn-ai-gen quiz-ai-btn" 
+                  (click)="generateAiQuiz()" 
+                  [disabled]="isGeneratingQuiz || (!form.description && !form.criteriaDescription)"
+                  title="Generate quiz questions using AI"
+                >
+                  <i class="bi" [class.bi-magic]="!isGeneratingQuiz" [class.bi-hourglass-split]="isGeneratingQuiz" [class.spinning]="isGeneratingQuiz"></i>
+                  {{ isGeneratingQuiz ? 'Brainstorming...' : 'AI Generate Quiz' }}
+                </button>
+                <button class="btn-add-question" (click)="addQuizQuestion()">
+                  <i class="bi bi-plus-circle"></i> Add Question
+                </button>
+              </div>
             </div>
 
             <div class="quiz-builder">
@@ -1398,6 +1410,7 @@ export class CreateCertificationComponent implements OnInit {
   currentStep = 1;
   isSubmitting = false;
   isGeneratingAi = false;
+  isGeneratingQuiz = false;
   errorMessage = '';
   successMessage = '';
   touched = false;   // becomes true when user tries to advance from step 1
@@ -1491,6 +1504,40 @@ export class CreateCertificationComponent implements OnInit {
         console.error('AI Generation Error:', err);
         this.errorMessage = 'Failed to generate AI description. Please check your API key or network connection.';
         this.isGeneratingAi = false;
+      }
+    });
+  }
+
+  generateAiQuiz() {
+    const context = this.form.criteriaDescription || this.form.description;
+    if (!context || context.trim().length < 10) {
+      this.errorMessage = 'Please provide a certification description first so the AI can generate relevant questions.';
+      return;
+    }
+
+    this.isGeneratingQuiz = true;
+    this.errorMessage = '';
+
+    this.aiService.generateQuiz(context).subscribe({
+      next: (jsonString) => {
+        try {
+          const questions = JSON.parse(jsonString);
+          if (Array.isArray(questions)) {
+            const validQuestions = questions.filter(q => q.questionText && Array.isArray(q.options) && q.options.length >= 2);
+            this.form.quizQuestions = [...this.form.quizQuestions, ...validQuestions];
+            this.successMessage = `✨ AI successfully generated ${validQuestions.length} questions for your exam!`;
+            setTimeout(() => this.successMessage = '', 4000);
+          }
+        } catch (e) {
+          console.error('Quiz Parsing Error:', e);
+          this.errorMessage = 'Failed to parse the AI generated quiz. Please try again.';
+        }
+        this.isGeneratingQuiz = false;
+      },
+      error: (err) => {
+        console.error('AI Quiz Error:', err);
+        this.errorMessage = 'Failed to generate AI quiz. Please check your connection.';
+        this.isGeneratingQuiz = false;
       }
     });
   }

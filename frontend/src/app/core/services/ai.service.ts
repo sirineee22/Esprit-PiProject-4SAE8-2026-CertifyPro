@@ -18,4 +18,11 @@ export class AiService {
     generateDescription(shortDescription: string): Observable<string> {
         return this.http.post(this.apiUrl, { shortDescription }, { responseType: 'text' });
     }
+
+    /**
+     * Generates quiz questions based on certification description.
+     */
+    generateQuiz(description: string): Observable<string> {
+        return this.http.post(`${API_BASE_URL}/api/ai/generate-quiz`, { description }, { responseType: 'text' });
+    }
 }
