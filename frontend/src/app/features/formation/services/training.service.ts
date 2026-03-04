@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 import { ProgressionService } from './progression.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { FavoriteService } from './favorite.service';
 
 @Injectable({
     providedIn: 'root'
@@ -14,6 +15,7 @@ export class TrainingService {
     private http = inject(HttpClient);
     private authService = inject(AuthService);
     private progressionService = inject(ProgressionService);
+    private favoriteService = inject(FavoriteService);
 
     private trainingsSignal = signal<Training[]>([]);
     trainings = this.trainingsSignal.asReadonly();
@@ -30,16 +32,20 @@ export class TrainingService {
             const user = this.authService.getCurrentUser();
 
             let progressions: Progression[] = [];
+            let favorites: Training[] = [];
             if (user?.id && (user.role?.name === 'STUDENT' || user.role?.name === 'LEARNER')) {
                 progressions = await firstValueFrom(this.progressionService.getUserProgressions(user.id));
+                favorites = await this.favoriteService.loadFavorites(user.id);
             }
 
             const sanitizedData = data.map(t => {
                 const prog = progressions.find(p => p.formation?.id === t.id);
+                const isFav = favorites.some(f => f.id === t.id);
                 return {
                     ...t,
                     contentUrl: t.contentUrl?.startsWith('/api') ? `${API_BASE_URL}${t.contentUrl}` : t.contentUrl,
-                    progression: prog || { status: 'TO_DO' }
+                    progression: prog || { status: 'TO_DO' },
+                    isFavorite: isFav
                 };
             });
             this.trainingsSignal.set(sanitizedData);

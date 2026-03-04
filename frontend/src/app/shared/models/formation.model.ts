@@ -16,4 +16,5 @@ export interface Training {
     trainingType: 'PDF' | 'VIDEO';
     contentUrl?: string;
     progression?: Progression;
+    isFavorite?: boolean;
 }

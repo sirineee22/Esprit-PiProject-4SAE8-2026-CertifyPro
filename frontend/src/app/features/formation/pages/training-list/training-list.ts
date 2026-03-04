@@ -5,6 +5,7 @@ import { Training } from '../../../../shared/models/formation.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { TrainingService } from '../../services/training.service';
 import { ProgressionService } from '../../services/progression.service';
+import { FavoriteService } from '../../services/favorite.service';
 
 @Component({
   selector: 'app-training-list',
@@ -17,6 +18,7 @@ export class TrainingListComponent implements OnInit {
   private trainingService = inject(TrainingService);
   private authService = inject(AuthService);
   private progressionService = inject(ProgressionService);
+  private favoriteService = inject(FavoriteService);
   private router = inject(Router);
 
   trainings = this.trainingService.trainings;
@@ -77,6 +79,18 @@ export class TrainingListComponent implements OnInit {
           this.trainingService.loadTrainings(); // Refresh UI
         },
         error: (err) => alert('Failed to update status')
+      });
+    }
+  }
+
+  onToggleFavorite(event: Event, training: Training) {
+    event.stopPropagation();
+    if (training.id && this.currentUser?.id) {
+      this.favoriteService.toggleFavorite(this.currentUser.id, training.id).subscribe({
+        next: () => {
+          this.trainingService.loadTrainings(); // Refresh to update isFavorite flag
+        },
+        error: (err) => alert('Failed to update favorites')
       });
     }
   }

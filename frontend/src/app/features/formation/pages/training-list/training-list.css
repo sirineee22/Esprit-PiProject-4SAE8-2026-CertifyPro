@@ -326,6 +326,47 @@
     transform: scale(1.1);
 }
 
+.btn-favorite {
+    background: white;
+    color: #cbd5e1;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-favorite:hover {
+    color: #ef4444;
+    border-color: #fecaca;
+    background: #fff5f5;
+    transform: scale(1.1);
+}
+
+.btn-favorite.active {
+    background: #fff5f5;
+    color: #ef4444;
+    border-color: #fecaca;
+    animation: pulse-heart 0.3s ease-in-out;
+}
+
+@keyframes pulse-heart {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+/* Student specific actions positioning */
+.student-actions {
+    opacity: 1 !important;
+    /* Always visible for students */
+    transform: translateY(0) !important;
+}
+
 /* Progression Styles */
 .progression-badge {
     font-size: 0.75rem;

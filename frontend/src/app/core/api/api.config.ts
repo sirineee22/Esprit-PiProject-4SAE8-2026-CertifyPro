@@ -8,4 +8,5 @@ export const API_ENDPOINTS = {
   quizzes: `${API_BASE_URL}/api/quizzes`,
   progression: `${API_BASE_URL}/api/progression`,
   stats: `${API_BASE_URL}/api/stats`,
+  favorites: `${API_BASE_URL}/api/favorites`,
 };

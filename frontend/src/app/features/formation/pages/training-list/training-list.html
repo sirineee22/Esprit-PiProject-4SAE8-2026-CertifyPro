@@ -56,6 +56,15 @@
                         </button>
                     </div>
 
+                    <!-- Actions for Students (Favorites) -->
+                    <div class="card-actions student-actions" *ngIf="isStudent()">
+                        <button class="btn-action btn-favorite" [class.active]="training.isFavorite"
+                            (click)="onToggleFavorite($event, training)"
+                            [title]="training.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'">
+                            <i class="bi" [ngClass]="training.isFavorite ? 'bi-heart-fill' : 'bi-heart'"></i>
+                        </button>
+                    </div>
+
                     <div class="card-image-wrapper">
                         <div class="card-overlay">
                             <div class="badge-type" [class.video]="training.trainingType === 'VIDEO'">

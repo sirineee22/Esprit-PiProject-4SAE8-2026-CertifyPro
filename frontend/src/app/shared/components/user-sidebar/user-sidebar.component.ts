@@ -68,6 +68,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-graph-up"></i>
             <span>My Results</span>
           </a>
+          <a routerLink="/trainings/wishlist" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Wishlist' : ''">
+            <i class="bi bi-heart"></i>
+            <span>My Wishlist</span>
+          </a>
           <div class="nav-link disabled" [title]="isCollapsed ? 'Event' : ''">
             <i class="bi bi-calendar-event"></i>
             <span>Event</span>

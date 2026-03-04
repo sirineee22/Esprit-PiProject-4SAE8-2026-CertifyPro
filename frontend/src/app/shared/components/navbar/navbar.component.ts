@@ -27,7 +27,6 @@ import { User } from '../../models/user.model';
 
       <!-- Desktop Navigation -->
       <div class="nav-links-desktop d-none d-md-flex">
-        <a class="nav-link-modern" routerLink="/courses" routerLinkActive="active">Courses</a>
         <a class="nav-link-modern" routerLink="/trainings" routerLinkActive="active">Trainings</a>
         <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">About</a>
       </div>
@@ -108,7 +107,6 @@ import { User } from '../../models/user.model';
     <div class="mobile-menu-overlay" [class.show]="isMenuOpen">
       <div class="mobile-nav-links">
         <ng-container *ngIf="!isLoggedIn">
-          <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" (click)="isMenuOpen = false">Courses</a>
           <a class="nav-link-modern" routerLink="/about" (click)="isMenuOpen = false">À propos</a>
         </ng-container>
         <ng-container *ngIf="isLoggedIn">
@@ -116,7 +114,6 @@ import { User } from '../../models/user.model';
           <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">Mon Profil</a>
           <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">Mes Cours</a>
           <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">Mes Certifications</a>
-          <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Parcourir les Cours</a>
         </ng-container>
         <hr class="mobile-divider">
         <ng-container *ngIf="!isLoggedIn; else mobileUserLoggedIn">
