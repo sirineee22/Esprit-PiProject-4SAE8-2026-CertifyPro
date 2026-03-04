@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/auth/auth.service';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
+import { AiService } from '../../../core/services/ai.service';
 import { timeout, TimeoutError } from 'rxjs';
 
 interface QuizQuestion {
@@ -329,9 +330,24 @@ interface CreateCertificationForm {
           </div>
 
           <div class="field full-width">
-            <label>Full Description / About</label>
-            <textarea rows="5" placeholder="Detailed description shown on the certification detail page..."
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <label style="margin: 0;">Full Description / About</label>
+              <button 
+                type="button" 
+                class="btn-ai-gen" 
+                (click)="generateAiDescription()" 
+                [disabled]="isGeneratingAi || !form.description"
+                [title]="!form.description ? 'Enter a short description first' : 'Generate full description using AI'"
+              >
+                <i class="bi" [class.bi-magic]="!isGeneratingAi" [class.bi-hourglass-split]="isGeneratingAi" [class.spinning]="isGeneratingAi"></i>
+                {{ isGeneratingAi ? 'Creating Magic...' : 'Generate with AI' }}
+              </button>
+            </div>
+            <textarea rows="8" placeholder="Detailed description shown on the certification detail page..."
               [(ngModel)]="form.criteriaDescription" name="criteriaDescription"></textarea>
+            <span class="field-hint" *ngIf="!form.criteriaDescription && !isGeneratingAi">
+              <i class="bi bi-lightbulb"></i> Tip: Enter a short description above and click "Generate with AI" to get a detailed draft!
+            </span>
           </div>
 
           <div class="field full-width">
@@ -1208,8 +1224,45 @@ interface CreateCertificationForm {
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .spinning { animation: spin 1s linear infinite; }
-
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== AI GENERATION BUTTON ===== */
+    .btn-ai-gen {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-ai-gen:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+
+    .btn-ai-gen:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-ai-gen:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-ai-gen i {
+      font-size: 1rem;
+    }
 
     /* ===== VALIDATION ===== */
     .error-msg {
@@ -1344,6 +1397,7 @@ interface CreateCertificationForm {
 export class CreateCertificationComponent implements OnInit {
   currentStep = 1;
   isSubmitting = false;
+  isGeneratingAi = false;
   errorMessage = '';
   successMessage = '';
   touched = false;   // becomes true when user tries to advance from step 1
@@ -1408,7 +1462,8 @@ export class CreateCertificationComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private aiService: AiService
   ) { }
 
   ngOnInit() {
@@ -1416,6 +1471,28 @@ export class CreateCertificationComponent implements OnInit {
     if (!user || user.role?.name !== 'TRAINER') {
       this.router.navigate(['/']);
     }
+  }
+
+  generateAiDescription() {
+    if (!this.form.description || this.form.description.trim().length < 5) {
+      this.errorMessage = 'Please provide a clearer short description for the AI to work with.';
+      return;
+    }
+
+    this.isGeneratingAi = true;
+    this.errorMessage = '';
+
+    this.aiService.generateDescription(this.form.description).subscribe({
+      next: (fullDesc) => {
+        this.form.criteriaDescription = fullDesc;
+        this.isGeneratingAi = false;
+      },
+      error: (err) => {
+        console.error('AI Generation Error:', err);
+        this.errorMessage = 'Failed to generate AI description. Please check your API key or network connection.';
+        this.isGeneratingAi = false;
+      }
+    });
   }
 
   /** Validate Step 1 required fields before advancing */
