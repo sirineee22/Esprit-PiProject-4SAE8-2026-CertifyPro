@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/auth/auth.service';
 
 interface Certification {
   id: number;
@@ -34,6 +35,14 @@ interface Certification {
               <input type="text" placeholder="Search certifications..." (input)="onSearch($event)">
             </div>
           </div>
+
+          <a
+            *ngIf="isTrainer"
+            routerLink="/trainer/create-certification"
+            class="btn-create-cert"
+          >
+            <i class="bi bi-plus-circle-fill"></i> Create Certification
+          </a>
         </div>
         <div class="hero-bg-blobs">
           <div class="blob blob-1"></div>
@@ -72,7 +81,7 @@ interface Certification {
             
             <div class="card-footer">
               <span class="price">{{ cert.price }}</span>
-              <button class="btn-enroll">Enroll Now</button>
+              <a [routerLink]="['/certifications', cert.id]" class="btn-enroll">Enroll Now</a>
             </div>
           </div>
         </div>
@@ -370,6 +379,8 @@ interface Certification {
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
     }
 
     .btn-enroll:hover {
@@ -402,12 +413,39 @@ interface Certification {
       .hero-section h1 { font-size: 2.5rem; }
       .catalog-grid { grid-template-columns: 1fr; }
     }
+
+    .btn-create-cert {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.75rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+      transition: all 0.25s ease;
+    }
+
+    .btn-create-cert:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(16,185,129,0.45);
+    }
   `]
 })
 export class CertificationsListComponent implements OnInit {
   categories = ['All', 'IT & Cloud', 'Business', 'Marketing', 'Development', 'Design'];
   selectedCategory = 'All';
   searchQuery = '';
+
+  get isTrainer(): boolean {
+    return this.auth.getCurrentUser()?.role?.name === 'TRAINER';
+  }
+
+  constructor(private auth: AuthService) { }
 
   certifications: Certification[] = [
     {
