@@ -38,13 +38,13 @@ public class TrainerRequestController {
     @PostMapping
     public ResponseEntity<?> submitRequest(@Valid @RequestBody TrainerRequestDto dto) {
         System.out.println("Received trainer request for userId: " + dto.userId);
-        
+
         // Get user
         User user = userRepository.findById(dto.userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        System.out.println("User found: " + user.getEmail() + ", Role: " + 
-            (user.getRole() != null ? user.getRole().getName() : "NULL"));
+        System.out.println("User found: " + user.getEmail() + ", Role: " +
+                (user.getRole() != null ? user.getRole().getName() : "NULL"));
 
         // Check if user is LEARNER
         if (user.getRole() == null || !"LEARNER".equals(user.getRole().getName())) {
@@ -61,12 +61,11 @@ public class TrainerRequestController {
         // Check cooldown after rejection
         Optional<TrainerRequest> lastRejected = trainerRequestRepository
                 .findFirstByUserAndStatusOrderByCreatedAtDesc(user, TrainerRequest.RequestStatus.REJECTED);
-        
+
         if (lastRejected.isPresent() && lastRejected.get().getRejectedAt() != null) {
             long daysSinceRejection = ChronoUnit.DAYS.between(
-                    lastRejected.get().getRejectedAt(), 
-                    LocalDateTime.now()
-            );
+                    lastRejected.get().getRejectedAt(),
+                    LocalDateTime.now());
             if (daysSinceRejection < COOLDOWN_DAYS) {
                 long daysRemaining = COOLDOWN_DAYS - daysSinceRejection;
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -87,7 +86,7 @@ public class TrainerRequestController {
     }
 
     @GetMapping("/my-requests")
-    public ResponseEntity<List<TrainerRequest>> getMyRequests(@RequestParam Long userId) {
+    public ResponseEntity<List<TrainerRequest>> getMyRequests(@RequestParam(name = "userId") Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(trainerRequestRepository.findByUserOrderByCreatedAtDesc(user));
@@ -101,7 +100,7 @@ public class TrainerRequestController {
 
     @PutMapping("/{id}/approve")
     @Transactional
-    public ResponseEntity<?> approveRequest(@PathVariable Long id) {
+    public ResponseEntity<?> approveRequest(@PathVariable(name = "id") Long id) {
         // TODO: Add admin role check
         TrainerRequest request = trainerRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
@@ -130,7 +129,7 @@ public class TrainerRequestController {
     }
 
     @PutMapping("/{id}/reject")
-    public ResponseEntity<?> rejectRequest(@PathVariable Long id) {
+    public ResponseEntity<?> rejectRequest(@PathVariable(name = "id") Long id) {
         // TODO: Add admin role check
         TrainerRequest request = trainerRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));

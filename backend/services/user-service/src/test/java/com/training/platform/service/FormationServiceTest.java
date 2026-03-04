@@ -8,6 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,14 +42,15 @@ public class FormationServiceTest {
 
     @Test
     void getAllFormations() {
-        when(formationRepository.findAll()).thenReturn(Arrays.asList(formation));
+        Page<Formation> page = new PageImpl<>(Arrays.asList(formation));
+        when(formationRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        List<Formation> results = formationService.getAllFormations();
+        Page<Formation> results = formationService.getAllFormations(PageRequest.of(0, 10));
 
         assertNotNull(results);
-        assertEquals(1, results.size());
-        assertEquals("Java Spring Boot", results.get(0).getTitle());
-        verify(formationRepository, times(1)).findAll();
+        assertEquals(1, results.getTotalElements());
+        assertEquals("Java Spring Boot", results.getContent().get(0).getTitle());
+        verify(formationRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test

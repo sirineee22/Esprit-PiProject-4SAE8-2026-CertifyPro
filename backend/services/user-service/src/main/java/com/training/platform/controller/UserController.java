@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(@PathVariable(name = "id") Long id) {
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -56,7 +56,7 @@ public class UserController {
             // Assign default LEARNER role if no role provided
             if (user.getRole() == null) {
                 user.setRole(roleRepository.findByName("LEARNER")
-                    .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
+                        .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             }
 
             return ResponseEntity.ok(userRepository.save(user));
@@ -66,7 +66,8 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<?> updateUser(@PathVariable(name = "id") Long id,
+            @Valid @RequestBody UpdateUserRequest request) {
         return userRepository.findById(id)
                 .map(user -> {
                     if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
@@ -96,7 +97,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable(name = "id") Long id) {
         if (userRepository.existsById(id)) {
             userRepository.deleteById(id);
             return ResponseEntity.ok().build();

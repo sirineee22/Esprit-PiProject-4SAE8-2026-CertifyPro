@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Training, Progression } from '../../../shared/models/formation.model';
+import { PaginatedResponse } from '../../../shared/models/pagination.model';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../core/api/api.config';
 import { tap } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
@@ -20,22 +21,56 @@ export class TrainingService {
     private trainingsSignal = signal<Training[]>([]);
     trainings = this.trainingsSignal.asReadonly();
 
+    pagination = signal<{ totalElements: number; totalPages: number; currentPage: number }>({
+        totalElements: 0,
+        totalPages: 0,
+        currentPage: 0
+    });
+
     constructor() {
         this.loadTrainings();
     }
 
-    async loadTrainings() {
+    async loadTrainings(page: number = 0, size: number = 6) {
         try {
-            const data = await firstValueFrom(this.http.get<Training[]>(API_ENDPOINTS.formations));
+            const response = await firstValueFrom(
+                this.http.get<any>(API_ENDPOINTS.formations, {
+                    params: { page: page.toString(), size: size.toString() }
+                })
+            );
 
-            // If logged in student, fetch their progressions
+            // Resilience: Handle both PaginatedResponse (Object with content) and legacy Array
+            let data: Training[] = [];
+            if (response && Array.isArray(response)) {
+                data = response;
+                this.pagination.set({
+                    totalElements: data.length,
+                    totalPages: 1,
+                    currentPage: 0
+                });
+            } else if (response && response.content) {
+                data = response.content;
+                this.pagination.set({
+                    totalElements: response.totalElements,
+                    totalPages: response.totalPages,
+                    currentPage: response.number
+                });
+            }
+
+            // If logged in student, fetch their progressions and favorites
             const user = this.authService.getCurrentUser();
 
             let progressions: Progression[] = [];
             let favorites: Training[] = [];
+
             if (user?.id && (user.role?.name === 'STUDENT' || user.role?.name === 'LEARNER')) {
-                progressions = await firstValueFrom(this.progressionService.getUserProgressions(user.id));
-                favorites = await this.favoriteService.loadFavorites(user.id);
+                try {
+                    progressions = await firstValueFrom(this.progressionService.getUserProgressions(user.id));
+                } catch (e) { console.error('Progression fetch failed', e); }
+
+                try {
+                    favorites = await this.favoriteService.loadFavorites(user.id);
+                } catch (e) { console.error('Favorites fetch failed', e); }
             }
 
             const sanitizedData = data.map(t => {
@@ -51,6 +86,7 @@ export class TrainingService {
             this.trainingsSignal.set(sanitizedData);
         } catch (error) {
             console.error('Failed to load trainings', error);
+            this.trainingsSignal.set([]); // Clear on error to stop spinner
         }
     }
 

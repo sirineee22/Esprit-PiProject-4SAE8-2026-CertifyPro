@@ -4,6 +4,8 @@ import com.training.platform.entity.Formation;
 import com.training.platform.entity.TrainingType;
 import com.training.platform.service.FormationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,8 +26,10 @@ public class FormationController {
     private final String UPLOAD_DIR = "uploads/";
 
     @GetMapping
-    public List<Formation> getAllFormations() {
-        return formationService.getAllFormations();
+    public ResponseEntity<Page<Formation>> getAllFormations(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        return ResponseEntity.ok(formationService.getAllFormations(PageRequest.of(page, size)));
     }
 
     @GetMapping("/{id}")

@@ -55,7 +55,7 @@ public class EvaluationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvaluation(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEvaluation(@PathVariable(name = "id") Long id) {
         evaluationService.deleteEvaluation(id);
         return ResponseEntity.noContent().build();
     }

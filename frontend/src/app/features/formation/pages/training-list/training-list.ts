@@ -22,6 +22,7 @@ export class TrainingListComponent implements OnInit {
   private router = inject(Router);
 
   trainings = this.trainingService.trainings;
+  pagination = this.trainingService.pagination;
   isLoading = signal(true);
   currentUser = this.authService.getCurrentUser();
 
@@ -35,10 +36,13 @@ export class TrainingListComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Artificial delay to simulate loading
-    setTimeout(() => {
-      this.isLoading.set(false);
-    }, 800);
+    this.refreshData();
+  }
+
+  async refreshData() {
+    this.isLoading.set(true);
+    await this.trainingService.loadTrainings(this.pagination().currentPage);
+    this.isLoading.set(false);
   }
 
   joinTraining(training: Training) {
@@ -88,10 +92,30 @@ export class TrainingListComponent implements OnInit {
     if (training.id && this.currentUser?.id) {
       this.favoriteService.toggleFavorite(this.currentUser.id, training.id).subscribe({
         next: () => {
-          this.trainingService.loadTrainings(); // Refresh to update isFavorite flag
+          this.trainingService.loadTrainings(this.pagination().currentPage); // Refresh same page
         },
         error: (err) => alert('Failed to update favorites')
       });
+    }
+  }
+
+  onPageChange(page: number) {
+    this.isLoading.set(true);
+    this.trainingService.loadTrainings(page).then(() => {
+      this.isLoading.set(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  onNextPage() {
+    if (this.pagination().currentPage < this.pagination().totalPages - 1) {
+      this.onPageChange(this.pagination().currentPage + 1);
+    }
+  }
+
+  onPreviousPage() {
+    if (this.pagination().currentPage > 0) {
+      this.onPageChange(this.pagination().currentPage - 1);
     }
   }
 }

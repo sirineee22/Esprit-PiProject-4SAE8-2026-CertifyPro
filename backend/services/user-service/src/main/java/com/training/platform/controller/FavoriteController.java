@@ -17,12 +17,13 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Formation>> getUserFavorites(@PathVariable Long userId) {
+    public ResponseEntity<List<Formation>> getUserFavorites(@PathVariable(name = "userId") Long userId) {
         return ResponseEntity.ok(favoriteService.getUserFavorites(userId));
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkFavorite(@RequestParam Long userId, @RequestParam Long formationId) {
+    public ResponseEntity<Boolean> checkFavorite(@RequestParam(name = "userId") Long userId,
+            @RequestParam(name = "formationId") Long formationId) {
         return ResponseEntity.ok(favoriteService.isFavorite(userId, formationId));
     }
 
@@ -38,7 +39,8 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/user/{userId}/formation/{formationId}")
-    public ResponseEntity<Void> removeFavorite(@PathVariable Long userId, @PathVariable Long formationId) {
+    public ResponseEntity<Void> removeFavorite(@PathVariable(name = "userId") Long userId,
+            @PathVariable(name = "formationId") Long formationId) {
         favoriteService.removeFavorite(userId, formationId);
         return ResponseEntity.noContent().build();
     }

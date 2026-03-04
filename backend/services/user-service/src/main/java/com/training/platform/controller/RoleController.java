@@ -21,7 +21,7 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Role> getRoleById(@PathVariable Long id) {
+    public ResponseEntity<Role> getRoleById(@PathVariable(name = "id") Long id) {
         return roleRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -33,7 +33,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody Role roleDetails) {
+    public ResponseEntity<Role> updateRole(@PathVariable(name = "id") Long id, @RequestBody Role roleDetails) {
         return roleRepository.findById(id)
                 .map(role -> {
                     role.setName(roleDetails.getName());
@@ -43,7 +43,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRole(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteRole(@PathVariable(name = "id") Long id) {
         if (roleRepository.existsById(id)) {
             roleRepository.deleteById(id);
             return ResponseEntity.ok().build();

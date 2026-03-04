@@ -121,5 +121,29 @@
                 </div>
             </div>
         </div>
+
+        <!-- Pagination Controls -->
+        <div *ngIf="!isLoading() && pagination().totalPages > 1" class="pagination-wrapper mt-5 animate-fade-in">
+            <div class="pagination-container">
+                <button class="btn-pagination" [disabled]="pagination().currentPage === 0" (click)="onPreviousPage()">
+                    <i class="bi bi-chevron-left"></i>
+                    <span>Previous</span>
+                </button>
+
+                <div class="page-numbers">
+                    <span class="page-info">
+                        Page <strong>{{ pagination().currentPage + 1 }}</strong> of <strong>{{ pagination().totalPages
+                            }}</strong>
+                    </span>
+                    <span class="total-count">({{ pagination().totalElements }} total)</span>
+                </div>
+
+                <button class="btn-pagination" [disabled]="pagination().currentPage >= pagination().totalPages - 1"
+                    (click)="onNextPage()">
+                    <span>Next</span>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </div>

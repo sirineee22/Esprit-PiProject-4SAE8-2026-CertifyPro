@@ -17,7 +17,7 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
 
     @GetMapping("/trainer/{trainerId}")
-    public ResponseEntity<StatsDTO> getTrainerStats(@PathVariable Long trainerId) {
+    public ResponseEntity<StatsDTO> getTrainerStats(@PathVariable(name = "trainerId") Long trainerId) {
         System.out.println("Fetching stats for trainer: " + trainerId);
         return ResponseEntity.ok(statisticsService.getTrainerStats(trainerId));
     }

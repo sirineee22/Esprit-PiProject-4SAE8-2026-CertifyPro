@@ -6,10 +6,10 @@ import { Training } from '../../../../shared/models/formation.model';
 import { TrainingService } from '../../services/training.service';
 
 @Component({
-    selector: 'app-add-formation',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
-    template: `
+  selector: 'app-add-formation',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
     <div class="formation-container">
       <!-- Decoration Elements -->
       <div class="blob blob-1"></div>
@@ -61,8 +61,11 @@ import { TrainingService } from '../../services/training.service';
                 <div class="field-box">
                   <label>Training Title</label>
                   <div class="input-container">
-                    <input type="text" formControlName="title" placeholder="e.g., Mastering Modern Architecture">
+                    <input type="text" formControlName="title" placeholder="e.g., Mastering Modern Architecture" [class.is-invalid]="formationForm.get('title')?.touched && formationForm.get('title')?.invalid">
                   </div>
+                  <small class="error-text" *ngIf="formationForm.get('title')?.touched && formationForm.get('title')?.invalid">
+                    Title is required and helps students find your content.
+                  </small>
                 </div>
               </div>
 
@@ -78,13 +81,19 @@ import { TrainingService } from '../../services/training.service';
                 </div>
                 <div class="field-box">
                   <label>Duration</label>
-                  <input type="text" formControlName="duration" placeholder="e.g., 12 Hours">
+                  <input type="text" formControlName="duration" placeholder="e.g., 12 Hours" [class.is-invalid]="formationForm.get('duration')?.touched && formationForm.get('duration')?.invalid">
+                  <small class="error-text" *ngIf="formationForm.get('duration')?.touched && formationForm.get('duration')?.invalid">
+                    Please specify the duration.
+                  </small>
                 </div>
               </div>
 
               <div class="field-box">
                 <label>Description</label>
-                <textarea formControlName="description" rows="3" placeholder="Tell your students what they will achieve..."></textarea>
+                <textarea formControlName="description" rows="3" placeholder="Tell your students what they will achieve..." [class.is-invalid]="formationForm.get('description')?.touched && formationForm.get('description')?.invalid"></textarea>
+                <small class="error-text" *ngIf="formationForm.get('description')?.touched && formationForm.get('description')?.invalid">
+                  A good description increases enrollment rates.
+                </small>
               </div>
 
               <!-- Upload Section -->
@@ -141,7 +150,7 @@ import { TrainingService } from '../../services/training.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .formation-container {
       min-height: 100vh;
       display: flex;
@@ -442,130 +451,148 @@ import { TrainingService } from '../../services/training.service';
     .form-body::-webkit-scrollbar { width: 6px; }
     .form-body::-webkit-scrollbar-track { background: transparent; }
     .form-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+
+    .error-text {
+      color: #ef4444;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: 0.25rem;
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    input.is-invalid, textarea.is-invalid, select.is-invalid {
+      border-color: #ef4444;
+      background: #fffafa;
+    }
+
+    input.is-invalid:focus, textarea.is-invalid:focus, select.is-invalid:focus {
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+    }
   `]
 })
 export class AddFormationComponent implements OnInit {
-    formationForm: FormGroup;
-    isSubmitting = signal(false);
-    showToast = signal(false);
-    isEditMode = signal(false);
-    trainingId = signal<number | null>(null);
+  formationForm: FormGroup;
+  isSubmitting = signal(false);
+  showToast = signal(false);
+  isEditMode = signal(false);
+  trainingId = signal<number | null>(null);
 
-    // File Upload State
-    selectedFile = signal<File | null>(null);
-    selectedFileName = signal<string>('');
-    selectedFileSize = signal<string>('');
+  // File Upload State
+  selectedFile = signal<File | null>(null);
+  selectedFileName = signal<string>('');
+  selectedFileSize = signal<string>('');
 
-    constructor(
-        private fb: FormBuilder,
-        private router: Router,
-        private route: ActivatedRoute,
-        private trainingService: TrainingService
-    ) {
-        this.formationForm = this.fb.group({
-            title: ['', Validators.required],
-            description: ['', Validators.required],
-            level: ['Beginner', Validators.required],
-            duration: ['', Validators.required],
-            trainingType: ['PDF', Validators.required]
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private trainingService: TrainingService
+  ) {
+    this.formationForm = this.fb.group({
+      title: ['', Validators.required],
+      description: ['', Validators.required],
+      level: ['Beginner', Validators.required],
+      duration: ['', Validators.required],
+      trainingType: ['PDF', Validators.required]
+    });
+  }
+
+  ngOnInit() {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode.set(true);
+      this.trainingId.set(Number(id));
+
+      // Try to get from signal first
+      const training = this.trainingService.getTrainingById(Number(id));
+      if (training) {
+        this.formationForm.patchValue(training);
+        if (training.contentUrl) {
+          this.selectedFileName.set('Current linked file (will keep unless replaced)');
+        }
+      } else {
+        // Fetch from API if signal is empty (page refresh)
+        this.trainingService.fetchTrainingById(Number(id)).subscribe({
+          next: (data) => {
+            this.formationForm.patchValue(data);
+            if (data.contentUrl) {
+              this.selectedFileName.set('Current linked file (will keep unless replaced)');
+            }
+          },
+          error: () => this.router.navigate(['/trainings'])
         });
+      }
     }
+  }
 
-    ngOnInit() {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (id) {
-            this.isEditMode.set(true);
-            this.trainingId.set(Number(id));
-
-            // Try to get from signal first
-            const training = this.trainingService.getTrainingById(Number(id));
-            if (training) {
-                this.formationForm.patchValue(training);
-                if (training.contentUrl) {
-                    this.selectedFileName.set('Current linked file (will keep unless replaced)');
-                }
-            } else {
-                // Fetch from API if signal is empty (page refresh)
-                this.trainingService.fetchTrainingById(Number(id)).subscribe({
-                    next: (data) => {
-                        this.formationForm.patchValue(data);
-                        if (data.contentUrl) {
-                            this.selectedFileName.set('Current linked file (will keep unless replaced)');
-                        }
-                    },
-                    error: () => this.router.navigate(['/trainings'])
-                });
-            }
-        }
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile.set(file);
+      this.selectedFileName.set(file.name);
+      this.selectedFileSize.set(this.formatFileSize(file.size));
     }
+  }
 
-    onFileSelected(event: any) {
-        const file = event.target.files[0];
-        if (file) {
-            this.selectedFile.set(file);
-            this.selectedFileName.set(file.name);
-            this.selectedFileSize.set(this.formatFileSize(file.size));
-        }
+  removeFile() {
+    this.selectedFile.set(null);
+    this.selectedFileName.set('');
+    this.selectedFileSize.set('');
+    // Clear the input value so the same file can be selected again
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  onSubmit() {
+    const file = this.selectedFile();
+    if (this.formationForm.valid) {
+      this.isSubmitting.set(true);
+      const trainingData = this.formationForm.value;
+
+      if (this.isEditMode() && this.trainingId()) {
+        this.trainingService.updateTraining(this.trainingId()!, trainingData, file || undefined).subscribe({
+          next: () => {
+            this.isSubmitting.set(false);
+            this.showToast.set(true);
+          },
+          error: (err) => {
+            this.isSubmitting.set(false);
+            console.error('Update training failed details:', err);
+            alert('Failed to update training. Error: ' + (err.message || 'Unknown error'));
+          }
+        });
+      } else if (file) {
+        this.trainingService.addTraining(trainingData, file).subscribe({
+          next: (response) => {
+            console.log('Training successfully saved to backend:', response);
+            this.isSubmitting.set(false);
+            this.showToast.set(true);
+          },
+          error: (error) => {
+            console.error('Failed to save training:', error);
+            this.isSubmitting.set(false);
+            alert('Failed to save training. Please try again.');
+          }
+        });
+      }
     }
+  }
 
-    removeFile() {
-        this.selectedFile.set(null);
-        this.selectedFileName.set('');
-        this.selectedFileSize.set('');
-        // Clear the input value so the same file can be selected again
-        const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-    }
+  closeToast() {
+    this.showToast.set(false);
+    this.router.navigate(['/trainings']);
+  }
 
-    formatFileSize(bytes: number): string {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    onSubmit() {
-        const file = this.selectedFile();
-        if (this.formationForm.valid) {
-            this.isSubmitting.set(true);
-            const trainingData = this.formationForm.value;
-
-            if (this.isEditMode() && this.trainingId()) {
-                this.trainingService.updateTraining(this.trainingId()!, trainingData, file || undefined).subscribe({
-                    next: () => {
-                        this.isSubmitting.set(false);
-                        this.showToast.set(true);
-                    },
-                    error: (err) => {
-                        this.isSubmitting.set(false);
-                        console.error('Update training failed details:', err);
-                        alert('Failed to update training. Error: ' + (err.message || 'Unknown error'));
-                    }
-                });
-            } else if (file) {
-                this.trainingService.addTraining(trainingData, file).subscribe({
-                    next: (response) => {
-                        console.log('Training successfully saved to backend:', response);
-                        this.isSubmitting.set(false);
-                        this.showToast.set(true);
-                    },
-                    error: (error) => {
-                        console.error('Failed to save training:', error);
-                        this.isSubmitting.set(false);
-                        alert('Failed to save training. Please try again.');
-                    }
-                });
-            }
-        }
-    }
-
-    closeToast() {
-        this.showToast.set(false);
-        this.router.navigate(['/trainings']);
-    }
-
-    onCancel() {
-        this.router.navigate(['/trainings']);
-    }
+  onCancel() {
+    this.router.navigate(['/trainings']);
+  }
 }
