@@ -37,9 +37,15 @@ public class Post {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    private String imageUrl;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Reaction> reactions = new ArrayList<>();
 }
 
 

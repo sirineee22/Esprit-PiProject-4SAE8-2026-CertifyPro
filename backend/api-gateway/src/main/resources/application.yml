@@ -13,8 +13,8 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"
+            allowedOriginPatterns:
+              - "*"
             allowedMethods:
               - GET
               - POST
@@ -43,7 +43,7 @@ spring:
         - id: forum-service
           uri: lb://FORUM-SERVICE
           predicates:
-            - Path=/api/forum/**
+            - Path=/api/forum/**,/uploads/posts/**
 
 eureka:
   client:

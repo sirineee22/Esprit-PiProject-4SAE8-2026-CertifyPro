@@ -12,6 +12,8 @@ import { adminRoutes } from './features/admin/admin.routes';
 import { authGuard } from './core/guards/auth.guard';
 import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { ForumListComponent } from './features/forum/pages/forum-list/forum-list.component';
+import { PostDetailComponent } from './features/forum/pages/post-detail/post-detail.component';
 
 export const routes: Routes = [
     // Auth routes (no layout - no navbar/footer)
@@ -34,7 +36,8 @@ export const routes: Routes = [
             { path: 'about', component: AboutComponent },
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
-            { path: 'forum', redirectTo: '', pathMatch: 'full' }
+            { path: 'forum', component: ForumListComponent },
+            { path: 'forum/post/:id', component: PostDetailComponent }
         ]
     },
 

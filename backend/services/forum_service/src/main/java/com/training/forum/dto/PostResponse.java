@@ -7,8 +7,10 @@ public record PostResponse(
         Long userId,
         String title,
         String content,
-        LocalDateTime createdAt
+        String imageUrl,
+        LocalDateTime createdAt,
+        long reactionCount,
+        long commentCount,
+        boolean isLikedByCurrentUser
 ) {
 }
-
-
