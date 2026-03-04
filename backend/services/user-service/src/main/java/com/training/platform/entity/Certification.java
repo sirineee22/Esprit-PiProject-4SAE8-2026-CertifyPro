@@ -1,5 +1,7 @@
 package com.training.platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,6 +35,7 @@ public class Certification {
     @Column(columnDefinition = "TEXT")
     private String criteriaDescription;
 
+    @JsonProperty("isActive")
     private Boolean isActive;
 
     // Issued certificate fields
@@ -48,9 +51,22 @@ public class Certification {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
+
+    @Transient
+    @JsonProperty("trainerId")
+    public Long getTrainerId() {
+        return user != null ? user.getId() : null;
+    }
+
+    @Transient
+    @JsonProperty("trainerName")
+    public String getTrainerName() {
+        return user != null ? user.getFirstName() + " " + user.getLastName() : null;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -2,38 +2,43 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/auth/auth.service';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
+import { timeout, TimeoutError } from 'rxjs';
 
 interface CreateCertificationForm {
-    code: string;
-    name: string;
-    description: string;
-    validityMonths: number | null;
-    requiredScore: number | null;
-    criteriaDescription: string;
-    isActive: boolean;
-    // Extra display-only metadata (stored in criteriaDescription as JSON prefix)
-    level: string;
-    category: string;
-    duration: string;
-    price: string;
-    examQuestions: number | null;
-    examDurationMinutes: number | null;
-    examFormat: string;
-    topics: string;
-    skills: string;
-    prerequisites: string;
-    nextExamDate: string;
-    language: string;
+  // --- Certification fields ---
+  code: string;
+  name: string;
+  description: string;
+  validityMonths: number | null;
+  requiredScore: number | null;       // cert-level required score
+  criteriaDescription: string;
+  isActive: boolean;
+  // Extra display-only metadata (packed into criteriaDescription as JSON)
+  level: string;
+  category: string;
+  duration: string;
+  price: string;
+  topics: string;
+  skills: string;
+  prerequisites: string;
+  language: string;
+
+  // --- CertificationExam fields ---
+  examTitle: string;               // CertificationExam.title
+  examDurationMinutes: number | null; // CertificationExam.durationMinutes
+  examPassingScore: number | null;    // CertificationExam.passingScore
+  examMaxAttempts: number | null;     // CertificationExam.maxAttemptsPerUser
+  examIsActive: boolean;              // CertificationExam.isActive
 }
 
 @Component({
-    selector: 'app-create-certification',
-    standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, HttpClientModule],
-    template: `
+  selector: 'app-create-certification',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  template: `
     <div class="create-cert-page">
 
       <!-- Header -->
@@ -277,17 +282,20 @@ interface CreateCertificationForm {
           </div>
 
           <div class="form-grid">
-            <div class="field">
-              <label>Number of Questions</label>
+            <!-- CertificationExam.title -->
+            <div class="field full-width">
+              <label>Exam Title <span class="req">*</span></label>
               <div class="input-wrap">
-                <i class="bi bi-question-circle"></i>
-                <input type="number" placeholder="e.g. 65"
-                  [(ngModel)]="form.examQuestions" name="examQuestions" min="1">
+                <i class="bi bi-journal-check"></i>
+                <input type="text" placeholder="e.g. AWS Solutions Architect Associate Exam"
+                  [(ngModel)]="form.examTitle" name="examTitle">
               </div>
+              <span class="field-hint">A descriptive title for this exam session</span>
             </div>
 
+            <!-- CertificationExam.durationMinutes -->
             <div class="field">
-              <label>Exam Duration (minutes)</label>
+              <label>Duration (minutes)</label>
               <div class="input-wrap">
                 <i class="bi bi-hourglass-split"></i>
                 <input type="number" placeholder="e.g. 130"
@@ -295,62 +303,68 @@ interface CreateCertificationForm {
               </div>
             </div>
 
+            <!-- CertificationExam.passingScore -->
             <div class="field">
-              <label>Required Passing Score (%)</label>
+              <label>Passing Score (%)</label>
               <div class="input-wrap">
                 <i class="bi bi-graph-up"></i>
                 <input type="number" placeholder="e.g. 72"
-                  [(ngModel)]="form.requiredScore" name="requiredScore" min="0" max="100">
+                  [(ngModel)]="form.examPassingScore" name="examPassingScore" min="0" max="100">
               </div>
             </div>
 
+            <!-- CertificationExam.maxAttemptsPerUser -->
             <div class="field">
-              <label>Exam Format</label>
+              <label>Max Attempts per User</label>
               <div class="input-wrap">
-                <i class="bi bi-display"></i>
-                <select [(ngModel)]="form.examFormat" name="examFormat">
-                  <option value="Online / Proctored">Online / Proctored</option>
-                  <option value="Online / Unproctored">Online / Unproctored</option>
-                  <option value="In-Person">In-Person</option>
-                  <option value="Online + Project">Online + Project</option>
-                  <option value="Online + Portfolio">Online + Portfolio</option>
-                </select>
+                <i class="bi bi-repeat"></i>
+                <input type="number" placeholder="e.g. 3 (leave blank for unlimited)"
+                  [(ngModel)]="form.examMaxAttempts" name="examMaxAttempts" min="1">
               </div>
+              <span class="field-hint">Leave blank for unlimited attempts</span>
             </div>
 
-            <div class="field full-width">
-              <label>Next Exam Date</label>
-              <div class="input-wrap">
-                <i class="bi bi-calendar-event"></i>
-                <input type="text" placeholder="e.g. April 15, 2026 or Rolling Admission"
-                  [(ngModel)]="form.nextExamDate" name="nextExamDate">
+          </div>
+
+          <!-- CertificationExam.isActive toggle -->
+          <div class="toggle-row" style="margin-top: 1.25rem">
+            <div class="toggle-label">
+              <i class="bi bi-toggle-on"></i>
+              <div>
+                <strong>Exam Active</strong>
+                <p>Learners can take this exam immediately after enrolling</p>
               </div>
             </div>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="form.examIsActive" name="examIsActive">
+              <span class="slider"></span>
+            </label>
           </div>
 
           <!-- Exam preview cards -->
-          <div class="exam-preview" *ngIf="form.examQuestions || form.examDurationMinutes || form.requiredScore">
+          <div class="exam-preview" *ngIf="form.examDurationMinutes || form.examPassingScore || form.examMaxAttempts">
             <p class="preview-label">Preview:</p>
             <div class="exam-cards-row">
-              <div class="exam-mini-card" *ngIf="form.examQuestions">
-                <i class="bi bi-question-circle"></i>
-                <span class="val">{{ form.examQuestions }}</span>
-                <span class="lbl">Questions</span>
-              </div>
               <div class="exam-mini-card" *ngIf="form.examDurationMinutes">
                 <i class="bi bi-hourglass-split"></i>
                 <span class="val">{{ form.examDurationMinutes }} min</span>
                 <span class="lbl">Duration</span>
               </div>
-              <div class="exam-mini-card" *ngIf="form.requiredScore">
+              <div class="exam-mini-card" *ngIf="form.examPassingScore">
                 <i class="bi bi-graph-up"></i>
-                <span class="val">{{ form.requiredScore }}%</span>
-                <span class="lbl">Passing</span>
+                <span class="val">{{ form.examPassingScore }}%</span>
+                <span class="lbl">Pass Score</span>
               </div>
-              <div class="exam-mini-card" *ngIf="form.examFormat">
-                <i class="bi bi-display"></i>
-                <span class="val">{{ form.examFormat }}</span>
-                <span class="lbl">Format</span>
+              <div class="exam-mini-card" *ngIf="form.examMaxAttempts">
+                <i class="bi bi-repeat"></i>
+                <span class="val">{{ form.examMaxAttempts }}x</span>
+                <span class="lbl">Max Attempts</span>
+              </div>
+              <div class="exam-mini-card">
+                <i class="bi" [class.bi-check-circle-fill]="form.examIsActive" [class.bi-x-circle]="!form.examIsActive"
+                   [style.color]="form.examIsActive ? '#10b981' : '#ef4444'"></i>
+                <span class="val">{{ form.examIsActive ? 'Active' : 'Inactive' }}</span>
+                <span class="lbl">Status</span>
               </div>
             </div>
           </div>
@@ -391,11 +405,15 @@ interface CreateCertificationForm {
 
             <div class="review-section">
               <h3><i class="bi bi-clipboard-data"></i> Exam Info</h3>
-              <div class="review-row"><span>Questions</span><strong>{{ form.examQuestions || '—' }}</strong></div>
+              <div class="review-row"><span>Exam Title</span><strong>{{ form.examTitle || '—' }}</strong></div>
               <div class="review-row"><span>Duration</span><strong>{{ form.examDurationMinutes ? form.examDurationMinutes + ' min' : '—' }}</strong></div>
-              <div class="review-row"><span>Passing Score</span><strong>{{ form.requiredScore ? form.requiredScore + '%' : '—' }}</strong></div>
-              <div class="review-row"><span>Format</span><strong>{{ form.examFormat || '—' }}</strong></div>
-              <div class="review-row"><span>Next Date</span><strong>{{ form.nextExamDate || '—' }}</strong></div>
+              <div class="review-row"><span>Passing Score</span><strong>{{ form.examPassingScore ? form.examPassingScore + '%' : '—' }}</strong></div>
+              <div class="review-row"><span>Max Attempts</span><strong>{{ form.examMaxAttempts || 'Unlimited' }}</strong></div>
+              <div class="review-row"><span>Exam Active</span>
+                <strong [class.active-badge]="form.examIsActive" [class.inactive-badge]="!form.examIsActive">
+                  {{ form.examIsActive ? 'Active' : 'Inactive' }}
+                </strong>
+              </div>
             </div>
 
             <div class="review-section full-review">
@@ -436,7 +454,7 @@ interface CreateCertificationForm {
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     :host {
       display: block;
       background: #f1f5f9;
@@ -957,118 +975,152 @@ interface CreateCertificationForm {
   `]
 })
 export class CreateCertificationComponent implements OnInit {
-    currentStep = 1;
-    isSubmitting = false;
-    errorMessage = '';
-    successMessage = '';
+  currentStep = 1;
+  isSubmitting = false;
+  errorMessage = '';
+  successMessage = '';
 
-    form: CreateCertificationForm = {
-        code: '',
-        name: '',
-        description: '',
-        validityMonths: null,
-        requiredScore: null,
-        criteriaDescription: '',
-        isActive: true,
-        level: 'Intermediate',
-        category: '',
-        duration: '',
-        price: '',
-        examQuestions: null,
-        examDurationMinutes: null,
-        examFormat: 'Online / Proctored',
-        topics: '',
-        skills: '',
-        prerequisites: '',
-        nextExamDate: '',
-        language: 'English'
+  form: CreateCertificationForm = {
+    // Certification fields
+    code: '',
+    name: '',
+    description: '',
+    validityMonths: null,
+    requiredScore: null,
+    criteriaDescription: '',
+    isActive: true,
+    level: 'Intermediate',
+    category: '',
+    duration: '',
+    price: '',
+    topics: '',
+    skills: '',
+    prerequisites: '',
+    language: 'English',
+    // CertificationExam fields
+    examTitle: '',
+    examDurationMinutes: null,
+    examPassingScore: null,
+    examMaxAttempts: null,
+    examIsActive: true
+  };
+
+  constructor(
+    private auth: AuthService,
+    private http: HttpClient,
+    private router: Router
+  ) { }
+
+  ngOnInit() {
+    const user = this.auth.getCurrentUser();
+    if (!user || user.role?.name !== 'TRAINER') {
+      this.router.navigate(['/']);
+    }
+  }
+
+  nextStep() {
+    if (this.currentStep < 4) {
+      this.currentStep++;
+    }
+  }
+
+  prevStep() {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+      this.errorMessage = '';
+      this.successMessage = '';
+    }
+  }
+
+  submit() {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const user = this.auth.getCurrentUser();
+    if (!user?.id) {
+      this.errorMessage = 'You must be logged in as a trainer to create a certification.';
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    // Build metadata blob to store display-only fields inside criteriaDescription
+    const metaJson = JSON.stringify({
+      level: this.form.level,
+      category: this.form.category,
+      duration: this.form.duration,
+      price: this.form.price,
+      topics: this.form.topics,
+      skills: this.form.skills,
+      prerequisites: this.form.prerequisites,
+      language: this.form.language,
+      fullDescription: this.form.criteriaDescription
+    });
+
+    // -- Step 1: Create the Certification --
+    const certPayload = {
+      code: this.form.code,
+      name: this.form.name,
+      description: this.form.description,
+      validityMonths: this.form.validityMonths,
+      requiredScore: this.form.requiredScore,
+      criteriaDescription: metaJson,
+      isActive: this.form.isActive,
+      trainerId: user.id
     };
 
-    constructor(
-        private auth: AuthService,
-        private http: HttpClient,
-        private router: Router
-    ) { }
+    this.http.post(API_ENDPOINTS.certifications, certPayload)
+      .pipe(timeout(15000))
+      .subscribe({
+        next: (certRes: any) => {
+          // -- Step 2: Create the CertificationExam (if exam title provided) --
+          if (this.form.examTitle?.trim()) {
+            const examPayload = {
+              certificationCode: certRes.code ?? this.form.code.toUpperCase(),
+              title: this.form.examTitle.trim(),
+              durationMinutes: this.form.examDurationMinutes,
+              passingScore: this.form.examPassingScore,
+              maxAttemptsPerUser: this.form.examMaxAttempts,
+              isActive: this.form.examIsActive
+            };
 
-    ngOnInit() {
-        const user = this.auth.getCurrentUser();
-        if (!user || user.role?.name !== 'TRAINER') {
-            this.router.navigate(['/']);
-        }
-    }
-
-    nextStep() {
-        if (this.currentStep < 4) {
-            this.currentStep++;
-        }
-    }
-
-    prevStep() {
-        if (this.currentStep > 1) {
-            this.currentStep--;
-            this.errorMessage = '';
-            this.successMessage = '';
-        }
-    }
-
-    submit() {
-        this.errorMessage = '';
-        this.successMessage = '';
-
-        const user = this.auth.getCurrentUser();
-        if (!user?.id) {
-            this.errorMessage = 'You must be logged in as a trainer to create a certification.';
-            return;
-        }
-
-        this.isSubmitting = true;
-
-        // Build metadata blob to store extra display fields alongside criteriaDescription
-        const metaJson = JSON.stringify({
-            level: this.form.level,
-            category: this.form.category,
-            duration: this.form.duration,
-            price: this.form.price,
-            examQuestions: this.form.examQuestions,
-            examDurationMinutes: this.form.examDurationMinutes,
-            examFormat: this.form.examFormat,
-            topics: this.form.topics,
-            skills: this.form.skills,
-            prerequisites: this.form.prerequisites,
-            nextExamDate: this.form.nextExamDate,
-            language: this.form.language,
-            fullDescription: this.form.criteriaDescription
-        });
-
-        const payload = {
-            code: this.form.code,
-            name: this.form.name,
-            description: this.form.description,
-            validityMonths: this.form.validityMonths,
-            requiredScore: this.form.requiredScore,
-            criteriaDescription: metaJson,
-            isActive: this.form.isActive,
-            trainerId: user.id
-        };
-
-        this.http.post(API_ENDPOINTS.certifications, payload).subscribe({
-            next: (res: any) => {
-                this.isSubmitting = false;
-                this.successMessage = `🎉 "${this.form.name}" has been published successfully! Learners can now see it in the catalog.`;
-                setTimeout(() => {
-                    this.router.navigate(['/certifications']);
-                }, 2500);
-            },
-            error: (err) => {
-                this.isSubmitting = false;
-                if (err.status === 409) {
-                    this.errorMessage = 'A certification with this code already exists. Please use a different code.';
-                } else if (err.status === 403) {
-                    this.errorMessage = 'Only TRAINER accounts can create certifications.';
-                } else {
-                    this.errorMessage = err.error || 'Failed to create certification. Please check the backend is running.';
+            this.http.post(API_ENDPOINTS.certificationExams, examPayload)
+              .pipe(timeout(10000))
+              .subscribe({
+                next: () => {
+                  this.isSubmitting = false;
+                  this.successMessage = `🎉 "${this.form.name}" and its exam have been published! Learners can now see it in the catalog.`;
+                  setTimeout(() => this.router.navigate(['/certifications']), 2500);
+                },
+                error: (examErr) => {
+                  // Certification was saved; exam failed — show partial success
+                  this.isSubmitting = false;
+                  this.successMessage = `✅ Certification "${this.form.name}" was saved, but the exam could not be created (${examErr.status ?? 'network error'}). You can add the exam later.`;
+                  setTimeout(() => this.router.navigate(['/certifications']), 3500);
                 }
-            }
-        });
-    }
+              });
+          } else {
+            // No exam title — skip exam creation
+            this.isSubmitting = false;
+            this.successMessage = `🎉 "${this.form.name}" has been published successfully! Learners can now see it in the catalog.`;
+            setTimeout(() => this.router.navigate(['/certifications']), 2500);
+          }
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          if (err instanceof TimeoutError || err.name === 'TimeoutError') {
+            this.errorMessage = '⏱️ Request timed out. The backend server (port 8083) does not appear to be running. Please start it and try again.';
+          } else if (err.status === 0) {
+            this.errorMessage = '🔌 Cannot connect to the backend server. Please make sure the Spring Boot app is running on port 8083.';
+          } else if (err.status === 409) {
+            this.errorMessage = 'A certification with this code already exists. Please use a different code.';
+          } else if (err.status === 403) {
+            this.errorMessage = 'Only TRAINER accounts can create certifications.';
+          } else {
+            this.errorMessage = (typeof err.error === 'string' ? err.error : null)
+              || `Server error (${err.status}). Please try again.`;
+          }
+        }
+      });
+  }
 }

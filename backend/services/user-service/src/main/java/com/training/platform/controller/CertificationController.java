@@ -1,7 +1,7 @@
 package com.training.platform.controller;
 
-import com.training.platform.entity.Certification;
 import com.training.platform.entity.CertificateStatus;
+import com.training.platform.entity.Certification;
 import com.training.platform.entity.User;
 import com.training.platform.repository.CertificationRepository;
 import com.training.platform.repository.UserRepository;

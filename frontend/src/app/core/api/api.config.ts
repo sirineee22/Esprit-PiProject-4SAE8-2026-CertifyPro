@@ -4,5 +4,6 @@ export const API_ENDPOINTS = {
   users: `${API_BASE_URL}/api/users`,
   auth: `${API_BASE_URL}/api/auth`,
   certifications: `${API_BASE_URL}/api/certifications`,
+  certificationExams: `${API_BASE_URL}/api/certification-exams`,
 };
 
