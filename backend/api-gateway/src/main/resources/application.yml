@@ -15,6 +15,7 @@ spring:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
             allowedHeaders:
@@ -37,19 +38,32 @@ spring:
           predicates:
             - Path=/api/trainer-requests/**
         - id: evaluations-service
-          uri: lb://USER-SERVICE
+          uri: lb://TRAINING-SERVICE
           predicates:
-            - Path=/api/evaluations/**
+            - Path=/api/evaluations/**,/api/evaluations
         - id: formations-service
-          uri: lb://USER-SERVICE
+          uri: lb://TRAINING-SERVICE
           predicates:
-            - Path=/api/formations/**
+            - Path=/api/formations/**,/api/formations
         - id: quizzes-service
-          uri: lb://USER-SERVICE
+          uri: lb://TRAINING-SERVICE
           predicates:
-            - Path=/api/quizzes/**
+            - Path=/api/quizzes/**,/api/quizzes
+        - id: progression-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/progression/**,/api/progression
+        - id: favorites-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/favorites/**,/api/favorites
+        - id: stats-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/stats/**,/api/stats
 
 eureka:
   client:
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://localhost:8761/eureka/

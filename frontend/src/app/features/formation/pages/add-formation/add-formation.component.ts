@@ -498,7 +498,7 @@ export class AddFormationComponent implements OnInit {
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode.set(true);
@@ -513,15 +513,19 @@ export class AddFormationComponent implements OnInit {
         }
       } else {
         // Fetch from API if signal is empty (page refresh)
-        this.trainingService.fetchTrainingById(Number(id)).subscribe({
-          next: (data) => {
+        try {
+          const data = await this.trainingService.fetchTrainingById(Number(id));
+          if (data) {
             this.formationForm.patchValue(data);
             if (data.contentUrl) {
               this.selectedFileName.set('Current linked file (will keep unless replaced)');
             }
-          },
-          error: () => this.router.navigate(['/trainings'])
-        });
+          } else {
+            this.router.navigate(['/trainings']);
+          }
+        } catch (error) {
+          this.router.navigate(['/trainings']);
+        }
       }
     }
   }
@@ -580,7 +584,8 @@ export class AddFormationComponent implements OnInit {
           error: (error) => {
             console.error('Failed to save training:', error);
             this.isSubmitting.set(false);
-            alert('Failed to save training. Please try again.');
+            const errorMsg = error.error?.message || error.message || 'Unknown error';
+            alert('Failed to save training. Details: ' + errorMsg);
           }
         });
       }

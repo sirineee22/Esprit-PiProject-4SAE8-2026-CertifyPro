@@ -9,6 +9,12 @@ import { ProgressionService } from './progression.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FavoriteService } from './favorite.service';
 
+export interface PaginationInfo {
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -21,14 +27,23 @@ export class TrainingService {
     private trainingsSignal = signal<Training[]>([]);
     trainings = this.trainingsSignal.asReadonly();
 
-    pagination = signal<{ totalElements: number; totalPages: number; currentPage: number }>({
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: 0
-    });
+    pagination = signal<PaginationInfo>({ totalElements: 0, totalPages: 0, currentPage: 0 });
 
     constructor() {
         this.loadTrainings();
+    }
+
+    private sanitizeUrl(url: string | undefined): string | undefined {
+        if (!url || url === '#') return url;
+        // If it's a relative API path, prepend the Base URL
+        if (url.startsWith('/api')) {
+            return `${API_BASE_URL}${url}`;
+        }
+        // If it's an absolute URL but points to an old service port (8083 or 8084), redirect to Gateway (8082)
+        if (url.includes('localhost:8083') || url.includes('localhost:8084')) {
+            return url.replace(/localhost:8083|localhost:8084/i, 'localhost:8082');
+        }
+        return url;
     }
 
     async loadTrainings(page: number = 0, size: number = 6) {
@@ -63,7 +78,7 @@ export class TrainingService {
             let progressions: Progression[] = [];
             let favorites: Training[] = [];
 
-            if (user?.id && (user.role?.name === 'STUDENT' || user.role?.name === 'LEARNER')) {
+            if (user?.id && (user.role?.name === 'STUDENT' || user.role?.name === 'LEARNER' || user.role?.name === 'TRAINER')) {
                 try {
                     progressions = await firstValueFrom(this.progressionService.getUserProgressions(user.id));
                 } catch (e) { console.error('Progression fetch failed', e); }
@@ -78,7 +93,7 @@ export class TrainingService {
                 const isFav = favorites.some(f => f.id === t.id);
                 return {
                     ...t,
-                    contentUrl: t.contentUrl?.startsWith('/api') ? `${API_BASE_URL}${t.contentUrl}` : t.contentUrl,
+                    contentUrl: this.sanitizeUrl(t.contentUrl),
                     progression: prog || { status: 'TO_DO' },
                     isFavorite: isFav
                 };
@@ -123,10 +138,6 @@ export class TrainingService {
         );
     }
 
-    fetchTrainingById(id: number) {
-        return this.http.get<Training>(`${API_ENDPOINTS.formations}/${id}`);
-    }
-
     updateTraining(id: number, training: Training, file?: File) {
         const formData = new FormData();
         formData.append('title', training.title);
@@ -157,5 +168,18 @@ export class TrainingService {
 
     getTrainingById(id: number): Training | undefined {
         return this.trainingsSignal().find(t => t.id === id);
+    }
+
+    async fetchTrainingById(id: number): Promise<Training | undefined> {
+        try {
+            const training = await firstValueFrom(this.http.get<Training>(`${API_ENDPOINTS.formations}/${id}`));
+            if (training) {
+                training.contentUrl = this.sanitizeUrl(training.contentUrl);
+            }
+            return training;
+        } catch (error) {
+            console.error('Failed to fetch training by id', error);
+            return undefined;
+        }
     }
 }

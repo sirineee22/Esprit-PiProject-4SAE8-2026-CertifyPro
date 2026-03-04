@@ -557,16 +557,16 @@ export class LoginComponent {
       error: (e: unknown) => {
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 401) {
-          const message = typeof e.error === 'string' && e.error ? e.error : 'Invalid email or password.';
-          alert(message);
+          alert('Invalid credentials. Please check your email and password.');
           return;
         }
         if (e instanceof HttpErrorResponse && e.status === 500) {
-          const message = typeof e.error === 'string' && e.error ? e.error : 'Server error. Please try again or contact support.';
-          alert(message);
+          console.error('Server Error (500):', e);
+          alert('Erreur serveur (500). Veuillez consulter la console pour plus de détails.');
           return;
         }
-        alert('Login failed. Please try again.');
+        console.error('Login Error Details:', e);
+        alert('Login failed. Check console (F12) for detailed error information.');
       }
     });
   }

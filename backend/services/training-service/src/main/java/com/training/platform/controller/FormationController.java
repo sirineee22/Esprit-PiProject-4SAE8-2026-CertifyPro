@@ -6,6 +6,10 @@ import com.training.platform.service.FormationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +23,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/formations")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class FormationController {
     private final FormationService formationService;
     private final com.training.platform.repository.UserRepository userRepository;
@@ -146,15 +149,31 @@ public class FormationController {
     }
 
     @GetMapping("/files/{filename:.+}")
-    public ResponseEntity<byte[]> getFile(@PathVariable("filename") String filename) throws IOException {
-        Path filePath = Paths.get(UPLOAD_DIR).resolve(filename);
-        if (!Files.exists(filePath))
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Resource> getFile(@PathVariable("filename") String filename) throws IOException {
+        Path filePath = Paths.get(UPLOAD_DIR).resolve(filename).normalize();
+        System.out.println("Trying to serve file: " + filePath.toAbsolutePath());
 
-        byte[] content = Files.readAllBytes(filePath);
+        if (!Files.exists(filePath)) {
+            System.err.println("File not found: " + filePath.toAbsolutePath());
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = new UrlResource(filePath.toUri());
         String contentType = Files.probeContentType(filePath);
+
+        if (contentType == null) {
+            if (filename.toLowerCase().endsWith(".pdf")) {
+                contentType = "application/pdf";
+            } else if (filename.toLowerCase().endsWith(".mp4")) {
+                contentType = "video/mp4";
+            } else {
+                contentType = "application/octet-stream";
+            }
+        }
+
         return ResponseEntity.ok()
-                .header("Content-Type", contentType)
-                .body(content);
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
     }
 }

@@ -45,20 +45,17 @@
             <div class="col-md-6 col-lg-4 animate-slide-up" *ngFor="let training of trainings(); let i = index"
                 [style.animation-delay]="(i * 0.1) + 's'">
                 <div class="training-card">
-                    <!-- Actions for Trainers/Admins -->
-                    <div class="card-actions" *ngIf="isAdmin || isTrainer">
-                        <button class="btn-action btn-edit" (click)="onEditTraining($event, training)" title="Edit">
+                    <!-- Updated Actions: Combined and non-overlapping -->
+                    <div class="card-actions" [class.student-actions]="isStudent()">
+                        <button *ngIf="isAdmin || isTrainer" class="btn-action btn-edit"
+                            (click)="onEditTraining($event, training)" title="Edit">
                             <i class="bi bi-pencil-square"></i>
                         </button>
-                        <button class="btn-action btn-delete" (click)="onDeleteTraining($event, training)"
-                            title="Delete">
+                        <button *ngIf="isAdmin || isTrainer" class="btn-action btn-delete"
+                            (click)="onDeleteTraining($event, training)" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
-                    </div>
-
-                    <!-- Actions for Students (Favorites) -->
-                    <div class="card-actions student-actions" *ngIf="isStudent()">
-                        <button class="btn-action btn-favorite" [class.active]="training.isFavorite"
+                        <button *ngIf="isStudent()" class="btn-action btn-favorite" [class.active]="training.isFavorite"
                             (click)="onToggleFavorite($event, training)"
                             [title]="training.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'">
                             <i class="bi" [ngClass]="training.isFavorite ? 'bi-heart-fill' : 'bi-heart'"></i>
@@ -82,27 +79,27 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="level-badge" [ngClass]="training.level.toLowerCase()">{{ training.level
                                 }}</span>
-                            <!-- Progression Badge for Students -->
-                            <span *ngIf="isStudent() && training.progression" class="progression-badge"
-                                [ngClass]="training.progression.status.toLowerCase()">
+                            <!-- Progression Badge for Students & Trainers -->
+                            <span *ngIf="isStudent()" class="progression-badge"
+                                [ngClass]="training.progression ? training.progression.status.toLowerCase() : 'to_do'">
                                 <i class="bi" [ngClass]="{
-                                    'bi-circle': training.progression.status === 'TO_DO',
-                                    'bi-play-circle': training.progression.status === 'IN_PROGRESS',
-                                    'bi-check-circle-fill': training.progression.status === 'COMPLETED'
+                                    'bi-circle': !training.progression || training.progression.status === 'TO_DO',
+                                    'bi-play-circle': training.progression?.status === 'IN_PROGRESS',
+                                    'bi-check-circle-fill': training.progression?.status === 'COMPLETED'
                                 }"></i>
-                                {{ training.progression.status === 'TO_DO' ? 'To Do' : (training.progression.status ===
-                                'IN_PROGRESS' ? 'In Progress' : 'Completed') }}
+                                {{ !training.progression || training.progression.status === 'TO_DO' ? 'To Do' :
+                                (training.progression.status === 'IN_PROGRESS' ? 'In Progress' : 'Completed') }}
                             </span>
                             <span class="duration-tag"><i class="bi bi-clock me-1"></i>{{ training.duration }}</span>
                         </div>
 
                         <h3 class="card-title-modern">{{ training.title }}</h3>
 
-                        <!-- Status Selector for Students -->
-                        <div *ngIf="isStudent() && training.progression" class="status-selector-wrapper mb-3"
+                        <!-- Status Selector for Students & Trainers -->
+                        <div *ngIf="isStudent()" class="status-selector-wrapper mb-3"
                             (click)="$event.stopPropagation()">
                             <label class="small text-muted mb-1 d-block">My Progress:</label>
-                            <select class="form-select status-select" [value]="training.progression.status"
+                            <select class="form-select status-select" [value]="training.progression?.status || 'TO_DO'"
                                 (change)="onStatusChange($event, training)">
                                 <option value="TO_DO">To Do</option>
                                 <option value="IN_PROGRESS">In Progress</option>

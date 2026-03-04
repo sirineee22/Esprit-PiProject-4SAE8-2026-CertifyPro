@@ -16,7 +16,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/quizzes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class QuizController {
     private final QuizService quizService;
 

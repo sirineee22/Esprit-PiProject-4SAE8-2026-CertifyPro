@@ -1,6 +1,5 @@
 package com.training.platform.controller;
 
-import com.training.platform.entity.Role;
 import com.training.platform.entity.User;
 import com.training.platform.repository.UserRepository;
 import com.training.platform.security.JwtUtil;
@@ -12,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.util.Optional;
 
@@ -57,12 +59,12 @@ public class AuthController {
             String token = jwtUtil.generateToken(
                     user.getEmail(),
                     user.getId(),
-                    user.getRole().getName()
-            );
+                    user.getRole().getName());
             log.info("Login OK for email={}", email);
             return ResponseEntity.ok(LoginResponse.from(user, token));
         } catch (Exception e) {
-            log.error("Login 500 for email={}", request != null ? request.email : "?", e);
+            log.error("CRITICAL: Login 500 for email={} - Exception: {}",
+                    request != null ? request.email : "?", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Login failed. Please try again.");
         }
@@ -77,10 +79,16 @@ public class AuthController {
         public String password;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     static class LoginResponse {
         public String token;
         public UserData user;
 
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
         static class UserData {
             public Long id;
             public String firstName;
@@ -88,7 +96,15 @@ public class AuthController {
             public String email;
             public String phoneNumber;
             public boolean active;
-            public Role role;
+            public RoleDTO role;
+        }
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        static class RoleDTO {
+            public Long id;
+            public String name;
         }
 
         static LoginResponse from(User user, String token) {
@@ -101,7 +117,11 @@ public class AuthController {
             response.user.email = user.getEmail();
             response.user.phoneNumber = user.getPhoneNumber();
             response.user.active = user.isActive();
-            response.user.role = user.getRole();
+            if (user.getRole() != null) {
+                response.user.role = new RoleDTO();
+                response.user.role.id = user.getRole().getId();
+                response.user.role.name = user.getRole().getName();
+            }
             return response;
         }
     }

@@ -1,0 +1,42 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: TRAINING-SERVICE
+  datasource:
+    url: jdbc:postgresql://localhost:5432/userdb
+    username: postgres
+    password: ${DB_PASSWORD:0511249527}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+
+# JWT Configuration (MUST MATCH USER-SERVICE)
+jwt:
+  secret: ${JWT_SECRET:dev-secret-min-32-chars-for-local-only}
+  expiration: 86400000
+
+# Enable logging for debugging
+logging:
+  level:
+    org.springframework.web: DEBUG

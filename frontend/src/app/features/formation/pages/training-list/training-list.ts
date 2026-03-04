@@ -69,7 +69,8 @@ export class TrainingListComponent implements OnInit {
   }
 
   isStudent(): boolean {
-    return this.currentUser?.role?.name === 'STUDENT' || this.currentUser?.role?.name === 'LEARNER';
+    const role = this.currentUser?.role?.name;
+    return role === 'STUDENT' || role === 'LEARNER' || role === 'TRAINER';
   }
 
   onStatusChange(event: Event, training: Training) {
@@ -80,9 +81,13 @@ export class TrainingListComponent implements OnInit {
     if (training.id && this.currentUser?.id) {
       this.progressionService.updateStatus(training.id, this.currentUser.id, newStatus).subscribe({
         next: () => {
-          this.trainingService.loadTrainings(); // Refresh UI
+          this.trainingService.loadTrainings(this.pagination().currentPage); // Refresh same page
         },
-        error: (err) => alert('Failed to update status')
+        error: (err) => {
+          console.error('Failed to update status:', err);
+          const errorMsg = err.error?.message || err.message || 'Unknown error';
+          alert('Failed to update status. Details: ' + errorMsg);
+        }
       });
     }
   }
