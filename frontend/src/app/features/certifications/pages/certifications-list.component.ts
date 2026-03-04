@@ -69,20 +69,42 @@ interface Certification {
             <div class="card-meta">
               <span class="cert-code">{{ cert.code }}</span>
               <span class="duration" *ngIf="cert.validityMonths">
-                <i class="bi bi-clock"></i> {{ cert.validityMonths }} months validity
+                <i class="bi bi-clock"></i> {{ cert.validityMonths }} mo
               </span>
             </div>
             <h3>{{ cert.name }}</h3>
             <p class="description">{{ cert.description || 'No description provided.' }}</p>
             <div class="card-footer">
               <span class="score-badge" *ngIf="cert.requiredScore">
-                <i class="bi bi-patch-check"></i> Pass: {{ cert.requiredScore }}%
+                <i class="bi bi-patch-check"></i> {{ cert.requiredScore }}%
               </span>
-              <a [routerLink]="['/certifications', cert.id]" class="btn-enroll">View Details</a>
+              <a [routerLink]="['/certifications', cert.id]" class="btn-enroll">Details</a>
             </div>
           </div>
         </div>
       </section>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-container" *ngIf="!isLoading && !errorMessage && totalPages > 1">
+        <button class="btn-page" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+          <i class="bi bi-chevron-left"></i> Previous
+        </button>
+        
+        <div class="page-numbers">
+          <button 
+            *ngFor="let p of [].constructor(totalPages); let idx = index" 
+            class="page-num" 
+            [class.active]="idx === currentPage"
+            (click)="goToPage(idx)"
+          >
+            {{ idx + 1 }}
+          </button>
+        </div>
+
+        <button class="btn-page" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
+          Next <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
 
       <!-- Empty State -->
       <div class="no-results" *ngIf="!isLoading && !errorMessage && filteredCertifications.length === 0">
@@ -177,6 +199,27 @@ interface Certification {
       box-shadow: 0 4px 14px rgba(16,185,129,0.35); transition: all 0.25s ease;
     }
     .btn-create-cert:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,185,129,0.45); }
+    
+    /* Pagination Styles */
+    .pagination-container {
+      display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 3.5rem; padding: 0 2rem;
+    }
+    .page-numbers { display: flex; gap: 0.5rem; }
+    .page-num {
+      width: 40px; height: 40px; border-radius: 10px; border: 1px solid #e2e8f0;
+      background: white; color: #64748b; font-weight: 600; cursor: pointer;
+      transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
+    }
+    .page-num.active { background: #1e3a8a; color: white; border-color: #1e3a8a; box-shadow: 0 4px 12px rgba(30,58,138,0.2); }
+    .page-num:hover:not(.active) { border-color: #3b82f6; color: #3b82f6; transform: translateY(-2px); }
+    
+    .btn-page {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem;
+      background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+      color: #1e293b; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-page:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
     @media (max-width: 768px) {
       .hero-section h1 { font-size: 2.5rem; }
@@ -188,8 +231,14 @@ export class CertificationsListComponent implements OnInit {
   searchQuery = '';
   certifications: Certification[] = [];
   filteredCertifications: Certification[] = [];
-  isLoading = true;   // ← start true so no empty-state flash before data arrives
+  isLoading = true;
   errorMessage = '';
+
+  // Pagination state
+  currentPage = 0;
+  pageSize = 6;
+  totalElements = 0;
+  totalPages = 0;
 
   private colors = [
     'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)',
@@ -225,25 +274,34 @@ export class CertificationsListComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.get<Certification[]>(API_ENDPOINTS.certifications).subscribe({
-      next: (data) => {
-        console.log('[CertificationsList] Raw API response:', data);
-        const list = Array.isArray(data) ? data : [];
-        console.log('[CertificationsList] Total certifications received:', list.length);
-        // Show all active certifications (isActive true or not explicitly false)
-        this.certifications = list.filter(c => c.isActive !== false);
+    const params = `?activeOnly=true&page=${this.currentPage}&size=${this.pageSize}&sort=id,desc`;
+    this.http.get<any>(API_ENDPOINTS.certifications + params).subscribe({
+      next: (res) => {
+        // Backend returns Page object: { content: [], totalPages: 0, ... }
+        this.certifications = res.content || [];
+        this.totalElements = res.totalElements || 0;
+        this.totalPages = res.totalPages || 0;
         this.filteredCertifications = [...this.certifications];
+
         this.isLoading = false;
-        console.log('[CertificationsList] Displaying', this.filteredCertifications.length, 'certifications');
-        this.cdr.markForCheck(); // force Angular to update the view
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('[CertificationsList] API Error:', err);
-        this.errorMessage = 'Unable to reach the server. Make sure the backend is running on port 8083.';
+        this.errorMessage = 'Unable to reach the server. Make sure the backend is running.';
         this.isLoading = false;
         this.cdr.markForCheck();
       }
     });
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.loadCertifications();
+      // Scroll to top of list
+      window.scrollTo({ top: 300, behavior: 'smooth' });
+    }
   }
 
   getCardColor(index: number): string {

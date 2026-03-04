@@ -7,6 +7,10 @@ import com.training.platform.repository.CertificationRepository;
 import com.training.platform.repository.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -73,12 +77,38 @@ public class CertificationController {
      * Returns all active certifications for the public catalog.
      */
     @GetMapping
-    public ResponseEntity<List<Certification>> getAllCertifications(
-            @RequestParam(required = false) Boolean activeOnly) {
-        if (Boolean.TRUE.equals(activeOnly)) {
-            return ResponseEntity.ok(certificationRepository.findByIsActive(true));
+    public ResponseEntity<?> getAllCertifications(
+            @RequestParam(required = false) Boolean activeOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(defaultValue = "id,desc") String[] sort) {
+
+        try {
+            List<Sort.Order> orders = new java.util.ArrayList<>();
+            if (sort[0].contains(",")) {
+                // multiple sort params
+                for (String sortOrder : sort) {
+                    String[] _sort = sortOrder.split(",");
+                    orders.add(new Sort.Order(Sort.Direction.fromString(_sort[1]), _sort[0]));
+                }
+            } else {
+                // single sort param
+                orders.add(new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]));
+            }
+
+            Pageable paging = PageRequest.of(page, size, Sort.by(orders));
+            Page<Certification> pageCerts;
+
+            if (Boolean.TRUE.equals(activeOnly)) {
+                pageCerts = certificationRepository.findByIsActive(true, paging);
+            } else {
+                pageCerts = certificationRepository.findAll(paging);
+            }
+
+            return ResponseEntity.ok(pageCerts);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        return ResponseEntity.ok(certificationRepository.findAll());
     }
 
     /**
