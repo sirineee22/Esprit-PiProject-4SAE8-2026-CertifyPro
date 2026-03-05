@@ -57,7 +57,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
                 <div class="dropdown-header">
                    <p class="user-full-name">{{currentUser?.firstName}} {{currentUser?.lastName}}</p>
                    <p class="user-email">{{currentUser?.email}}</p>
-                   <span class="user-role-badge" [class.admin]="isAdmin" [class.trainer]="isTrainer" [class.learner]="isLearner">
+                   <span class="user-role-badge" [class.admin]="isAdmin" [class.trainer]="isTrainer" [class.learner]="isLearner" [class.employer]="isEmployer">
                      {{currentUser?.role?.name}}
                    </span>
                 </div>
@@ -180,6 +180,10 @@ export class NavbarComponent implements OnDestroy {
 
   get isLearner(): boolean {
     return this.currentUser?.role?.name === 'LEARNER';
+  }
+
+  get isEmployer(): boolean {
+    return this.currentUser?.role?.name === 'EMPLOYER';
   }
 
   @HostListener('document:click', ['$event'])

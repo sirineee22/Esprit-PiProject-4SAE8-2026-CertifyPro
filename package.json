@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "ngx-simplebar": "^0.0.1",
+    "simplebar-angular": "^3.3.2"
+  }
+}

@@ -1,9 +1,12 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.RegisterRequest;
 import com.training.platform.entity.Role;
 import com.training.platform.entity.User;
+import com.training.platform.service.AuthService;
 import com.training.platform.repository.UserRepository;
 import com.training.platform.security.JwtUtil;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
@@ -24,11 +27,13 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuthService authService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.authService = authService;
     }
 
     @PostMapping("/login")
@@ -66,6 +71,18 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Login failed. Please try again.");
         }
+    }
+
+    @PostMapping("/register/{role}")
+    public ResponseEntity<User> register(
+            @Valid @RequestBody RegisterRequest request,
+            @PathVariable String role) {
+        String roleName = role.toUpperCase();
+        if (!roleName.equals("LEARNER") && !roleName.equals("EMPLOYER")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        User user = authService.register(request, roleName);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     static class LoginRequest {

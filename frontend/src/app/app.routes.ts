@@ -12,7 +12,8 @@ import { adminRoutes } from './features/admin/admin.routes';
 import { authGuard } from './core/guards/auth.guard';
 import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
-
+import { ChatComponent } from './chat/chat';
+import { jobsRoutes } from './features/jobs/jobs.routes';
 export const routes: Routes = [
     // Auth routes (no layout - no navbar/footer)
     ...authRoutes,
@@ -23,6 +24,8 @@ export const routes: Routes = [
         component: UserLayoutComponent,
         children: [
             { path: '', component: HomeComponent },
+            { path: 'chat', component: ChatComponent, canActivate: [authGuard, nonAdminGuard] },
+
             { path: 'profile', component: ProfileComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'courses', component: CoursesListComponent },
             { path: 'certifications', component: CertificationsListComponent },
@@ -35,7 +38,8 @@ export const routes: Routes = [
             { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
-            { path: 'forum', redirectTo: '', pathMatch: 'full' }
+            { path: 'forum', redirectTo: '', pathMatch: 'full' },
+            { path: 'jobs', children: jobsRoutes },
         ]
     },
 

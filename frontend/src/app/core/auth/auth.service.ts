@@ -9,6 +9,14 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -23,6 +31,11 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${API_ENDPOINTS.auth}/login`, { email, password });
+  }
+
+  /** Inscription avec rôle : learner | employer (backend: POST /api/auth/register/{role}) */
+  register(role: 'learner' | 'employer', body: RegisterRequest): Observable<User> {
+    return this.http.post<User>(`${API_ENDPOINTS.auth}/register/${role}`, body);
   }
 
   private loadUser(): User | null {

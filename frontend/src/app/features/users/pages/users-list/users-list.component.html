@@ -32,7 +32,8 @@
                     <td>
                         <span class="role-badge" [class.admin]="user.role?.name === 'ADMIN'"
                             [class.trainer]="user.role?.name === 'TRAINER'"
-                            [class.learner]="user.role?.name === 'LEARNER'">
+                            [class.learner]="user.role?.name === 'LEARNER'"
+                            [class.employer]="user.role?.name === 'EMPLOYER'">
                             {{ user.role?.name || 'N/A' }}
                         </span>
                     </td>

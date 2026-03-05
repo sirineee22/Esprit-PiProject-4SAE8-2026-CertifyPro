@@ -1,0 +1,92 @@
+<div class="job-module-container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">Mes Offres d'Emploi</h2>
+            <p class="text-muted mb-0">Gérez vos publications et candidatures.</p>
+        </div>
+        <div>
+            <a routerLink="/employer/jobs/new" class="btn btn-glass-primary">
+                <i class="ri-add-line align-bottom me-1"></i> Créer une offre
+            </a>
+        </div>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading && offers.length === 0" class="glass-card text-center py-5">
+        <i class="ri-briefcase-line display-4 text-muted mb-3"></i>
+        <h5 class="text-white">Aucune offre publiée</h5>
+        <p class="text-muted">Commencez par créer votre première offre d'emploi.</p>
+        <a routerLink="/employer/jobs/new" class="btn btn-glass-primary mt-3">Créer une offre</a>
+    </div>
+
+    <div *ngIf="!loading && offers.length > 0" class="glass-card overflow-hidden p-0">
+        <div class="table-responsive">
+            <table class="table table-borderless table-nowrap align-middle mb-0">
+                <thead class="text-muted bg-soft-light">
+                    <tr>
+                        <th scope="col">Titre du poste</th>
+                        <th scope="col">Contrat</th>
+                        <th scope="col">Date limite</th>
+                        <th scope="col" class="text-center">Statut</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let offer of offers" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td>
+                            <h6 class="text-white mb-1">
+                                <a [routerLink]="['/employer/jobs', offer.id]" class="text-white">{{ offer.title }}</a>
+                            </h6>
+                            <p class="text-muted mb-0 small"><i class="ri-map-pin-line align-bottom me-1"></i> {{
+                                offer.location }}</p>
+                        </td>
+                        <td>
+                            <span class="glass-badge badge-{{ getBadgeColor(offer.contractType) }}">{{
+                                offer.contractType }}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ offer.deadline ? (offer.deadline | date:'mediumDate') : 'Non
+                                spécifiée' }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="glass-badge badge-{{ getBadgeColor(offer.status) }}">{{ offer.status }}</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="dropdown" ngbDropdown placement="bottom-end">
+                                <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" ngbDropdownToggle>
+                                    <i class="ri-more-2-fill"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
+                                    <a class="dropdown-item"
+                                        [routerLink]="['/employer/jobs', offer.id, 'applications']">
+                                        <i class="ri-file-list-3-line text-muted me-2 align-bottom"></i> Candidatures
+                                    </a>
+                                    <a class="dropdown-item" [routerLink]="['/employer/jobs/edit', offer.id]">
+                                        <i class="ri-pencil-line text-muted me-2 align-bottom"></i> Modifier
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item" *ngIf="offer.status === 'DRAFT'"
+                                        (click)="publish(offer.id)">
+                                        <i class="ri-check-line text-success me-2 align-bottom"></i> Publier
+                                    </button>
+                                    <button class="dropdown-item" *ngIf="offer.status === 'PUBLISHED'"
+                                        (click)="close(offer.id)">
+                                        <i class="ri-close-line text-warning me-2 align-bottom"></i> Clôturer
+                                    </button>
+                                    <button class="dropdown-item text-danger" (click)="delete(offer.id)">
+                                        <i class="ri-delete-bin-line me-2 align-bottom"></i> Supprimer
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

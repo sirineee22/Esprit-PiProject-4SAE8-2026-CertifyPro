@@ -68,12 +68,12 @@ import { API_BASE_URL } from '../../../core/api/api.config';
           </div>
           <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Événements' : ''">
             <i class="bi bi-calendar-event"></i>
-            <span>Événements</span>
-          </a>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Messagerie' : ''">
-            <i class="bi bi-chat-dots"></i>
-            <span>Messagerie</span>
+            <span>Event</span>
           </div>
+         <a routerLink="/chat" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Messagerie' : ''">
+  <i class="bi bi-chat-dots"></i>
+  <span>Messagerie</span>
+</a>
           <div class="nav-link disabled" [title]="isCollapsed ? 'E-commerce' : ''">
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
@@ -91,6 +91,15 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <i class="bi bi-people"></i>
             <span>My Students</span>
           </div>
+        </div>
+
+        <!-- Employer Section (only for employers) -->
+        <div class="nav-section" *ngIf="isEmployer">
+          <span class="section-label" *ngIf="!isCollapsed">EMPLOYER</span>
+          <a routerLink="/jobs/offers" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Job Offers' : ''">
+            <i class="bi bi-briefcase"></i>
+            <span>My Job Offers</span>
+          </a>
         </div>
 
         </nav>
@@ -614,8 +623,8 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role?.name === 'TRAINER';
   }
 
-  get isLearner(): boolean {
-    return this.currentUser?.role?.name === 'LEARNER';
+  get isEmployer(): boolean {
+    return this.currentUser?.role?.name === 'EMPLOYER';
   }
 
   toggleSidebar() {

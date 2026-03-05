@@ -68,6 +68,11 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                   <h4>Learner</h4>
                   <p>Access courses and earn certifications</p>
                 </div>
+                <div class="role-card" (click)="selectRole('EMPLOYER')">
+                  <i class="bi bi-briefcase"></i>
+                  <h4>Employer</h4>
+                  <p>Post job offers and manage candidates</p>
+                </div>
                 <div class="role-card" (click)="selectRole('TRAINER')">
                   <i class="bi bi-person-workspace"></i>
                   <h4>Trainer</h4>
@@ -79,13 +84,13 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
             <!-- Registration Form -->
             <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" *ngIf="selectedRole && !showSuccessModal">
               <div class="selected-role-badge">
-                <i class="bi" [ngClass]="selectedRole === 'LEARNER' ? 'bi-book' : 'bi-person-workspace'"></i>
-                <span>Registering as {{ selectedRole === 'LEARNER' ? 'Learner' : 'Trainer' }}</span>
+                <i class="bi" [ngClass]="getRoleIcon()"></i>
+                <span>Registering as {{ getRoleLabel() }}</span>
                 <button type="button" class="change-role-btn" (click)="changeRole()">Change</button>
               </div>
 
               <!-- Basic Info Section -->
-              <div *ngIf="selectedRole === 'LEARNER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
+              <div *ngIf="selectedRole === 'LEARNER' || selectedRole === 'EMPLOYER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
                 <div class="row gx-3">
                    <div class="col-6">
                       <div class="form-group">
@@ -131,8 +136,8 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                   <i class="bi bi-arrow-right"></i>
                 </button>
 
-                <!-- Submit Button (Learner) -->
-                <button type="submit" class="submit-btn" *ngIf="selectedRole === 'LEARNER'" [disabled]="registerForm.invalid || isSubmitting">
+                <!-- Submit Button (Learner or Employer) -->
+                <button type="submit" class="submit-btn" *ngIf="selectedRole === 'LEARNER' || selectedRole === 'EMPLOYER'" [disabled]="registerForm.invalid || isSubmitting">
                   <span *ngIf="!isSubmitting">Get Started</span>
                   <span *ngIf="isSubmitting">Processing...</span>
                   <i class="bi bi-chevron-right" *ngIf="!isSubmitting"></i>
@@ -336,7 +341,7 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
     /* Role Selection */
     .role-selection { margin-top: 1rem; }
     .role-title { font-size: 1.1rem; font-weight: 700; color: #0b1f3b; margin-bottom: 1.5rem; }
-    .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .role-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
     .role-card {
       padding: 2rem 1.5rem;
       border: 2px solid #e5e7eb;
@@ -613,12 +618,13 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
       .auth-card { flex-direction: column; height: auto; max-width: 500px; }
       .right-panel { padding: 2.5rem; }
       .role-cards { grid-template-columns: 1fr; }
+      .role-card { min-width: 0; }
     }
   `]
 })
 export class RegisterComponent {
   registerForm: FormGroup;
-  selectedRole: 'LEARNER' | 'TRAINER' | null = null;
+  selectedRole: 'LEARNER' | 'TRAINER' | 'EMPLOYER' | null = null;
   trainerStep: number = 1;
   isSubmitting = false;
   showSuccessModal = false;
@@ -644,11 +650,11 @@ export class RegisterComponent {
     });
   }
 
-  selectRole(role: 'LEARNER' | 'TRAINER') {
+  selectRole(role: 'LEARNER' | 'TRAINER' | 'EMPLOYER') {
     this.selectedRole = role;
     this.trainerStep = 1;
 
-    // Add validators for trainer fields
+    // Add validators for trainer fields only
     if (role === 'TRAINER') {
       this.registerForm.get('subjects')?.setValidators([Validators.required]);
       this.registerForm.get('experience')?.setValidators([Validators.required]);
@@ -694,6 +700,18 @@ export class RegisterComponent {
     this.trainerStep = 1;
   }
 
+  getRoleIcon(): string {
+    if (this.selectedRole === 'LEARNER') return 'bi-book';
+    if (this.selectedRole === 'EMPLOYER') return 'bi-briefcase';
+    return 'bi-person-workspace';
+  }
+
+  getRoleLabel(): string {
+    if (this.selectedRole === 'LEARNER') return 'Learner';
+    if (this.selectedRole === 'EMPLOYER') return 'Employer';
+    return 'Trainer';
+  }
+
   onSubmit() {
     if (this.registerForm.invalid || this.isSubmitting) return;
 
@@ -701,22 +719,48 @@ export class RegisterComponent {
 
     if (this.selectedRole === 'LEARNER') {
       this.registerAsLearner();
+    } else if (this.selectedRole === 'EMPLOYER') {
+      this.registerAsEmployer();
     } else {
       this.registerAsTrainer();
     }
   }
 
   private registerAsLearner() {
-    const user: User = {
-      ...this.registerForm.value,
-      active: true
+    this.registerWithRole('learner');
+  }
+
+  private registerAsEmployer() {
+    this.registerWithRole('employer');
+  }
+
+  private registerWithRole(role: 'learner' | 'employer') {
+    const form = this.registerForm.value;
+    const phoneRaw = this.registerForm.get('phoneNumber')?.value;
+    const body = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: (form.email ?? '').trim().toLowerCase(),
+      password: (form.password ?? '').trim(),
+      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined
     };
 
-    this.userService.create(user).subscribe({
+    this.authService.register(role, body).subscribe({
       next: (createdUser: User) => {
-        console.log('Learner registered successfully:', createdUser);
-        this.authService.setSession(createdUser);
-        this.router.navigate(['/']);
+        const email = body.email;
+        const password = body.password;
+        this.authService.login(email, password).subscribe({
+          next: (loginRes) => {
+            this.authService.setSession(loginRes.user, loginRes.token);
+            this.isSubmitting = false;
+            this.router.navigate(['/']);
+          },
+          error: () => {
+            this.authService.setSession(createdUser);
+            this.isSubmitting = false;
+            this.router.navigate(['/']);
+          }
+        });
       },
       error: (e: unknown) => {
         this.isSubmitting = false;
