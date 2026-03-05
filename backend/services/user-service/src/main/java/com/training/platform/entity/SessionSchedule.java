@@ -30,10 +30,15 @@ public class SessionSchedule {
     @JoinColumn(name = "trainer_id", nullable = false)
     private User trainer;
 
-    @Column(name = "room", nullable = false)
-    private String room;
-    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
+
     // Links to the course/module id this session belongs to
     @Column(name = "course_id")
     private Long courseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SessionStatus status = SessionStatus.SCHEDULED;
 }

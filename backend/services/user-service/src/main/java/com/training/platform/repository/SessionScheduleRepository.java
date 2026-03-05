@@ -10,7 +10,12 @@ import java.util.List;
 @Repository
 public interface SessionScheduleRepository extends JpaRepository<SessionSchedule, Long> {
     List<SessionSchedule> findByTrainerId(Long trainerId);
+
     List<SessionSchedule> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
-    boolean existsByRoomAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(String room, LocalDateTime endTime, LocalDateTime startTime);
-    boolean existsByTrainerIdAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(Long trainerId, LocalDateTime endTime, LocalDateTime startTime);
+
+    boolean existsByRoomIdAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(Long roomId, LocalDateTime endTime,
+            LocalDateTime startTime);
+
+    boolean existsByTrainerIdAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(Long trainerId, LocalDateTime endTime,
+            LocalDateTime startTime);
 }
