@@ -526,12 +526,18 @@ interface CreateCertificationForm {
           <!-- PDF File Upload -->
           <div class="field full-width" style="margin-top: 1rem;">
             <label>Upload Exam Document (PDF) <span class="badge-optional">Optional</span></label>
-            <div class="file-upload-box" [class.has-file]="form.examPdfName" (click)="fileInput.click()">
+            <div class="file-upload-box" 
+                 [class.has-file]="form.examPdfName" 
+                 [class.dragging]="isDragging"
+                 (click)="fileInput.click()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event)">
               <input type="file" #fileInput accept=".pdf" style="display: none" (change)="onFileSelected($event)">
               
               <div class="upload-content" *ngIf="!form.examPdfName">
-                <i class="bi bi-cloud-arrow-up"></i>
-                <p>Click to browse and upload a PDF file</p>
+                <i class="bi" [class.bi-cloud-arrow-up]="!isDragging" [class.bi-file-earmark-pdf-fill]="isDragging"></i>
+                <p>{{ isDragging ? 'Drop it here!' : 'Click or Drag & Drop PDF file' }}</p>
                 <span>Maximum size: 10MB</span>
               </div>
               
@@ -1407,7 +1413,8 @@ interface CreateCertificationForm {
       padding: 2.5rem; text-align: center; cursor: pointer; transition: all 0.2s ease;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .file-upload-box:hover { border-color: #3b82f6; background: #eff6ff; }
+    .file-upload-box:hover { border-color: #3b82f6; background: #f0f9ff; }
+    .file-upload-box.dragging { border-color: #3b82f6; background: #eff6ff; border-width: 2px; transform: scale(1.01); box-shadow: 0 10px 20px rgba(59,130,246,0.1); }
     .file-upload-box.has-file { border-color: #10b981; background: #f0fdf4; border-style: solid; padding: 2rem; }
     
     .upload-content i { font-size: 3rem; color: #94a3b8; margin-bottom: 0.75rem; transition: color 0.2s; }
@@ -1504,6 +1511,7 @@ export class CreateCertificationComponent implements OnInit {
   selectedSkills: string[] = [];
   selectedPrereqs: string[] = [];
   isFree = false;
+  isDragging = false;
 
   form: CreateCertificationForm = {
     code: '',
@@ -1675,9 +1683,36 @@ export class CreateCertificationComponent implements OnInit {
   // ===== PDF File Upload logic =====
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
+    this.processFile(file);
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      this.processFile(file);
+    }
+  }
+
+  private processFile(file: File) {
     if (file && file.type === 'application/pdf') {
       this.form.examPdfName = file.name;
-    } else {
+    } else if (file) {
       alert('Please select a valid PDF file.');
     }
   }
