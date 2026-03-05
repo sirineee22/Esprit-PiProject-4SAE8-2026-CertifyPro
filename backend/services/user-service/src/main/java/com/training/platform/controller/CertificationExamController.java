@@ -31,6 +31,11 @@ public class CertificationExamController {
      */
     @PostMapping
     public ResponseEntity<?> createExam(@Valid @RequestBody ExamDto dto) {
+        System.out.println("[ExamController] Received Create Exam Request for code: " + dto.certificationCode);
+        System.out.println("[ExamController] questionsJson content: " + (dto.questionsJson != null
+                ? dto.questionsJson.substring(0, Math.min(dto.questionsJson.length(), 50)) + "..."
+                : "NULL"));
+
         // Ensure the certification code exists
         boolean certExists = certificationRepository.findAll().stream()
                 .anyMatch(c -> dto.certificationCode.equalsIgnoreCase(c.getCode()));
@@ -46,6 +51,7 @@ public class CertificationExamController {
         exam.setPassingScore(dto.passingScore);
         exam.setMaxAttemptsPerUser(dto.maxAttemptsPerUser);
         exam.setIsActive(dto.isActive != null ? dto.isActive : true);
+        exam.setQuestionsJson(dto.questionsJson);
 
         CertificationExam saved = examRepository.save(exam);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -88,7 +94,7 @@ public class CertificationExamController {
     }
 
     // DTO
-    static class ExamDto {
+    public static class ExamDto {
         @NotBlank
         public String certificationCode;
 
@@ -99,5 +105,6 @@ public class CertificationExamController {
         public Double passingScore;
         public Integer maxAttemptsPerUser;
         public Boolean isActive;
+        public String questionsJson;
     }
 }

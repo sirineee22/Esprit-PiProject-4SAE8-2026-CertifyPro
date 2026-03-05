@@ -199,20 +199,37 @@ interface CreateCertificationForm {
               </div>
             </div>
 
-            <!-- Price (numbers only) -->
+            <!-- Price / Fee Selector -->
             <div class="field">
               <label>Price / Fee (USD)</label>
-              <div class="input-wrap">
+              <div class="price-type-toggle">
+                <button type="button" 
+                        class="btn-toggle" 
+                        [class.active]="isFree" 
+                        (click)="isFree = true; form.price = '0'">
+                  <i class="bi bi-gift-fill"></i> Free
+                </button>
+                <button type="button" 
+                        class="btn-toggle" 
+                        [class.active]="!isFree" 
+                        (click)="isFree = false">
+                  <i class="bi bi-cash-stack"></i> Paid
+                </button>
+              </div>
+
+              <div class="input-wrap animate-fade-in" *ngIf="!isFree">
                 <i class="bi bi-currency-dollar"></i>
                 <input
                   type="number"
-                  placeholder="e.g. 299"
+                  placeholder="Enter amount (e.g. 299)"
                   [(ngModel)]="form.price"
                   name="price"
                   min="0" step="0.01"
                   (keypress)="onlyNumbers($event)"
                 >
               </div>
+              <span class="field-hint" *ngIf="isFree">Certification will be marked as <strong>FREE</strong> for all learners.</span>
+              <span class="field-hint" *ngIf="!isFree">Set a registration fee for this certification.</span>
             </div>
 
             <!-- Validity months (numbers only) -->
@@ -1090,6 +1107,52 @@ interface CreateCertificationForm {
       margin-bottom: 2rem;
     }
 
+    /* Price Toggle Styles */
+    .price-type-toggle {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-toggle {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      border: 1.5px solid #e2e8f0;
+      background: white;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-toggle:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .btn-toggle.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #3b82f6;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .review-section {
       background: #f8fafc;
       border-radius: 12px;
@@ -1440,6 +1503,7 @@ export class CreateCertificationComponent implements OnInit {
   selectedTopics: string[] = [];
   selectedSkills: string[] = [];
   selectedPrereqs: string[] = [];
+  isFree = false;
 
   form: CreateCertificationForm = {
     code: '',
@@ -1681,8 +1745,10 @@ export class CreateCertificationComponent implements OnInit {
       language: this.form.language,
       nextExamDate: this.form.nextExamDate || null,
       fullDescription: this.form.criteriaDescription,
-      examPdfName: this.form.examPdfName,            // Inject PDF name metadata
-      quizQuestions: this.form.quizQuestions           // Inject Quiz Questions metadata
+      examPdfName: this.form.examPdfName,
+      examDurationMinutes: this.form.examDurationMinutes,
+      examQuestions: this.form.quizQuestions ? this.form.quizQuestions.length : 0,
+      quizQuestions: this.form.quizQuestions
     });
 
     // -- Step 1: Create the Certification --
@@ -1709,8 +1775,12 @@ export class CreateCertificationComponent implements OnInit {
               durationMinutes: this.form.examDurationMinutes,
               passingScore: this.form.examPassingScore,
               maxAttemptsPerUser: this.form.examMaxAttempts,
-              isActive: this.form.examIsActive
+              isActive: this.form.examIsActive,
+              questionsJson: JSON.stringify(this.form.quizQuestions)
             };
+
+            console.log('[CreateCert] Sending Exam Payload:', examPayload);
+            console.log('[CreateCert] Questions Count:', this.form.quizQuestions?.length);
 
             this.http.post(API_ENDPOINTS.certificationExams, examPayload)
               .pipe(timeout(10000))

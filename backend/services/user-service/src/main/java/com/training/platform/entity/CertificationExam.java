@@ -28,6 +28,9 @@ public class CertificationExam {
     private Integer maxAttemptsPerUser;
     private Boolean isActive;
 
+    @Column(name = "questions_json", columnDefinition = "TEXT")
+    private String questionsJson;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

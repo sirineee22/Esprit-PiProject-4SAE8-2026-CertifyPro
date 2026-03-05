@@ -35,6 +35,7 @@ interface CriteriaJson {
   nextExamDate?: string;
   language?: string;
   fullDescription?: string;
+  quizQuestions?: any[];
 }
 
 /** Internal view-model used by the template */
@@ -549,9 +550,9 @@ export class CertificationDetailComponent implements OnInit {
       topics: splitList(c.topics),
       skills: splitList(c.skills),
       prerequisites: splitList(c.prerequisites),
-      examQuestions: c.examQuestions ?? null,
+      examQuestions: c.examQuestions ?? (c.quizQuestions ? c.quizQuestions.length : null),
       examDurationMinutes: c.examDurationMinutes ?? null,
-      examFormat: c.examFormat || '',
+      examFormat: c.examFormat || (c.quizQuestions ? 'Multiple Choice' : ''),
       nextExamDate: c.nextExamDate || '',
       language: c.language || '',
       cardColor: this.cardColors[idx],
