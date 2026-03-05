@@ -23,22 +23,13 @@ interface DashboardStats {
           <h1>Admin Dashboard</h1>
           <p>Welcome back! Here's what's happening on CertifyPro today.</p>
         </div>
-        <div class="header-actions">
-          <button class="btn-refresh" (click)="loadDashboardData()" [disabled]="isLoading">
-            <i class="bi bi-arrow-clockwise" [class.spinning]="isLoading"></i>
-            Refresh Data
-          </button>
-        </div>
+       
       </header>
 
-      <!-- Loading State -->
-      <div class="loading-state" *ngIf="isLoading">
-        <div class="spinner"></div>
-        <p>Loading dashboard data...</p>
-      </div>
+     
 
       <!-- Dashboard Content -->
-      <div *ngIf="!isLoading">
+      <div  >
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon users">

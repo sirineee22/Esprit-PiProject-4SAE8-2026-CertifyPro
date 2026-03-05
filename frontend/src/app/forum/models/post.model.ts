@@ -8,4 +8,4 @@ export interface Post {
     reactionCount: number;
     commentCount: number;
     isLikedByCurrentUser: boolean;
-}
+  }

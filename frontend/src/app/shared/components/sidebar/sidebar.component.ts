@@ -44,6 +44,17 @@ import { User } from '../../models/user.model';
             <i class="bi bi-chat-left-text-fill"></i>
             <span>Forum Management</span>
           </a>
+          
+           <a routerLink="/admin/productss" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <span>Ecommerce Management</span>
+          </a>
+            <a routerLink="/admin/orders" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <span>Orders Management</span>
+          </a>
+
+          
         </div>
         
         <div class="nav-section">

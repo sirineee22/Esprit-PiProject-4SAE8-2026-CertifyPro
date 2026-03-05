@@ -36,7 +36,7 @@
     <button (click)="loadData()">Retry</button>
   </div>
 
-  <div class="content-table" *ngIf="!loading && !errorMessage">
+  <div class="content-table" *ngIf="!errorMessage">
     <div *ngIf="activeTab === 'posts' && posts.length === 0" class="empty-state">
       <i class="bi bi-chat-left-dots"></i>
       <p>No posts found in the forum.</p>
@@ -95,8 +95,5 @@
     </table>
   </div>
 
-  <div class="loading-spinner" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Loading forum data...</p>
-  </div>
+   
 </div>

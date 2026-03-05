@@ -1,58 +1,74 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_ENDPOINTS } from '../../core/api/api.config';
 import { Post } from '../models/post.model';
 import { Comment } from '../models/comment.model';
+import { API_BASE_URL } from '../../core/api/api.config';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class ForumService {
-    private postsUrl = API_ENDPOINTS.forum.posts;
-    private commentsUrl = API_ENDPOINTS.forum.comments;
 
-    constructor(private http: HttpClient) { }
+  private POST_API = API_BASE_URL + '/api/forum/posts';
+  private COMMENT_API = API_BASE_URL + '/api/forum/comments';
 
-    // Posts
-    getAllPosts(): Observable<Post[]> {
-        return this.http.get<Post[]>(this.postsUrl);
-    }
+  constructor(private http: HttpClient) {}
 
-    getPostById(id: number): Observable<Post> {
-        return this.http.get<Post>(`${this.postsUrl}/${id}`);
-    }
+  private authHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: 'Bearer ' + token
+    });
+  }
 
-    createPost(formData: FormData): Observable<Post> {
-        return this.http.post<Post>(this.postsUrl, formData);
-    }
+  // ========================
+  // POSTS
+  // ========================
 
-    deletePost(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.postsUrl}/${id}`);
-    }
+  getAllPosts(): Observable<Post[]> {
+    return this.http.get<Post[]>(this.POST_API, { headers: this.authHeaders() });
+  }
 
-    reactToPost(id: number): Observable<any> {
-        return this.http.post(`${this.postsUrl}/${id}/react`, {});
-    }
+  getPostById(id: number): Observable<Post> {
+    return this.http.get<Post>(`${this.POST_API}/${id}`, { headers: this.authHeaders() });
+  }
 
-    // Comments
-    getAllComments(): Observable<Comment[]> {
-        return this.http.get<Comment[]>(this.commentsUrl);
-    }
+  createPost(formData: FormData): Observable<Post> {
+    return this.http.post<Post>(this.POST_API, formData, { headers: this.authHeaders() });
+  }
 
-    getCommentsByPostId(postId: number): Observable<Comment[]> {
-        return this.http.get<Comment[]>(`${this.postsUrl}/${postId}/comments`);
-    }
+  reactToPost(postId: number): Observable<any> {
+    return this.http.post(`${this.POST_API}/${postId}/react`, {}, { headers: this.authHeaders() });
+  }
 
-    createComment(postId: number, content: string): Observable<Comment> {
-        return this.http.post<Comment>(`${this.postsUrl}/${postId}/comments`, { content });
-    }
+  deletePost(postId: number): Observable<any> {
+    return this.http.delete(`${this.POST_API}/${postId}`, { headers: this.authHeaders() });
+  }
 
-    deleteComment(commentId: number): Observable<void> {
-        return this.http.delete<void>(`${this.commentsUrl}/${commentId}`);
-    }
+  // ========================
+  // COMMENTS
+  // ========================
 
-    deleteCommentByPost(postId: number, commentId: number): Observable<void> {
-        return this.http.delete<void>(`${this.postsUrl}/${postId}/comments/${commentId}`);
-    }
+  getCommentsByPostId(postId: number): Observable<Comment[]> {
+    return this.http.get<Comment[]>(`${this.POST_API}/${postId}/comments`, { headers: this.authHeaders() });
+  }
+
+  createComment(postId: number, content: string): Observable<Comment> {
+    return this.http.post<Comment>(
+      `${this.POST_API}/${postId}/comments`,
+      { content },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  // 🔹 ADMIN METHODS
+
+  getAllComments(): Observable<Comment[]> {
+    return this.http.get<Comment[]>(this.COMMENT_API, { headers: this.authHeaders() });
+  }
+
+  deleteComment(id: number): Observable<any> {
+    return this.http.delete(`${this.COMMENT_API}/${id}`, { headers: this.authHeaders() });
+  }
 }

@@ -51,6 +51,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-chat-left-text"></i>
             <span>Forum</span>
           </a>
+             <a routerLink="/shop/productss" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Forum' : ''">
+            <i class="bi bi-chat-left-text"></i>
+            <span>Our products</span>
+          </a>
         </div>
 
         <!-- My Learning Section -->

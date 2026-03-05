@@ -3,5 +3,5 @@ export interface Comment {
     postId: number;
     userId: number;
     content: string;
-    commentDate: string; // ISO date string
-}
+    commentDate: string;
+  }

@@ -14,6 +14,10 @@ import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { ForumListComponent } from './features/forum/pages/forum-list/forum-list.component';
 import { PostDetailComponent } from './features/forum/pages/post-detail/post-detail.component';
+import { ProductListComponent } from './product-list/product-list.component';
+import { ProductDetailsComponent } from './product-list/product-details.component';
+import { CartComponent } from './product-list/cart.component';
+import { ProductsListComponent } from './product-list/products-list.component';
 
 export const routes: Routes = [
     // Auth routes (no layout - no navbar/footer)
@@ -37,7 +41,11 @@ export const routes: Routes = [
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
             { path: 'forum', component: ForumListComponent },
-            { path: 'forum/post/:id', component: PostDetailComponent }
+            { path: 'forum/post/:id', component: PostDetailComponent },
+            { path: 'shop/products', component: ProductListComponent },
+            { path: 'shop/productss', component: ProductsListComponent },
+            { path: 'shop/products/:id', component: ProductDetailsComponent },
+            { path: 'shop/cart', component: CartComponent },
         ]
     },
 
