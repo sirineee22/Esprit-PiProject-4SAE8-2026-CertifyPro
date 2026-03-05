@@ -183,19 +183,30 @@ interface CreateCertificationForm {
               </div>
             </div>
 
-            <!-- Duration (numbers only) -->
+            <!-- Duration (Value and Unit choice) -->
             <div class="field">
-              <label>Duration (hours)</label>
-              <div class="input-wrap">
-                <i class="bi bi-clock"></i>
-                <input
-                  type="number"
-                  placeholder="e.g. 40"
-                  [(ngModel)]="form.duration"
-                  name="duration"
-                  min="0"
-                  (keypress)="onlyNumbers($event)"
-                >
+              <label>Duration</label>
+              <div class="duration-group">
+                <div class="input-wrap">
+                  <i class="bi bi-clock"></i>
+                  <input
+                    type="number"
+                    placeholder="Value"
+                    [(ngModel)]="durationValue"
+                    name="durationValue"
+                    min="1"
+                    (keypress)="onlyNumbers($event)"
+                    (input)="updateDuration()"
+                  >
+                </div>
+                <div class="input-wrap unit-select">
+                  <select [(ngModel)]="durationUnit" name="durationUnit" (change)="updateDuration()">
+                    <option value="Hours">Hours</option>
+                    <option value="Days">Days</option>
+                    <option value="Weeks">Weeks</option>
+                    <option value="Months">Months</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -325,7 +336,8 @@ interface CreateCertificationForm {
           <div class="step-actions">
             <span></span>
             <button class="btn-next" (click)="goNextStep1()">
-              Next: Content <i class="bi bi-arrow-right"></i>
+              {{ isEditing ? 'Save & Return to Review' : 'Next: Content' }} 
+              <i class="bi" [class.bi-arrow-right]="!isEditing" [class.bi-check-circle]="isEditing"></i>
             </button>
           </div>
         </div>
@@ -444,7 +456,8 @@ interface CreateCertificationForm {
               <i class="bi bi-arrow-left"></i> Back
             </button>
             <button class="btn-next" (click)="nextStep()">
-              Next: Exam Details <i class="bi bi-arrow-right"></i>
+              {{ isEditing ? 'Save & Return to Review' : 'Next: Exam Details' }} 
+              <i class="bi" [class.bi-arrow-right]="!isEditing" [class.bi-check-circle]="isEditing"></i>
             </button>
           </div>
         </div>
@@ -471,21 +484,30 @@ interface CreateCertificationForm {
               <span class="field-hint" *ngIf="!touchedStep3 || form.examTitle">A descriptive title for this exam session</span>
             </div>
 
-            <!-- Exam Duration (numbers only) -->
+            <!-- Exam Duration (Value and Unit choice) -->
             <div class="field">
-              <label>Duration (minutes)</label>
-              <div class="input-wrap">
-                <i class="bi bi-hourglass-split"></i>
-                <input
-                  type="number"
-                  placeholder="e.g. 130"
-                  [(ngModel)]="form.examDurationMinutes"
-                  name="examDurationMinutes"
-                  min="1" max="600"
-                  (keypress)="onlyNumbers($event)"
-                >
+              <label>Exam Duration</label>
+              <div class="duration-group">
+                <div class="input-wrap">
+                  <i class="bi bi-hourglass-split"></i>
+                  <input
+                    type="number"
+                    placeholder="Value"
+                    [(ngModel)]="examDurationValue"
+                    name="examDurationValue"
+                    min="1"
+                    (keypress)="onlyNumbers($event)"
+                    (input)="updateExamDuration()"
+                  >
+                </div>
+                <div class="input-wrap unit-select">
+                  <select [(ngModel)]="examDurationUnit" name="examDurationUnit" (change)="updateExamDuration()">
+                    <option value="Minutes">Minutes</option>
+                    <option value="Hours">Hours</option>
+                  </select>
+                </div>
               </div>
-              <span class="field-hint">Whole number of minutes (1–600)</span>
+              <span class="field-hint">Total time allowed for the exam</span>
             </div>
 
             <!-- Passing Score (numbers only) -->
@@ -667,7 +689,8 @@ interface CreateCertificationForm {
               <i class="bi bi-arrow-left"></i> Back
             </button>
             <button class="btn-next" (click)="goNextStep3()">
-              Review &amp; Submit <i class="bi bi-arrow-right"></i>
+              {{ isEditing ? 'Save & Return to Review' : 'Review & Submit' }} 
+              <i class="bi" [class.bi-arrow-right]="!isEditing" [class.bi-check-circle]="isEditing"></i>
             </button>
           </div>
         </div>
@@ -681,7 +704,12 @@ interface CreateCertificationForm {
 
           <div class="review-grid">
             <div class="review-section">
-              <h3><i class="bi bi-info-circle"></i> Basic Info</h3>
+              <div class="review-header">
+                <h3><i class="bi bi-info-circle"></i> Basic Info</h3>
+                <button type="button" class="btn-edit-section" (click)="editStep(1)">
+                  <i class="bi bi-pencil-square"></i> Edit
+                </button>
+              </div>
               <div class="review-row"><span>Code</span><strong>{{ form.code }}</strong></div>
               <div class="review-row"><span>Name</span><strong>{{ form.name }}</strong></div>
               <div class="review-row"><span>Category</span><strong>{{ form.category || '—' }}</strong></div>
@@ -699,7 +727,12 @@ interface CreateCertificationForm {
             </div>
 
             <div class="review-section">
-              <h3><i class="bi bi-clipboard-data"></i> Exam Info</h3>
+              <div class="review-header">
+                <h3><i class="bi bi-clipboard-data"></i> Exam Info</h3>
+                <button type="button" class="btn-edit-section" (click)="editStep(3)">
+                  <i class="bi bi-pencil-square"></i> Edit
+                </button>
+              </div>
               <div class="review-row"><span>Exam Title</span><strong>{{ form.examTitle || '—' }}</strong></div>
               <div class="review-row"><span>Duration</span><strong>{{ form.examDurationMinutes ? form.examDurationMinutes + ' min' : '—' }}</strong></div>
               <div class="review-row"><span>Passing Score</span><strong>{{ form.examPassingScore ? form.examPassingScore + '%' : '—' }}</strong></div>
@@ -714,12 +747,22 @@ interface CreateCertificationForm {
             </div>
 
             <div class="review-section full-review">
-              <h3><i class="bi bi-text-paragraph"></i> Description</h3>
+              <div class="review-header">
+                <h3><i class="bi bi-text-paragraph"></i> Description</h3>
+                <button type="button" class="btn-edit-section" (click)="editStep(2)">
+                  <i class="bi bi-pencil-square"></i> Edit
+                </button>
+              </div>
               <p>{{ form.description || '—' }}</p>
             </div>
 
             <div class="review-section full-review" *ngIf="selectedTopics.length">
-              <h3><i class="bi bi-journal-bookmark"></i> Topics</h3>
+              <div class="review-header">
+                <h3><i class="bi bi-journal-bookmark"></i> Topics</h3>
+                <button type="button" class="btn-edit-section" (click)="editStep(2)">
+                  <i class="bi bi-pencil-square"></i> Edit
+                </button>
+              </div>
               <ul style="padding-left:1.5rem; margin:0.5rem 0 0"><li *ngFor="let t of selectedTopics">{{ t }}</li></ul>
             </div>
           </div>
@@ -1004,6 +1047,13 @@ interface CreateCertificationForm {
       box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
     }
 
+    /* Duration Selector Styling */
+    .duration-group {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 0.75rem;
+    }
+    
     .field-hint {
       font-size: 0.78rem;
       color: #94a3b8;
@@ -1183,6 +1233,42 @@ interface CreateCertificationForm {
     }
 
     .review-section h3 i { color: #3b82f6; }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+
+    .review-header h3 {
+      border-bottom: none !important;
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .btn-edit-section {
+      background: transparent;
+      border: 1px solid #e2e8f0;
+      color: #3b82f6;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s;
+    }
+
+    .btn-edit-section:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      transform: translateY(-1px);
+    }
 
     .review-row {
       display: flex;
@@ -1478,6 +1564,7 @@ interface CreateCertificationForm {
 })
 export class CreateCertificationComponent implements OnInit {
   currentStep = 1;
+  isEditing = false;
   isSubmitting = false;
   isGeneratingAi = false;
   isGeneratingQuiz = false;
@@ -1512,6 +1599,10 @@ export class CreateCertificationComponent implements OnInit {
   selectedPrereqs: string[] = [];
   isFree = false;
   isDragging = false;
+  durationValue: number = 40;
+  durationUnit: string = 'Hours';
+  examDurationValue: number = 120;
+  examDurationUnit: string = 'Minutes';
 
   form: CreateCertificationForm = {
     code: '',
@@ -1556,6 +1647,8 @@ export class CreateCertificationComponent implements OnInit {
     if (!user || user.role?.name !== 'TRAINER') {
       this.router.navigate(['/']);
     }
+    this.updateDuration(); // Set initial duration string
+    this.updateExamDuration(); // Set initial exam duration
   }
 
   generateAiDescription() {
@@ -1621,7 +1714,12 @@ export class CreateCertificationComponent implements OnInit {
       return; // stop — errors will show via *ngIf
     }
     this.touched = false;
-    this.currentStep++;
+    if (this.isEditing) {
+      this.currentStep = 4;
+      this.isEditing = false;
+    } else {
+      this.currentStep++;
+    }
   }
 
   /** Validate Step 3 required fields before advancing */
@@ -1631,11 +1729,26 @@ export class CreateCertificationComponent implements OnInit {
       return; // stop — errors will show via *ngIf
     }
     this.touchedStep3 = false;
-    this.currentStep++;
+    if (this.isEditing) {
+      this.currentStep = 4;
+      this.isEditing = false;
+    } else {
+      this.currentStep++;
+    }
   }
 
   nextStep() {
-    if (this.currentStep < 4) this.currentStep++;
+    if (this.isEditing) {
+      this.currentStep = 4;
+      this.isEditing = false;
+    } else if (this.currentStep < 4) {
+      this.currentStep++;
+    }
+  }
+
+  editStep(batch: number) {
+    this.isEditing = true;
+    this.currentStep = batch;
   }
 
   prevStep() {
@@ -1678,6 +1791,19 @@ export class CreateCertificationComponent implements OnInit {
       event.preventDefault(); return false;
     }
     return true;
+  }
+
+  updateDuration() {
+    this.form.duration = `${this.durationValue} ${this.durationUnit}`;
+  }
+
+  updateExamDuration() {
+    // Convert to minutes for storage if Hours is selected
+    if (this.examDurationUnit === 'Hours') {
+      this.form.examDurationMinutes = this.examDurationValue * 60;
+    } else {
+      this.form.examDurationMinutes = this.examDurationValue;
+    }
   }
 
   // ===== PDF File Upload logic =====
