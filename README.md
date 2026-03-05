@@ -1,174 +1,167 @@
-🎓 CertifyPro – Learning & Certification Platform
-<p align="center"> A modern learning and certification platform built with a microservices architecture. </p>
-📌 Overview
+# 🎓 CertifyPro – Learning & Certification Platform
+
+A modern learning and certification platform built with a microservices architecture.
+
+## 📌 Overview
 
 CertifyPro is a learning and certification platform that enables learners to access trainings, participate in events, interact through forums, communicate with trainers, and obtain certifications.
 
 The platform is designed using a microservices architecture to ensure scalability, modularity, and maintainability.
 
-This project was developed as part of the PIDEV – 3rd Year Engineering Program at Esprit School of Engineering – Tunisia
-Academic Year 2025–2026.
+*This project was developed as part of the PIDEV – 3rd Year Engineering Program at Esprit School of Engineering – Tunisia Academic Year 2025–2026.*
 
-🚀 Features
+---
 
-🔐 User authentication & authorization (JWT)
+## 🚀 Features
 
-✉️ Email verification & password reset
+### 🔐 User Management
+- User authentication & authorization (JWT)
+- Email verification & password reset
 
-🔑 Two-Factor Authentication (2FA)
+### 📚 Learning & Training
+- Training management system
+- E-commerce module for trainings
+- Certification management
 
-📚 Training management system
+### 📅 Events & Scheduling
+- Event management (workshops, webinars, bootcamps)
+- Event registration & personal agenda calendar
+- QR Code Event Pass
+- Online meeting integration (Zoom / Google Meet / Teams)
 
-📅 Event management (workshops, webinars, bootcamps)
+### 💬 Communication
+- Forum discussions
+- Messaging between users
+- Notifications and reminders
 
-🗓 Event registration & personal agenda calendar
+---
 
-🎟 QR Code Event Pass
+## 🛠 Tech Stack
 
-💬 Forum discussions
+### Frontend
+- **Angular** – Frontend framework
+- **TypeScript** – Typed JavaScript
+- **HTML / CSS** – Markup and styling
+- **Bootstrap** – Responsive design
+- **Angular Material** – UI components
 
-📩 Messaging between users
+### Backend
+- **Spring Boot** – Backend framework
+- **Spring Security** – Authentication & authorization
+- **JWT Authentication** – Secure token-based auth
+- **Spring Cloud** – Microservices management
+- **RESTful APIs** – Service communication
 
-🏆 Certification management
+### Database
+- **PostgreSQL** – Relational database
 
-🛒 E-commerce module for trainings
+### DevOps & Tools
+- **Git** & **GitHub** – Version control
+- **Docker** (optional) – Containerization
 
-🔔 Notifications and reminders
+---
 
-🎥 Online meeting integration (Zoom / Google Meet / Teams)
+## 🏗 Architecture
 
-🛠 Tech Stack
-Frontend
+The platform follows a **Microservices Architecture**.
 
-Angular
+### Core Services
 
-TypeScript
+| Service | Responsibility |
+|---------|----------------|
+| **API Gateway** | Central entry point for all client requests |
+| **Discovery Server (Eureka)** | Service registration and discovery |
+| **User Service** | Authentication, user management and security |
+| **Training Service** | Training and course management |
+| **Event Service** | Event creation, registration and agenda management |
+| **Forum Service** | Community discussions |
+| **Messaging Service** | Communication between users |
+| **Certification Service** | Certificate generation and management |
+| **E-Commerce Service** | Online purchasing of trainings |
+| **Notification Service** | Email notifications and reminders |
 
-HTML / CSS
+All services communicate through REST APIs and are registered using **Eureka Service Discovery**.
 
-Bootstrap
+---
 
-Angular Material
-
-Backend
-
-Spring Boot
-
-Spring Security
-
-JWT Authentication
-
-Spring Cloud (Microservices)
-
-RESTful APIs
-
-Database
-
-PostgreSQL
-
-DevOps & Tools
-
-Git
-
-GitHub
-
-Docker (optional)
-
-🏗 Architecture
-
-The platform follows a Microservices Architecture.
-
-Core Services
-
-API Gateway
-Central entry point for all client requests
-
-Discovery Server (Eureka)
-Service registration and discovery
-
-Business Services
-
-User Service
-Authentication, user management and security
-
-Training Service
-Training and course management
-
-Event Service
-Event creation, registration and agenda management
-
-Forum Service
-Community discussions
-
-Messaging Service
-Communication between users
-
-Certification Service
-Certificate generation and management
-
-E-Commerce Service
-Online purchasing of trainings
-
-Notification Service
-Email notifications and reminders
-
-All services communicate through REST APIs and are registered using Eureka Service Discovery.
-
-📂 Project Structure
+## 📂 Project Structure
 certifypro
 │
-├── frontend/                 # Angular application
+├── frontend/ # Angular application
+│ ├── src/
+│ ├── angular.json
+│ └── package.json
 │
 ├── backend/
-│   ├── api-gateway
-│   ├── discovery-server
-│   ├── user-service
-│   ├── training-service
-│   ├── event-service
-│   ├── forum-service
-│   ├── messaging-service
-│   ├── certification-service
-│   ├── ecommerce-service
-│   └── notification-service
+│ ├── api-gateway/
+│ ├── discovery-server/
+│ ├── user-service/
+│ ├── training-service/
+│ ├── event-service/
+│ ├── forum-service/
+│ ├── messaging-service/
+│ ├── certification-service/
+│ ├── ecommerce-service/
+│ └── notification-service/
 │
 └── README.md
-👨‍💻 Contributors
 
-Sirine Dahmane
+---
 
-Khalil Houari
+## 👨‍💻 Contributors
 
-Rania Kalai
+- **Sirine Dahmane**
+- **Khalil Houari**
+- **Rania Kalai**
+- **Mohamed Ali Saadaoui**
+- **Nesrine Romdhane**
+- **Ammar**
 
-Mohamed Ali Saadaoui
+---
 
-Nesrine Romdhane
+## 🎓 Academic Context
 
-Ammar
+- **Developed at:** Esprit School of Engineering – Tunisia
+- **Program:** PIDEV – 3rd Year Engineering Program
+- **Academic Year:** 2025–2026
 
-🎓 Academic Context
+---
 
-Developed at Esprit School of Engineering – Tunisia
+## ⚙️ Getting Started
 
-PIDEV – 3rd Year Engineering Program
-Academic Year 2025–2026
+### Prerequisites
+- Java 11+
+- Node.js & npm
+- PostgreSQL
+- Maven
 
-⚙️ Getting Started
-Clone the repository
-git clone https://github.com/username/project-name.git
-cd project-name
-Run Backend
-cd backend
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/username/certifypro.git
+cd certifypro
+Run Backend Services
+
+bash
+# Start Discovery Server first
+cd backend/discovery-server
 mvn spring-boot:run
+
+# Start API Gateway
+cd ../api-gateway
+mvn spring-boot:run
+
+# Start other services in separate terminals
+cd ../user-service
+mvn spring-boot:run
+# Repeat for other services
 Run Frontend
+
+bash
 cd frontend
 npm install
 ng serve
 
-Application URLs
-
-Frontend: http://localhost:4200
-API Gateway: http://localhost:8081
 🙏 Acknowledgments
-
-This project was developed as part of the PIDEV course at Esprit School of Engineering – Tunisia.
+This project was developed as part of the PIDEV course at Esprit School of Engineering – Tunisia. Special thanks to our instructors and supervisors for their guidance throughout this academic project.
