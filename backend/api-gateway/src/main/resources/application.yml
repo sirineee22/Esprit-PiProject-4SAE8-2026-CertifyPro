@@ -6,11 +6,15 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        # When downstream services also add CORS headers, the browser rejects duplicate values.
+        # This keeps only the first occurrence.
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"
+            allowedOriginPatterns:
+              - "*"
             allowedMethods:
               - GET
               - POST
@@ -36,6 +40,14 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+        - id: forum-service
+          uri: lb://FORUM-SERVICE
+          predicates:
+            - Path=/api/forum/**,/uploads/posts/**
+        - id: ecommerce-service
+          uri: lb://ECOMMERCE-SERVICE
+          predicates:
+            - Path=/api/products/**,/api/orders/**
 
 eureka:
   client:

@@ -1,0 +1,99 @@
+<div class="management-container">
+  <div class="header-section">
+    <h1>Forum Management</h1>
+    <p>Monitor and moderate community discussions</p>
+  </div>
+
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-icon posts">
+        <i class="bi bi-chat-square-text"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{posts.length}}</span>
+        <span class="stat-label">Total Posts</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon comments">
+        <i class="bi bi-chat-dots"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{allComments.length}}</span>
+        <span class="stat-label">Total Comments</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button [class.active]="activeTab === 'posts'" (click)="activeTab = 'posts'">Posts</button>
+    <button [class.active]="activeTab === 'comments'" (click)="activeTab = 'comments'">Comments</button>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span>{{errorMessage}}</span>
+    <button (click)="loadData()">Retry</button>
+  </div>
+
+  <div class="content-table" *ngIf="!errorMessage">
+    <div *ngIf="activeTab === 'posts' && posts.length === 0" class="empty-state">
+      <i class="bi bi-chat-left-dots"></i>
+      <p>No posts found in the forum.</p>
+    </div>
+
+    <table *ngIf="activeTab === 'posts' && posts.length > 0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let post of posts">
+          <td>#{{post.id}}</td>
+          <td class="title-cell">{{post.title}}</td>
+          <td>{{getUserName(post.userId)}}</td>
+          <td>{{formatDate(post.createdAt)}}</td>
+          <td class="actions">
+            <button class="btn-delete" (click)="deletePost(post.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table *ngIf="activeTab === 'comments'">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Post ID</th>
+          <th>Content</th>
+          <th>Author</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let comment of allComments">
+          <td>#{{comment.id}}</td>
+          <td>#{{comment.postId}}</td>
+          <td class="content-cell">{{comment.content}}</td>
+          <td>{{getUserName(comment.userId)}}</td>
+          <td>{{formatDate(comment.commentDate)}}</td>
+          <td class="actions">
+            <button class="btn-delete" (click)="deleteComment(comment.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+   
+</div>
