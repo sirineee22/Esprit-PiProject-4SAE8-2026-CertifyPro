@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -31,7 +31,7 @@ export class OfferFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private jobOfferService: JobOfferService,
-        private ngZone: NgZone
+        private cdr: ChangeDetectorRef
     ) {
         this.initForm();
     }
@@ -77,40 +77,39 @@ export class OfferFormComponent implements OnInit {
 
     loadOfferData(id: string): void {
         this.loading = true;
+        this.cdr.markForCheck();
         this.jobOfferService.getEmployerOffer(id).subscribe({
             next: (res) => {
-                this.ngZone.run(() => {
-                    const offer = res.data;
-                    this.offerForm.patchValue({
-                        title: offer.title,
-                        description: offer.description,
-                        location: offer.location,
-                        contractType: offer.contractType,
-                        experienceLevel: offer.experienceLevel,
-                        sector: offer.sector,
-                        remote: offer.remote,
-                        salaryMin: offer.salaryMin,
-                        salaryMax: offer.salaryMax,
-                        deadline: offer.deadline ? offer.deadline.substring(0, 10) : '',
-                        status: offer.status
-                    });
-
-                    if (offer.requiredSkills && offer.requiredSkills.length > 0) {
-                        this.skillsArray.clear();
-                        offer.requiredSkills.forEach(skill => {
-                            this.skillsArray.push(this.fb.control(skill));
-                        });
-                    }
-                    this.loading = false;
+                const offer = res.data;
+                this.offerForm.patchValue({
+                    title: offer.title,
+                    description: offer.description,
+                    location: offer.location,
+                    contractType: offer.contractType,
+                    experienceLevel: offer.experienceLevel,
+                    sector: offer.sector,
+                    remote: offer.remote,
+                    salaryMin: offer.salaryMin,
+                    salaryMax: offer.salaryMax,
+                    deadline: offer.deadline ? offer.deadline.substring(0, 10) : '',
+                    status: offer.status
                 });
+
+                if (offer.requiredSkills && offer.requiredSkills.length > 0) {
+                    this.skillsArray.clear();
+                    offer.requiredSkills.forEach(skill => {
+                        this.skillsArray.push(this.fb.control(skill));
+                    });
+                }
+                this.loading = false;
+                this.cdr.markForCheck();
             },
             error: (err) => {
-                this.ngZone.run(() => {
-                    console.error(err);
-                    this.loading = false;
-                    Swal.fire('Erreur', 'Impossible de charger les données de l\'offre.', 'error');
-                    this.router.navigate(['/employer/jobs']);
-                });
+                console.error(err);
+                this.loading = false;
+                Swal.fire('Erreur', 'Impossible de charger les données de l\'offre.', 'error');
+                this.router.navigate(['/employer/jobs']);
+                this.cdr.markForCheck();
             }
         });
     }
@@ -137,18 +136,16 @@ export class OfferFormComponent implements OnInit {
 
         request$.subscribe({
             next: () => {
-                this.ngZone.run(() => {
-                    this.submitting = false;
-                    Swal.fire('Succès', `Offre ${this.isEditMode ? 'mise à jour' : 'créée'} avec succès !`, 'success');
-                    this.router.navigate(['/employer/jobs']);
-                });
+                this.submitting = false;
+                Swal.fire('Succès', `Offre ${this.isEditMode ? 'mise à jour' : 'créée'} avec succès !`, 'success');
+                this.router.navigate(['/employer/jobs']);
+                this.cdr.markForCheck();
             },
             error: (err) => {
-                this.ngZone.run(() => {
-                    console.error(err);
-                    this.submitting = false;
-                    Swal.fire('Erreur', 'Une erreur est survenue.', 'error');
-                });
+                console.error(err);
+                this.submitting = false;
+                Swal.fire('Erreur', 'Une erreur est survenue.', 'error');
+                this.cdr.markForCheck();
             }
         });
     }

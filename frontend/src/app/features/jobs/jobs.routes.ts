@@ -5,46 +5,24 @@ import { OfferFormComponent } from '../../pages/jobs/pages/employer/offer-form/o
 import { OfferApplicationsComponent } from '../../pages/jobs/pages/employer/offer-applications/offer-applications.component';
 import { MyApplicationsComponent } from '../../pages/jobs/pages/candidate/my-applications/my-applications.component';
 import { AdminStatsComponent } from '../../pages/jobs/pages/admin/admin-stats/admin-stats.component';
-import { JobRoleGuard } from '../../pages/jobs/core/guards/job-role.guard';
 
-// Exported feature routes for Jobs Module
 export const jobsRoutes: Routes = [
-    // Public
+    // ─── Public ───────────────────────────────────────────
     { path: '', component: JobSearchComponent },
 
-    // Employer
-    {
-        path: 'employer/jobs',
-        component: EmployerOffersComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }  // Commented out to ease manual testing or use actual auth
-    },
-    {
-        path: 'employer/jobs/new',
-        component: OfferFormComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
-    {
-        path: 'employer/jobs/edit/:id',
-        component: OfferFormComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
-    {
-        path: 'employer/jobs/:id/applications',
-        component: OfferApplicationsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
+    // ─── Employer ─────────────────────────────────────────
+    { path: 'employer/jobs', component: EmployerOffersComponent },
+    { path: 'employer/jobs/new', component: OfferFormComponent },
+    { path: 'employer/jobs/edit/:id', component: OfferFormComponent },
+    { path: 'employer/jobs/:id/applications', component: OfferApplicationsComponent },
 
-    // Candidate
-    {
-        path: 'candidate/applications',
-        component: MyApplicationsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'LEARNER' }
-    },
+    // ─── Employer : toutes les candidatures reçues ─────────
+    // (réutilise MyApplications côté employeur ou crée un composant dédié)
+    { path: 'employer/applications', component: OfferApplicationsComponent },
 
-    // Admin
-    {
-        path: 'admin/stats',
-        component: AdminStatsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'ADMIN' }
-    }
+    // ─── Candidate ────────────────────────────────────────
+    { path: 'candidate/applications', component: MyApplicationsComponent },
+
+    // ─── Admin ────────────────────────────────────────────
+    { path: 'admin/stats', component: AdminStatsComponent },
 ];

@@ -22,6 +22,7 @@ import { User } from '../../models/user.model';
       </div>
 
       <nav class="nav">
+
         <div class="nav-section">
           <span class="section-label">MAIN</span>
           <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-link">
@@ -41,7 +42,7 @@ import { User } from '../../models/user.model';
             <span>User Management</span>
           </a>
         </div>
-        
+
         <div class="nav-section">
           <span class="section-label">PLATFORM</span>
           <a class="nav-link disabled">
@@ -53,6 +54,32 @@ import { User } from '../../models/user.model';
             <span>Certifications</span>
           </a>
         </div>
+
+        <!-- ─── JOBS MODULE ─── -->
+        <div class="nav-section">
+          <span class="section-label">JOBS MODULE</span>
+
+          <a routerLink="/admin/jobs/dashboard" routerLinkActive="active" class="nav-link nav-link-jobs">
+            <i class="bi bi-briefcase-fill"></i>
+            <span>Jobs Dashboard</span>
+          </a>
+
+          <a routerLink="/admin/jobs/offers" routerLinkActive="active" class="nav-link nav-link-jobs">
+            <i class="bi bi-list-ul"></i>
+            <span>Toutes les Offres</span>
+          </a>
+
+          <a routerLink="/admin/jobs/applications" routerLinkActive="active" class="nav-link nav-link-jobs">
+            <i class="bi bi-file-earmark-person-fill"></i>
+            <span>Toutes les Candidatures</span>
+          </a>
+
+          <a routerLink="/admin/jobs/stats" routerLinkActive="active" class="nav-link nav-link-jobs">
+            <i class="bi bi-bar-chart-fill"></i>
+            <span>Statistiques</span>
+          </a>
+        </div>
+
       </nav>
 
       <div class="sidebar-footer">
@@ -83,9 +110,11 @@ import { User } from '../../models/user.model';
       --primary-glow: rgba(245, 158, 11, 0.15);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
+      --jobs-accent: #7c3aed;
+      --jobs-accent-glow: rgba(124, 58, 237, 0.15);
     }
 
-    .sidebar-content { 
+    .sidebar-content {
       padding: 2rem 1.25rem;
       height: 100vh;
       display: flex;
@@ -93,6 +122,7 @@ import { User } from '../../models/user.model';
       background: var(--sidebar-bg);
       color: var(--text-main);
       box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
     }
 
     .logo-section {
@@ -102,6 +132,7 @@ import { User } from '../../models/user.model';
       padding-bottom: 2rem;
       margin-bottom: 2rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
     }
 
     .logo-icon {
@@ -134,11 +165,11 @@ import { User } from '../../models/user.model';
       letter-spacing: 0.05em;
     }
 
-    .nav { 
+    .nav {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1.75rem;
       overflow-y: auto;
     }
 
@@ -152,81 +183,95 @@ import { User } from '../../models/user.model';
       font-size: 0.65rem;
       font-weight: 800;
       color: #475569;
-      letter-spacing: 0.15em;   
+      letter-spacing: 0.15em;
       padding: 0 0.75rem;
       margin-bottom: 0.5rem;
     }
 
-    .nav-link { 
+    .nav-link {
       display: flex;
-      align-items: center;     
+      align-items: center;
       gap: 0.875rem;
-      padding: 0.875rem 1rem;  
-      text-decoration: none;   
+      padding: 0.875rem 1rem;
+      text-decoration: none;
       color: var(--text-muted);
-      border-radius: 12px;     
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);    
-      font-weight: 500;        
+      border-radius: 12px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      cursor: pointer;
     }
 
-    .nav-link i {
-      font-size: 1.2rem;       
-      transition: transform 0.2s;
-    }
+    .nav-link i { font-size: 1.1rem; transition: transform 0.2s; }
 
-    .nav-link:hover:not(.disabled) { 
+    .nav-link:hover:not(.disabled) {
       background: var(--sidebar-hover);
       color: white;
       transform: translateX(4px);
     }
 
-    .nav-link.active { 
+    .nav-link.active {
       background: linear-gradient(135deg, var(--primary), #d97706);
       color: white;
-      font-weight: 600;        
+      font-weight: 600;
       box-shadow: 0 4px 15px var(--primary-glow);
     }
 
-    .nav-link.active i {
-      transform: scale(1.1);
-    }
+    .nav-link.active i { transform: scale(1.1); }
 
     .nav-link.disabled {
       opacity: 0.3;
-      cursor: not-allowed;     
+      cursor: not-allowed;
+    }
+
+    /* ── Jobs links get purple accent ── */
+    .nav-link-jobs:hover:not(.disabled) {
+      background: rgba(124, 58, 237, 0.1);
+      color: #c4b5fd;
+    }
+
+    .nav-link-jobs.active {
+      background: linear-gradient(135deg, var(--jobs-accent), #4f46e5);
+      color: white;
+      box-shadow: 0 4px 15px var(--jobs-accent-glow);
+    }
+
+    /* Jobs section divider feel */
+    .nav-section:last-of-type {
+      border-top: 1px solid rgba(124, 58, 237, 0.15);
+      padding-top: 1.25rem;
+      margin-top: 0.25rem;
     }
 
     .sidebar-footer {
-      padding-top: 1.5rem;     
+      padding-top: 1.5rem;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 1rem;        
+      margin-top: 1rem;
       display: flex;
-      flex-direction: column;  
+      flex-direction: column;
       gap: 1.25rem;
+      flex-shrink: 0;
     }
 
     .admin-profile-card {
       display: flex;
-      align-items: center;     
+      align-items: center;
       gap: 0.875rem;
-      padding: 1rem;        
+      padding: 1rem;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 14px;     
+      border-radius: 14px;
     }
 
-    .admin-avatar-wrapper {
-      position: relative;
-    }
+    .admin-avatar-wrapper { position: relative; }
 
     .admin-avatar {
       width: 42px;
       height: 42px;
       background: linear-gradient(135deg, #334155, #1e293b);
-      border-radius: 10px;      
+      border-radius: 10px;
       display: flex;
-      align-items: center;     
-      justify-content: center; 
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
       color: var(--primary);
       font-size: 1.25rem;
@@ -243,28 +288,25 @@ import { User } from '../../models/user.model';
       border-radius: 50%;
     }
 
-    .admin-details {
-      flex: 1;
-      min-width: 0;
-    }
+    .admin-details { flex: 1; min-width: 0; }
 
     .admin-name {
-      font-size: 0.9rem;       
-      font-weight: 700;        
+      font-size: 0.9rem;
+      font-weight: 700;
       color: white;
       margin: 0;
-      white-space: nowrap;     
-      overflow: hidden;        
-      text-overflow: ellipsis; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .admin-role {
-      font-size: 0.7rem;      
+      font-size: 0.7rem;
       color: var(--primary);
       margin: 0;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;  
+      letter-spacing: 0.05em;
     }
 
     .logout-btn {
@@ -273,33 +315,29 @@ import { User } from '../../models/user.model';
       align-items: center;
       justify-content: center;
       gap: 0.75rem;
-      padding: 0.875rem;  
+      padding: 0.875rem;
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.2);
       color: #f87171;
-      border-radius: 12px;     
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.2s;    
-      font-weight: 700;        
+      transition: all 0.2s;
+      font-weight: 700;
       font-size: 0.9rem;
     }
 
-    .logout-btn:hover {        
+    .logout-btn:hover {
       background: #ef4444;
       color: white;
       border-color: #ef4444;
       box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
     }
   `]
-
 })
 export class SidebarComponent implements OnInit {
   currentUser: User | null = null;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) { }
+  constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();

@@ -99,7 +99,7 @@
                         </div>
                     </li>
                     <li class="list-group-item bg-transparent text-muted px-0 text-center"
-                        *ngIf="!stats.offersByContractType?.length">
+                        *ngIf="!stats.offersByContractType.length">
                         Aucune donnée
                     </li>
                 </ul>
@@ -118,7 +118,7 @@
                         </div>
                     </li>
                     <li class="list-group-item bg-transparent text-muted px-0 text-center"
-                        *ngIf="!stats.offersBySector?.length">
+                        *ngIf="!stats.offersBySector.length">
                         Aucune donnée
                     </li>
                 </ul>
@@ -149,7 +149,7 @@
                                 <td><span class="glass-badge badge-secondary">{{ offer.status }}</span></td>
                                 <td class="text-muted">{{ offer.createdAt | date:'short' }}</td>
                             </tr>
-                            <tr *ngIf="!stats.recentOffers?.length">
+                            <tr *ngIf="!stats.recentOffers.length">
                                 <td colspan="5" class="text-center text-muted py-4">Aucune offre récente</td>
                             </tr>
                         </tbody>

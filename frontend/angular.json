@@ -24,31 +24,29 @@
       "architect": {
         "build": {
           "builder": "@angular/build:application",
-          "options": {
-            "browser": "src/main.ts",
-            "tsConfig": "tsconfig.app.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              },
-              {
-                "glob": "**/*",
-                "input": "src/assets",
-                "output": "assets"
-              }
-            ],
-            "styles": [
-              "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "node_modules/remixicon/fonts/remixicon.css",
-              "node_modules/boxicons/css/boxicons.min.css",
-              "node_modules/intl-tel-input/build/css/intlTelInput.css",
-              "src/styles.css"
-            ],
-            "scripts": [
-              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
-            ]
-          },
+         "options": {
+  "browser": "src/main.ts",
+  "tsConfig": "tsconfig.app.json",
+  "assets": [
+    {
+      "glob": "**/*",
+      "input": "public"
+    },
+    {
+      "glob": "**/*",
+      "input": "src/assets",
+      "output": "assets"
+    }
+  ],
+  "styles": [
+    "node_modules/bootstrap/dist/css/bootstrap.min.css",
+    "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+    "src/styles.css"
+  ],
+  "scripts": [
+    "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+  ]
+},
           "configurations": {
             "production": {
               "budgets": [

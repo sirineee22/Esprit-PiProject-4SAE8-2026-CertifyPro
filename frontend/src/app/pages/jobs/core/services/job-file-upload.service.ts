@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class JobFileUploadService {
 
-    private apiUrl = 'http://localhost:8082/api/jobs/upload';
+    private apiUrl = 'http://localhost:8089/api/jobs/upload';
 
     constructor(private http: HttpClient) { }
 

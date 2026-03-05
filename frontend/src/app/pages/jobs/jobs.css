@@ -1,25 +1,29 @@
 /* src/app/pages/jobs/jobs.css */
 /* DARK GLASS SAAS DESIGN SYSTEM */
 
-:host {
-    display: block;    --job-bg-dark: #0a0a0f;
+/* ✅ Variables globales pour le thème jobs (accessibles partout via @import) */
+:root {
+    --job-bg-dark: #0a0a0f;
     --job-card-bg: rgba(255, 255, 255, 0.04);
     --job-card-border: rgba(255, 255, 255, 0.08);
     --job-accent: #7c3aed;
-    /* Violet */
     --job-accent-hover: #4f46e5;
-    /* Indigo */
     --job-text-main: #f8fafc;
     --job-text-muted: #94a3b8;
     --job-glass-blur: blur(12px);
-
     --job-status-success: #10b981;
     --job-status-warning: #f59e0b;
     --job-status-danger: #ef4444;
     --job-status-info: #3b82f6;
-
     --job-font-heading: 'Cabinet Grotesk', sans-serif;
     --job-font-body: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ✅ :host assure que le composant lui‑même a le bon fond */
+:host {
+    display: block;
+    background-color: var(--job-bg-dark);
+    min-height: 100vh;
 }
 
 .job-module-container {
@@ -28,164 +32,190 @@
     font-family: var(--job-font-body);
     min-height: 100vh;
     padding: 2rem;
+}
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        font-family: var(--job-font-heading);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-    }
+.job-module-container h1,
+.job-module-container h2,
+.job-module-container h3,
+.job-module-container h4,
+.job-module-container h5,
+.job-module-container h6 {
+    font-family: var(--job-font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--job-text-main);
+}
 
-    /* Glass Morphism Card Base */
-    .glass-card {
-        background: var(--job-card-bg);
-        backdrop-filter: var(--job-glass-blur);
-        -webkit-backdrop-filter: var(--job-glass-blur);
-        border: 1px solid var(--job-card-border);
-        border-radius: 16px;
-        padding: 1.5rem;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+/* ─── Glass Morphism Card ─────────────────────────────── */
+.job-module-container .glass-card {
+    background: var(--job-card-bg);
+    backdrop-filter: var(--job-glass-blur);
+    -webkit-backdrop-filter: var(--job-glass-blur);
+    border: 1px solid var(--job-card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
 
-        &:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(124, 58, 237, 0.3);
-            background: rgba(255, 255, 255, 0.06);
-        }
-    }
+.job-module-container .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(124, 58, 237, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+}
 
-    /* Buttons */
-    .btn-glass-primary {
-        background: linear-gradient(135deg, var(--job-accent), var(--job-accent-hover));
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+/* ─── Buttons ─────────────────────────────────────────── */
+.job-module-container .btn-glass-primary {
+    background: linear-gradient(135deg, var(--job-accent), var(--job-accent-hover));
+    color: white !important;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+}
 
-        &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
-            filter: brightness(1.1);
-        }
+.job-module-container .btn-glass-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+    filter: brightness(1.1);
+    color: white !important;
+}
 
-        &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-    }
+.job-module-container .btn-glass-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
 
-    .btn-glass-secondary {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--job-text-main);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        transition: all 0.2s ease;
+.job-module-container .btn-glass-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--job-text-main);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-    }
+.job-module-container .btn-glass-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
 
-    /* Form Controls */
-    .glass-input {
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid var(--job-card-border);
-        color: var(--job-text-main);
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        width: 100%;
-        transition: all 0.2s ease;
+/* ─── Form Controls ───────────────────────────────────── */
+.job-module-container .glass-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--job-card-border);
+    color: var(--job-text-main);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    transition: all 0.2s ease;
+}
 
-        &:focus {
-            outline: none;
-            border-color: var(--job-accent);
-            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-        }
+.job-module-container .glass-input:focus {
+    outline: none;
+    border-color: var(--job-accent);
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+}
 
-        &::placeholder {
-            color: var(--job-text-muted);
-        }
-    }
+.job-module-container .glass-input::placeholder {
+    color: var(--job-text-muted);
+}
 
-    /* Badges */
-    .glass-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        backdrop-filter: blur(4px);
+/* ─── Badges ──────────────────────────────────────────── */
+.job-module-container .glass-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(4px);
+}
 
-        &.badge-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--job-status-success);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
+.job-module-container .glass-badge.badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--job-status-success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
 
-        &.badge-primary {
-            background: rgba(124, 58, 237, 0.1);
-            color: #a78bfa;
-            border: 1px solid rgba(124, 58, 237, 0.2);
-        }
+.job-module-container .glass-badge.badge-primary {
+    background: rgba(124, 58, 237, 0.1);
+    color: #a78bfa;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+}
 
-        &.badge-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--job-text-main);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+.job-module-container .glass-badge.badge-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--job-text-main);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-        &.badge-warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--job-status-warning);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
+.job-module-container .glass-badge.badge-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--job-status-warning);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
 
-        &.badge-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--job-status-danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
+.job-module-container .glass-badge.badge-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--job-status-danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
 
-        &.badge-info {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--job-status-info);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-    }
+.job-module-container .glass-badge.badge-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--job-status-info);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
 
-    /* Custom Scrollbar for inner elements */
-    .custom-scrollbar {
-        &::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
+/* ─── Scrollbar ───────────────────────────────────────── */
+.job-module-container .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
 
-        &::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-        }
+.job-module-container .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
 
-        &::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+.job-module-container .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
 
-            &:hover {
-                background: rgba(255, 255, 255, 0.3);
-            }
-        }
-    }
+.job-module-container .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ─── Surcharges Bootstrap ────────────────────────────── */
+.job-module-container .text-muted {
+    color: #94a3b8 !important;
+}
+
+.job-module-container .border-top {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.job-module-container .border-bottom {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.job-module-container .text-white {
+    color: #f8fafc !important;
+}
+
+.job-module-container a.text-white:hover {
+    color: #a78bfa !important;
 }
