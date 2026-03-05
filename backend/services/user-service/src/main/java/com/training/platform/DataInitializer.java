@@ -33,6 +33,9 @@ public class DataInitializer implements CommandLineRunner {
                 roleRepository.save(new Role(null, roleName));
             }
         }
+        if (roleRepository.findByName("EMPLOYER").isEmpty()) {
+            roleRepository.save(new Role(null, "EMPLOYER"));
+        }
 
         // Init Admin User (created on first run if not present)
         if (userRepository.findByEmailIgnoreCase("admin@platform.com").isEmpty()) {

@@ -267,6 +267,11 @@
   color: #1e40af;
 }
 
+.user-role-badge.employer {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
 .dropdown-divider {
   height: 1px;
   background: #f1f5f9;

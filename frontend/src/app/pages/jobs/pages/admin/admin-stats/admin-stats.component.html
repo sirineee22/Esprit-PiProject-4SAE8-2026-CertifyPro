@@ -1,0 +1,161 @@
+<div class="job-module-container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">Tableau de bord Administrateur</h2>
+            <p class="text-muted mb-0">Vue globale sur le module Carrières & Emplois.</p>
+        </div>
+        <div>
+            <button class="btn btn-glass-secondary" (click)="loadStats()" [disabled]="loading">
+                <i class="ri-refresh-line align-bottom me-1" [class.mdi-spin]="loading"></i> Actualiser
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading && stats" class="row g-4">
+        <!-- Chiffres Clés -->
+        <h5 class="text-white border-bottom border-light pb-2 mb-0 mt-4">Statistiques Générales</h5>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="glass-card">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-primary bg-opacity-10 text-primary rounded fs-3">
+                            <i class="ri-briefcase-line"></i>
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Total Offres</p>
+                        <h4 class="mb-0 text-white"><span class="counter-value">{{ stats.totalOffers }}</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="glass-card">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-success bg-opacity-10 text-success rounded fs-3">
+                            <i class="ri-check-double-line"></i>
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Offres Publiées</p>
+                        <h4 class="mb-0 text-white"><span class="counter-value">{{ stats.publishedOffers }}</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="glass-card">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-warning bg-opacity-10 text-warning rounded fs-3">
+                            <i class="ri-draft-line"></i>
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Brouillons</p>
+                        <h4 class="mb-0 text-white"><span class="counter-value">{{ stats.draftOffers }}</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="glass-card">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-info bg-opacity-10 text-info rounded fs-3">
+                            <i class="ri-file-list-3-line"></i>
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Candidatures</p>
+                        <h4 class="mb-0 text-white"><span class="counter-value">{{ stats.totalApplications }}</span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Répartitions -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="text-white mb-4">Répartition par Contrat</h5>
+                <ul class="list-group list-group-flush border-dashed px-3">
+                    <li class="list-group-item bg-transparent text-white px-0"
+                        *ngFor="let item of stats.offersByContractType">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>{{ item.contractType }}</span>
+                            <span class="badge bg-soft-primary text-primary rounded-pill">{{ item.count }}</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-transparent text-muted px-0 text-center"
+                        *ngIf="!stats.offersByContractType?.length">
+                        Aucune donnée
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="text-white mb-4">Répartition par Secteur</h5>
+                <ul class="list-group list-group-flush border-dashed px-3">
+                    <li class="list-group-item bg-transparent text-white px-0"
+                        *ngFor="let item of stats.offersBySector">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>{{ item.sector }}</span>
+                            <span class="badge bg-soft-info text-info rounded-pill">{{ item.count }}</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-transparent text-muted px-0 text-center"
+                        *ngIf="!stats.offersBySector?.length">
+                        Aucune donnée
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Offres Récentes -->
+        <h5 class="text-white border-bottom border-light pb-2 mb-0 mt-5">5 Dernières Offres</h5>
+        <div class="col-12 mt-3">
+            <div class="glass-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle mb-0">
+                        <thead class="bg-soft-light text-muted">
+                            <tr>
+                                <th>Titre</th>
+                                <th>Employeur</th>
+                                <th>Contrat</th>
+                                <th>Statut</th>
+                                <th>Date Création</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let offer of stats.recentOffers"
+                                style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td class="text-white fw-medium">{{ offer.title }}</td>
+                                <td class="text-muted">{{ offer.employerName }}</td>
+                                <td><span class="glass-badge badge-primary">{{ offer.contractType }}</span></td>
+                                <td><span class="glass-badge badge-secondary">{{ offer.status }}</span></td>
+                                <td class="text-muted">{{ offer.createdAt | date:'short' }}</td>
+                            </tr>
+                            <tr *ngIf="!stats.recentOffers?.length">
+                                <td colspan="5" class="text-center text-muted py-4">Aucune offre récente</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
