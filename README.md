@@ -1,245 +1,43 @@
-CertifyPro – Learning & Certification Platform
-Overview
+🎓 CertifyPro – Learning & Certification Platform
+<p align="center"> A modern learning and certification platform built with a microservices architecture. </p>
+📌 Overview
 
-CertifyPro is a learning and certification platform that enables learners to access courses, participate in events, interact through forums, and manage their certifications.
+CertifyPro is a learning and certification platform that enables learners to access trainings, participate in events, interact through forums, communicate with trainers, and obtain certifications.
 
-The platform is built using a microservices architecture to ensure scalability, modularity, and maintainability.
+The platform is designed using a microservices architecture to ensure scalability, modularity, and maintainability.
 
-This project was developed as part of the PIDEV – 3rd Year Engineering Program at Esprit School of Engineering – Tunisia (Academic Year 2025–2026).
+This project was developed as part of the PIDEV – 3rd Year Engineering Program at Esprit School of Engineering – Tunisia
+Academic Year 2025–2026.
 
-Features
+🚀 Features
 
-User authentication and authorization (JWT)
+🔐 User authentication & authorization (JWT)
 
-Email verification and password reset
+✉️ Email verification & password reset
 
-Two-Factor Authentication (2FA)
+🔑 Two-Factor Authentication (2FA)
 
-Event management system (workshops, webinars, bootcamps)
+📚 Training management system
 
-Event registration and personal agenda calendar
+📅 Event management (workshops, webinars, bootcamps)
 
-QR Code Event Pass for event participation
+🗓 Event registration & personal agenda calendar
 
-Online meeting integration (Zoom / Google Meet / Teams)
+🎟 QR Code Event Pass
 
-Interactive forum discussions
+💬 Forum discussions
 
-Certification management system
+📩 Messaging between users
 
-Event reminders and notifications
+🏆 Certification management
 
-Tech Stack
-Frontend
+🛒 E-commerce module for trainings
 
-Angular
+🔔 Notifications and reminders
 
-TypeScript
+🎥 Online meeting integration (Zoom / Google Meet / Teams)
 
-HTML / CSS
-
-Angular Material
-
-Backend
-
-Spring Boot
-
-Spring Security
-
-JWT Authentication
-
-Spring Cloud (Microservices)
-
-RESTful APIs
-
-Database
-
-MySQL
-
-H2 (development environment)
-
-DevOps / Tools
-
-Git
-
-GitHub
-
-Docker (optional)
-
-Architecture
-
-The platform follows a microservices architecture.
-
-Main services include:
-
-API Gateway – Central entry point for all requests
-
-Discovery Server (Eureka) – Service registration and discovery
-
-User Service – Authentication, user management, security
-
-Event Service – Event creation, registration, agenda management
-
-Forum Service – Community discussions and posts
-
-Notification Service – Email notifications and reminders
-
-All services communicate through REST APIs.
-
-Project Structure
-certifypro/
-│
-├── frontend/                 # Angular application
-│
-├── backend/
-│   ├── api-gateway
-│   ├── discovery-server
-│   ├── user-service
-│   ├── event-service
-│   ├── forum-service
-│   └── notification-service
-│
-└── README.md
-Contributors
-
-Student Name – Backend & Architecture
-
-Student Name – Frontend Development
-
-Student Name – Database & Integration
-
-Academic Context
-
-Developed at Esprit School of Engineering – Tunisia
-
-PIDEV – 3rd Year Engineering Program
-Academic Year 2025–2026
-
-Getting Started
-Clone the repository
-git clone https://github.com/username/project-name.git
-cd project-name
-Run Backend Services
-cd backend
-mvn spring-boot:run
-Run Frontend
-cd frontend
-npm install
-ng serve
-
-Application URLs:
-
-Frontend: http://localhost:4200
-API Gateway: http://localhost:8081
-Acknowledgments
-
-This project was developed as part of the PIDEV course at Esprit School of Engineering – Tunisia.
-
-✅ Avec ça ton README est 100% conforme aux exigences académiques.
-
-💡 Petit conseil pour ton repo GitHub :
-
-Description du repo :
-
-Developed at Esprit School of Engineering – Tunisia | PIDEV Academic Project | Angular, Spring Boot, Microservices | 2025–2026
-
-Topics :
-
-esprit-school-of-engineering
-academic-project
-esprit-pidev
-2025-2026
-angular
-spring-boot
-microservices
-
-Si tu veux, je peux aussi te montrer comment faire un README qui fait très “startup / GitHub pro” (avec badges, architecture diagram, screenshots de ton interface). Ça impressionne beaucoup les profs.
-
-API Gateway – Central entry point for all requests
-
-Discovery Server (Eureka) – Service registration and discovery
-
-User Service – Authentication, user management, security
-
-Event Service – Event creation, registration, agenda management
-
-Forum Service – Community discussions and posts messagerie service / training servuice / certification service/ e commerce service and tech stack Angular
-
-TypeScript
-
-HTML / CSS bootstrqp  
-
-Angular MaterialBackend
-
-Spring Boot
-
-Spring Security
-
-JWT Authentication
-
-Spring Cloud (Microservices)
-
-RESTful APIs database: postgresql DevOps / Tools
-
-Git
-
-GitHub
-
-Docker (optional)Architecture
-
-The platform follows a microservices architecture.
-
-Main services include:
-
-API Gateway – Central entry point for all requests
-
-Discovery Server (Eureka) – Service registration and discovery Contributors sirine dahmane , khalil houari , rania kz kalai modamed ali saadaou , nesrine romdhane , ammar Academic Context
-
-Developed at Esprit School of Engineering – Tunisia
-
-PIDEV – 3rd Year Engineering Program
-Academic Year 2025–2026 like this
-
-Oui 👍 tu es sur la bonne idée, mais il faut juste organiser proprement ton texte dans le README pour que ça soit clair et professionnel. Voici ta version corrigée et bien structurée avec tous tes services et technologies.
-
-CertifyPro – Learning & Certification Platform
-Overview
-
-CertifyPro is a learning and certification platform that allows learners to access trainings, participate in events, communicate with trainers and other learners, and obtain certifications.
-
-The platform is built using a microservices architecture to ensure scalability, modularity, and maintainability.
-
-This project was developed as part of the PIDEV – 3rd Year Engineering Program at Esprit School of Engineering – Tunisia (Academic Year 2025–2026).
-
-Features
-
-User authentication and authorization (JWT)
-
-Email verification and password reset
-
-Two-Factor Authentication (2FA)
-
-Training management system
-
-Event management (workshops, webinars, bootcamps)
-
-Forum discussions
-
-Messaging between users
-
-Certification management
-
-E-commerce module for selling trainings
-
-Event registration and personal agenda calendar
-
-QR Code Event Pass
-
-Online meeting integration (Zoom / Google Meet / Teams)
-
-Notification and reminder system
-
-Tech Stack
+🛠 Tech Stack
 Frontend
 
 Angular
@@ -268,7 +66,7 @@ Database
 
 PostgreSQL
 
-DevOps / Tools
+DevOps & Tools
 
 Git
 
@@ -276,35 +74,65 @@ GitHub
 
 Docker (optional)
 
-Architecture
+🏗 Architecture
 
-The platform follows a microservices architecture.
+The platform follows a Microservices Architecture.
 
-Main services include:
+Core Services
 
-API Gateway – Central entry point for all client requests
+API Gateway
+Central entry point for all client requests
 
-Discovery Server (Eureka) – Service registration and discovery
+Discovery Server (Eureka)
+Service registration and discovery
 
-User Service – Authentication, user management, security
+Business Services
 
-Training Service – Training and course management
+User Service
+Authentication, user management and security
 
-Event Service – Event creation, registration and agenda management
+Training Service
+Training and course management
 
-Forum Service – Community discussions and posts
+Event Service
+Event creation, registration and agenda management
 
-Messaging Service – Communication between users
+Forum Service
+Community discussions
 
-Certification Service – Certificate generation and management
+Messaging Service
+Communication between users
 
-E-Commerce Service – Online purchasing of trainings
+Certification Service
+Certificate generation and management
 
-Notification Service – Email notifications and reminders
+E-Commerce Service
+Online purchasing of trainings
 
-Services communicate through REST APIs and are registered in Eureka Service Discovery.
+Notification Service
+Email notifications and reminders
 
-Contributors
+All services communicate through REST APIs and are registered using Eureka Service Discovery.
+
+📂 Project Structure
+certifypro
+│
+├── frontend/                 # Angular application
+│
+├── backend/
+│   ├── api-gateway
+│   ├── discovery-server
+│   ├── user-service
+│   ├── training-service
+│   ├── event-service
+│   ├── forum-service
+│   ├── messaging-service
+│   ├── certification-service
+│   ├── ecommerce-service
+│   └── notification-service
+│
+└── README.md
+👨‍💻 Contributors
 
 Sirine Dahmane
 
@@ -318,14 +146,14 @@ Nesrine Romdhane
 
 Ammar
 
-Academic Context
+🎓 Academic Context
 
 Developed at Esprit School of Engineering – Tunisia
 
 PIDEV – 3rd Year Engineering Program
 Academic Year 2025–2026
 
-Getting Started
+⚙️ Getting Started
 Clone the repository
 git clone https://github.com/username/project-name.git
 cd project-name
@@ -337,10 +165,10 @@ cd frontend
 npm install
 ng serve
 
-Application URLs:
+Application URLs
 
 Frontend: http://localhost:4200
 API Gateway: http://localhost:8081
-Acknowledgments
+🙏 Acknowledgments
 
 This project was developed as part of the PIDEV course at Esprit School of Engineering – Tunisia.
