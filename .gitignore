@@ -16,6 +16,9 @@ dist/
 # ENV
 .env
 
+# Uploaded files (e.g. profile images)
+uploads/
+
 # OS
 .DS_Store
 Thumbs.db

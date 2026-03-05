@@ -1,0 +1,54 @@
+<div class="container">
+  <h1>{{ isEdit ? 'Edit Event' : 'New Event' }}</h1>
+  @if (loadError) {
+    <p class="error">{{ loadError }}</p>
+    <a routerLink="/events/trainer">Back</a>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form card">
+      <label>
+        Title <input type="text" formControlName="title" />
+      </label>
+      <label>
+        Description <textarea formControlName="description" rows="3"></textarea>
+      </label>
+      <label>
+        Type
+        <select formControlName="type">
+          @for (t of types; track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Mode
+        <select formControlName="mode">
+          @for (m of modes; track m) {
+            <option [value]="m">{{ m }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Start <input type="datetime-local" formControlName="dateStart" />
+      </label>
+      <label>
+        End <input type="datetime-local" formControlName="dateEnd" />
+      </label>
+      <label>
+        Meeting link <input type="url" formControlName="meetingLink" />
+      </label>
+      <label>
+        Location <input type="text" formControlName="location" />
+      </label>
+      <label>
+        Max number of participants <input type="number" formControlName="maxParticipants" min="1" />
+      </label>
+      @if (submitError) {
+        <p class="error">{{ submitError }}</p>
+      }
+      <div class="actions">
+        <button type="submit" [disabled]="loading">{{ isEdit ? 'Save' : 'Create' }}</button>
+        <a routerLink="/events/trainer" class="cancel">Cancel</a>
+      </div>
+    </form>
+  }
+</div>

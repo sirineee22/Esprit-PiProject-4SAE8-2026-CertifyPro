@@ -4,19 +4,39 @@ import com.training.platform.dto.UpdateUserRequest;
 import com.training.platform.entity.User;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.UserRepository;
+import com.training.platform.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
+        "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
+    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 
     @Autowired
     private UserRepository userRepository;
@@ -26,6 +46,29 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Value("${app.upload.profile-dir:uploads/profile}")
+    private String profileImageUploadDirName;
+
+    private Path getProfileImageUploadDir() {
+        return Paths.get(profileImageUploadDirName).toAbsolutePath();
+    }
+
+    private Optional<Long> getCurrentUserId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (details instanceof JwtAuthenticationFilter.JwtUserDetails u) {
+            return Optional.of(u.userId);
+        }
+        return Optional.empty();
+    }
+
+    private boolean isAdmin() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (details instanceof JwtAuthenticationFilter.JwtUserDetails u) {
+            return "ADMIN".equals(u.role);
+        }
+        return false;
+    }
 
     @GetMapping
     public List<User> getAllUsers() {
@@ -37,6 +80,72 @@ public class UserController {
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/batch")
+    public List<User> getUsersByIds(@RequestParam("ids") List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return userRepository.findAllById(ids);
+    }
+
+    @GetMapping("/profile-image/{filename}")
+    public ResponseEntity<Resource> serveProfileImage(@PathVariable String filename) {
+        if (filename == null || filename.isBlank() || filename.contains("..")) {
+            return ResponseEntity.badRequest().build();
+        }
+        Path file = getProfileImageUploadDir().resolve(filename);
+        if (!Files.isRegularFile(file)) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = new FileSystemResource(file);
+        String contentType = "image/jpeg";
+        if (filename.endsWith(".png")) contentType = "image/png";
+        else if (filename.endsWith(".gif")) contentType = "image/gif";
+        else if (filename.endsWith(".webp")) contentType = "image/webp";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CACHE_CONTROL, "max-age=3600")
+                .body(resource);
+    }
+
+    @PostMapping("/{id}/profile-image")
+    public ResponseEntity<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        Optional<Long> currentId = getCurrentUserId();
+        if (currentId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!currentId.get().equals(id) && !isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only upload your own profile image");
+        }
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("No file provided");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+            return ResponseEntity.badRequest().body("Allowed types: JPEG, PNG, GIF, WebP");
+        }
+        if (file.getSize() > MAX_IMAGE_SIZE) {
+            return ResponseEntity.badRequest().body("File too large (max 5 MB)");
+        }
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        User user = userOpt.get();
+        String ext = contentType.equals("image/jpeg") ? "jpg" : contentType.equals("image/png") ? "png" : contentType.equals("image/gif") ? "gif" : "webp";
+        String filename = id + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12) + "." + ext;
+        try {
+            Path dir = getProfileImageUploadDir();
+            Files.createDirectories(dir);
+            Path target = dir.resolve(filename);
+            file.transferTo(target.toFile());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save file");
+        }
+        String urlPath = "/api/users/profile-image/" + filename;
+        user.setProfileImageUrl(urlPath);
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping
@@ -80,6 +189,9 @@ public class UserController {
                     }
                     if (request.getPhoneNumber() != null) {
                         user.setPhoneNumber(request.getPhoneNumber());
+                    }
+                    if (request.getProfileImageUrl() != null) {
+                        user.setProfileImageUrl(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl().trim());
                     }
                     if (request.getActive() != null) {
                         user.setActive(request.getActive());

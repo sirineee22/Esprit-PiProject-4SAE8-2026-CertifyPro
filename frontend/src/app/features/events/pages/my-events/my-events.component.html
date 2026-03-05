@@ -1,0 +1,25 @@
+<div class="container">
+  <h1>My registrations</h1>
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (loading) {
+    <p>Loading...</p>
+  }
+  @if (!loading && events.length === 0) {
+    <p class="empty">You are not registered for any event.</p>
+    <a routerLink="/events">See events</a>
+  }
+  @if (!loading && events.length > 0) {
+    <div class="grid">
+      @for (e of events; track e.id) {
+        <div class="card">
+          <h3><a [routerLink]="['/events', e.id]">{{ e.title }}</a></h3>
+          <p class="meta">{{ e.type }} · {{ e.mode }}</p>
+          <p class="date">{{ formatDate(e.dateStart) }}</p>
+          <a [routerLink]="['/events', e.id]" class="link">See details</a>
+        </div>
+      }
+    </div>
+  }
+</div>
