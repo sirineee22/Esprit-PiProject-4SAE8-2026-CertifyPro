@@ -1,0 +1,92 @@
+<div class="event-form-modal-backdrop" (click)="cancel.emit()">
+  <div class="event-form-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ event ? 'Modifier l\'événement' : 'Créer un événement' }}</h2>
+      <button type="button" class="btn btn-cancel" style="padding: 0.5rem; width: auto;" (click)="cancel.emit()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="submit()" id="eventForm">
+        <div class="form-group">
+          <label class="form-label">Titre <span class="req">*</span></label>
+          <input type="text" formControlName="title" class="form-control" placeholder="Titre de l'événement" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea formControlName="description" class="form-control" rows="4"
+            placeholder="Description détaillée..."></textarea>
+        </div>
+
+        <div class="row">
+          <div class="form-group">
+            <label class="form-label">Type <span class="req">*</span></label>
+            <select formControlName="type" class="form-control">
+              @for (t of types; track t) {
+              <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mode <span class="req">*</span></label>
+            <select formControlName="mode" class="form-control">
+              @for (m of modes; track m) {
+              <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="form-group">
+            <label class="form-label">Début <span class="req">*</span></label>
+            <input type="datetime-local" formControlName="dateStart" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fin <span class="req">*</span></label>
+            <input type="datetime-local" formControlName="dateEnd" class="form-control" />
+          </div>
+        </div>
+
+        @if (form.get('mode')?.value === 'ONLINE' || form.get('mode')?.value === 'HYBRID') {
+        <div class="form-group">
+          <label class="form-label">Lien de réunion <span class="req">*</span></label>
+          <div class="input-group">
+            <input type="url" formControlName="meetingLink" class="form-control" placeholder="https://zoom.us/..." />
+          </div>
+        </div>
+        }
+
+        @if (form.get('mode')?.value === 'ONSITE' || form.get('mode')?.value === 'HYBRID') {
+        <div class="form-group">
+          <label class="form-label">Lieu <span class="req">*</span></label>
+          <input type="text" formControlName="location" class="form-control" placeholder="Adresse complète" />
+        </div>
+        }
+
+        <div class="form-group">
+          <label class="form-label">Nombre max de participants <span class="req">*</span></label>
+          <input type="number" formControlName="maxParticipants" class="form-control" min="1" placeholder="Ex: 50" />
+        </div>
+
+        @if (submitError) {
+        <div class="error-msg">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ submitError }}
+        </div>
+        }
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-cancel" (click)="cancel.emit()">Annuler</button>
+      <button type="submit" form="eventForm" class="btn btn-save" [disabled]="loading || form.invalid">
+        @if (loading) {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        }
+        {{ event ? 'Enregistrer les modifications' : 'Créer l\'événement' }}
+      </button>
+    </div>
+  </div>
+</div>

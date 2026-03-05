@@ -1,0 +1,191 @@
+<div class="create-event-page">
+    <div class="container py-5">
+        <div class="header-section mb-4">
+            <a routerLink="/events" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Back to events
+            </a>
+            <h1 class="page-title mt-3">{{ editEvent ? 'Edit' : 'Create' }} an event</h1>
+            <p class="text-muted">Fill in the information below to schedule your activity.</p>
+        </div>
+
+        <div class="form-card shadow-sm">
+            <form [formGroup]="form" (ngSubmit)="submit()">
+                <div class="section">
+                    <h3 class="section-title">Basic information</h3>
+                    <div class="form-group mb-4">
+                        <label class="form-label">Event title <span class="req">*</span></label>
+                        <input type="text" formControlName="title" class="form-control"
+                            placeholder="Ex: Advanced Angular Workshop" />
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Description</label>
+                        <textarea formControlName="description" class="form-control" rows="5"
+                            placeholder="Describe the content and objectives..."></textarea>
+                    </div>
+                </div>
+
+                <div class="section mt-4">
+                    <h3 class="section-title">Type and Mode</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Type <span class="req">*</span></label>
+                            <select formControlName="type" class="form-select">
+                                @for (t of types; track t) {
+                                <option [value]="t">{{ t }}</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mode <span class="req">*</span></label>
+                            <select formControlName="mode" class="form-select">
+                                @for (m of modes; track m) {
+                                <option [value]="m">{{ m }}</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section mt-4">
+                    <h3 class="section-title">Scheduling</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start date and time <span class="req">*</span></label>
+                            <input type="datetime-local" formControlName="dateStart" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End date and time <span class="req">*</span></label>
+                            <input type="datetime-local" formControlName="dateEnd" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section mt-4">
+                    <h3 class="section-title">Logistics</h3>
+                    @if (form.get('mode')?.value === 'ONLINE' || form.get('mode')?.value === 'HYBRID') {
+                    <div class="form-group mb-4">
+                        <label class="form-label">Meeting link (Zoom, Teams, Meet...) <span
+                                class="req">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" formControlName="meetingLink" class="form-control"
+                                placeholder="https://..." />
+                        </div>
+                    </div>
+                    }
+
+                    @if (form.get('mode')?.value === 'ONSITE' || form.get('mode')?.value === 'HYBRID') {
+                    <div class="form-group mb-4 position-relative">
+                        <label class="form-label">Exact location <span class="req">*</span></label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                            <input type="text" formControlName="location" class="form-control"
+                                placeholder="Type to search (e.g., Tunis, Sousse...)"
+                                (input)="onLocationInput($event)" (focus)="onLocationFocus()" (blur)="onLocationBlur()"
+                                autocomplete="off" />
+
+                            @if (suggestions.length > 0 || (showDefaultCities && defaultCities.length > 0)) {
+                            <div class="suggestions-list shadow-sm">
+                                @if (showDefaultCities) {
+                                @for (item of defaultCities; track item.display_name) {
+                                <div class="suggestion-item city-item" (click)="selectLocation(item)">
+                                    <i class="bi bi-geo-alt-fill me-2 text-primary"></i> {{ item.display_name }}
+                                    <span class="badge bg-light text-dark ms-2">City</span>
+                                </div>
+                                }
+                                } @else {
+                                @for (item of suggestions; track item.place_id) {
+                                <div class="suggestion-item" (click)="selectLocation(item)">
+                                    <i
+                                        class="bi bi-{{ item.type === 'city' || item.type === 'administrative' ? 'geo-alt-fill text-primary' : 'geo-alt' }} me-2"></i>
+                                    {{ item.display_name }}
+                                </div>
+                                }
+                                }
+                            </div>
+                            } @else if (noResultsFound) {
+                            <div class="suggestions-list shadow-sm">
+                                <div class="suggestion-item no-click text-muted">
+                                    <i class="bi bi-search me-2"></i> No location found in Tunisia for "{{
+                                    form.get('location')?.value }}"
+                                </div>
+                            </div>
+                            }
+
+                            @if (searchingLocation) {
+                            <div class="position-absolute end-0 top-50 translate-middle-y me-5">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            </div>
+                            }
+                        </div>
+                        <div id="preview-map" class="shadow-sm rounded-3 mt-3"
+                            style="height: 250px; width: 100%; border: 1.5px solid #e2e8f0; z-index: 1;"></div>
+                        <small class="text-muted d-block mt-2">Click on a suggestion to update the
+                            map.</small>
+                    </div>
+                    }
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Participant limit <span class="req">*</span></label>
+                        <input type="number" formControlName="maxParticipants" class="form-control" min="1"
+                            max="1000" />
+                        <small class="text-muted">Maximum number of places available.</small>
+                    </div>
+                </div>
+
+                <div class="section mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="section-title mb-0">Event program</h3>
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addProgramItem()">
+                            <i class="bi bi-plus-circle me-1"></i> Add a step
+                        </button>
+                    </div>
+
+                    <div formArrayName="program" class="program-container">
+                        @for (item of programControls.controls; track $index) {
+                        <div [formGroupName]="$index" class="program-row mb-3 p-3 rounded-3 border bg-light shadow-sm">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Time</label>
+                                    <input type="time" formControlName="time" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small mb-1">Activity</label>
+                                    <input type="text" formControlName="activity" class="form-control form-control-sm"
+                                        placeholder="Ex: Introduction to the Framework" />
+                                </div>
+                                <div class="col-md-1 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 mb-1"
+                                        (click)="removeProgramItem($index)" [disabled]="programControls.length <= 1">
+                                        <i class="bi bi-trash3 fs-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                    <small class="text-muted">Define the different stages of your activity for the
+                        participants.</small>
+                </div>
+
+                @if (submitError) {
+                <div class="alert alert-danger mt-4 d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {{ submitError }}
+                </div>
+                }
+
+                <div class="form-footer mt-5 pt-4 border-top d-flex justify-content-end gap-3">
+                    <button type="button" class="btn btn-outline-secondary px-5" routerLink="/events">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-5" [disabled]="loading || form.invalid">
+                        @if (loading) {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        {{ editEvent ? 'Save the changes' : 'Publish the event' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

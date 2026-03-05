@@ -1,0 +1,97 @@
+<div class="container">
+  <h1>Events (admin)</h1>
+
+  <section class="stats-section">
+    @if (statsLoading && events.length === 0) {
+      <p class="stats-loading">Loading statistics...</p>
+    }
+    @if (displayStats) {
+      @if (statsError) {
+        <p class="stats-fallback">
+          Statistics calculated from the list.
+          <button type="button" class="link-btn" (click)="loadStats()">Retry API</button>
+        </p>
+      }
+      <div class="stats-grid">
+        <div class="stat-card stat-total">
+          <span class="stat-value">{{ displayStats.totalEvents }}</span>
+          <span class="stat-label">Total events</span>
+        </div>
+        <div class="stat-card stat-upcoming">
+          <span class="stat-value">{{ displayStats.upcoming }}</span>
+          <span class="stat-label">Upcoming</span>
+        </div>
+        <div class="stat-card stat-done">
+          <span class="stat-value">{{ displayStats.done }}</span>
+          <span class="stat-label">Finished</span>
+        </div>
+        <div class="stat-card stat-cancelled">
+          <span class="stat-value">{{ displayStats.cancelled }}</span>
+          <span class="stat-label">Cancelled</span>
+        </div>
+        <div class="stat-card stat-registrations">
+          <span class="stat-value">{{ displayStats.totalRegistrations }}</span>
+          <span class="stat-label">Registrations</span>
+        </div>
+      </div>
+      <div class="stats-breakdown">
+        <div class="breakdown-box">
+          <h3>By type</h3>
+          <ul>
+            @for (e of byTypeEntries(); track e.key) {
+              <li><span class="breakdown-key">{{ e.key }}</span> <span class="breakdown-value">{{ e.value }}</span></li>
+            }
+          </ul>
+        </div>
+        <div class="breakdown-box">
+          <h3>By mode</h3>
+          <ul>
+            @for (e of byModeEntries(); track e.key) {
+              <li><span class="breakdown-key">{{ e.key }}</span> <span class="breakdown-value">{{ e.value }}</span></li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+  </section>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (loading) {
+    <p>Loading...</p>
+  }
+  @if (!loading && events.length === 0) {
+    <p class="empty">No events.</p>
+  }
+  @if (!loading && events.length > 0) {
+    <table class="table card">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Mode</th>
+          <th>Start</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of events; track e.id) {
+          <tr>
+            <td><a [routerLink]="['/events', e.id]">{{ e.title }}</a></td>
+            <td>{{ e.type }}</td>
+            <td>{{ e.mode }}</td>
+            <td>{{ formatDate(e.dateStart) }}</td>
+            <td>{{ e.status }}</td>
+            <td>
+              <button type="button" class="btn-delete" (click)="delete(e.id)" [disabled]="deletingId === e.id">
+                Delete
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

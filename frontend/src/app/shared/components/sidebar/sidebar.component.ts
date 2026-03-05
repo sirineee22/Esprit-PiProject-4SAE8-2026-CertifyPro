@@ -40,6 +40,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-people-fill"></i>
             <span>User Management</span>
           </a>
+          <a routerLink="/admin/events" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-calendar-event"></i>
+            <span>Events</span>
+          </a>
         </div>
         
         <div class="nav-section">

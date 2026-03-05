@@ -1,0 +1,252 @@
+<div class="detail-container py-4">
+  @if (loading) {
+  <div class="loading-state">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p>Loading event...</p>
+  </div>
+  } @else if (error && !event) {
+  <div class="error-state">
+    <i class="bi bi-exclamation-octagon fs-1 text-danger"></i>
+    <h3>Oops!</h3>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" routerLink="/events">Back to list</button>
+  </div>
+  } @else if (event) {
+  <div class="detail-grid">
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="event-header">
+        <div class="header-top">
+          <span class="type-badge">{{ typeLabel(event.type) }}</span>
+          <span class="mode-badge" [class.online]="event.mode === 'ONLINE'">
+            <i class="bi bi-{{ event.mode === 'ONLINE' ? 'broadcast' : 'geo-alt' }}"></i>
+            {{ event.mode === 'ONLINE' ? 'En ligne — Zoom' : ('Présentiel — ' + (event.location || 'Tunis, Lac 2')) }}
+          </span>
+          @if ((event.participantCount || 0) >= event.maxParticipants) {
+          <span class="status-badge full">FULL</span>
+          } @else {
+          <span class="status-badge open">OPEN</span>
+          }
+        </div>
+        <h1 class="event-title">{{ event.title }}</h1>
+        <div class="event-quick-info">
+          <div class="info-item">
+            <i class="bi bi-calendar-check"></i>
+            <span>{{ formatDate(event.dateStart) }}</span>
+          </div>
+          <div class="info-item">
+            <i class="bi bi-people"></i>
+            <span>{{ event.maxParticipants }} maximum participants</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-section">
+        <h3>Description</h3>
+        <p class="description-text">{{ event.description || 'No description provided.' }}</p>
+      </section>
+
+      <section class="content-section">
+        <h3>Location</h3>
+        @if (event.mode === 'ONLINE') {
+        <div class="online-box p-4 bg-light rounded-3 text-center border">
+          <i class="bi bi-broadcast fs-1 mb-3 d-block text-primary"></i>
+          <p>This event takes place entirely <strong>online</strong>.</p>
+          @if (registrationStatus === 'REGISTERED') {
+          <div class="alert alert-info py-2 m-0">
+            <i class="bi bi-info-circle me-2"></i>
+            The connection link (Zoom/Meet) is available in the sidebar.
+          </div>
+          } @else if (registrationStatus === 'WAITLISTED') {
+          <div class="alert alert-warning py-2 m-0">
+            <i class="bi bi-hourglass-split me-2"></i>
+            You are on the waitlist. The link will appear if a spot becomes available.
+          </div>
+          } @else {
+          <p class="text-muted m-0">Register to get the confidential access link.</p>
+          }
+        </div>
+        } @else {
+        <div class="location-details">
+          <p class="mb-3">
+            <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+            <strong>Location:</strong> {{ event.location || 'Tunis, Lac 2' }}
+          </p>
+          <div class="map-wrapper shadow-sm rounded-3 overflow-hidden border">
+            <div id="map" style="height: 350px; width: 100%; border-radius: 12px; z-index: 1;"></div>
+          </div>
+        </div>
+        }
+      </section>
+
+      <section class="content-section">
+        <h3>Program</h3>
+        <div class="program-list">
+          @for (item of event.program; track $index) {
+          <div class="program-item">
+            <span class="time">{{ item.time }}</span>
+            <span class="activity">{{ item.activity }}</span>
+          </div>
+          }
+        </div>
+      </section>
+
+      <section class="content-section reviews-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="m-0">Reviews and Ratings</h3>
+          <div class="avg-rating" *ngIf="reviewsCount > 0">
+            <i class="bi bi-star-fill text-warning me-1"></i>
+            <strong>{{ averageRating }} / 5</strong>
+            <span class="text-muted ms-1">({{ reviewsCount }} reviews)</span>
+          </div>
+        </div>
+
+        @if (canReview) {
+        <div class="add-review-card shadow-sm mb-5">
+          <h5>Share your experience</h5>
+          <div class="star-rating-input mb-3">
+            @for (star of [1,2,3,4,5]; track star) {
+            <i class="bi" [class.bi-star-fill]="userReview.rating >= star" [class.bi-star]="userReview.rating < star"
+              (click)="setRating(star)"></i>
+            }
+          </div>
+          <textarea class="form-control mb-3" [(ngModel)]="userReview.comment"
+            placeholder="What did you think of this event?" rows="3"></textarea>
+          <button class="btn btn-primary w-100" (click)="submitReview()"
+            [disabled]="isSubmittingReview || !userReview.comment.trim()">
+            {{ isSubmittingReview ? 'Submitting...' : 'Publish my review' }}
+          </button>
+        </div>
+        }
+
+        <div class="reviews-list">
+          @if (loadingReviews) {
+          <div class="text-center py-5">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <p class="text-muted small mt-2">Loading reviews...</p>
+          </div>
+          } @else {
+          @for (r of reviews; track r.id) {
+          <div class="review-item">
+            <div class="review-header">
+              <div class="user-info">
+                <span class="user-avatar">{{ (r.learnerFirstName.charAt(0) || '') + (r.learnerLastName.charAt(0) || '') }}</span>
+                <span class="user-name">{{ r.learnerFirstName }} {{ r.learnerLastName }}</span>
+              </div>
+              <div class="stars">
+                @for (s of [1,2,3,4,5]; track s) {
+                <i class="bi" [class.bi-star-fill]="r.rating >= s" [class.bi-star]="r.rating < s"></i>
+                }
+              </div>
+            </div>
+            <p class="comment">{{ r.comment }}</p>
+            <span class="review-date">{{ formatDateShort(r.createdAt || '') }}</span>
+          </div>
+          } @empty {
+          <div class="empty-reviews text-center py-4 text-muted border rounded-3">
+            <i class="bi bi-chat-left-text fs-2 mb-2 d-inline-block"></i>
+            <p>Be the first to give your opinion!</p>
+          </div>
+          }
+          }
+        </div>
+      </section>
+
+
+    </div>
+
+    <!-- Sidebar Actions & Chat -->
+    <aside class="sidebar">
+      <div class="action-card">
+        @if (registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED') {
+        <div class="registered-banner"
+          [style.background-color]="registrationStatus === 'ATTENDED' ? '#e0f2fe' : '#ecfdf5'"
+          [style.color]="registrationStatus === 'ATTENDED' ? '#0369a1' : '#065f46'">
+          <i class="bi bi-{{ registrationStatus === 'ATTENDED' ? 'patch-check' : 'check-circle-fill' }}"></i>
+          {{ registrationStatus === 'ATTENDED' ? 'You have participated' : 'You are registered!' }}
+        </div>
+        @if (registrationStatus === 'REGISTERED') {
+        <button class="btn btn-join w-100 mb-3" (click)="joinMeeting()"
+          [title]="event.meetingLink || 'Link coming soon'">
+          <i class="bi bi-camera-video me-2"></i> Join meeting
+        </button>
+        }
+        <button class="btn btn-outline-danger w-100" (click)="unregister()"
+          [disabled]="unregistering || registrationStatus === 'ATTENDED'">
+          Unregister
+        </button>
+        } @else if (registrationStatus === 'WAITLISTED') {
+        <div class="waitlist-banner">
+          <i class="bi bi-hourglass-split"></i>
+          On waitlist
+        </div>
+        <button class="btn btn-outline-danger w-100 mt-3" (click)="unregister()" [disabled]="unregistering">
+          Leave waitlist
+        </button>
+        } @else if (isPastEvent) {
+        <div class="finished-banner">
+          <i class="bi bi-calendar-x"></i>
+          This event is over
+        </div>
+        } @else {
+        @if ((event.participantCount || 0) >= event.maxParticipants) {
+        <button class="btn btn-warning w-100 btn-lg btn-waitlist" (click)="register()" [disabled]="registering">
+          Join waitlist
+        </button>
+        } @else {
+        <button class="btn btn-primary w-100 btn-lg" (click)="register()" [disabled]="registering">
+          Register for the event
+        </button>
+        }
+        }
+
+        <button class="btn btn-outline-success w-100 mt-3" (click)="shareOnWhatsApp()">
+          <i class="bi bi-whatsapp me-2"></i> Share on WhatsApp
+        </button>
+      </div>
+
+      @if ((registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED') && isLearner && user) {
+      <div class="event-pass shadow-lg mt-3">
+        <div class="pass-header">
+          <div class="pass-logo">Certify<span>Pro</span></div>
+          <div class="pass-label">Official Pass</div>
+        </div>
+
+        <div class="pass-body">
+          <div class="pass-event-info">
+            <span class="small-label">Event</span>
+            <div class="pass-title">{{ event.title }}</div>
+            <span class="small-label mt-2">Holder</span>
+            <div class="pass-user">{{ user.firstName }} {{ user.lastName }}</div>
+          </div>
+
+          <div class="pass-qr-section">
+            <div class="qr-box">
+              <img [src]="qrCodeUrl" alt="Verification QR" />
+              <div class="qr-scan-line"></div>
+            </div>
+            <div class="pass-code">{{ verificationCode }}</div>
+          </div>
+        </div>
+
+        <div class="pass-footer">
+          <i class="bi bi-shield-check me-2"></i>
+          Guaranteed & Verified by CertifyPro
+        </div>
+      </div>
+      }
+
+      <div class="trainer-card shadow-sm">
+        <div class="trainer-avatar">{{ (event.trainerFirstName?.charAt(0) || '') + (event.trainerLastName?.charAt(0)
+          ||
+          '') }}</div>
+        <div class="trainer-meta">
+          <span class="label">Hosted by</span>
+          <span class="name">{{ event.trainerFirstName }} {{ event.trainerLastName }}</span>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+  }
+</div>

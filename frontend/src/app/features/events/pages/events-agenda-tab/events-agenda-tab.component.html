@@ -1,0 +1,157 @@
+<div class="agenda-tab">
+  <div class="view-toggle">
+    <button type="button" class="toggle-btn" [class.active]="viewMode === 'list'"
+      (click)="viewMode === 'list' ? null : toggleView()">
+      <i class="bi bi-list-ul"></i> List
+    </button>
+    <button type="button" class="toggle-btn" [class.active]="viewMode === 'calendar'"
+      (click)="viewMode === 'calendar' ? null : toggleView()">
+      <i class="bi bi-calendar3"></i> Calendar
+    </button>
+  </div>
+
+  @if (error) {
+  <div class="error">{{ error }}</div>
+  }
+
+  @if (loading) {
+  <div class="agenda-skeleton">
+    @for (i of [1,2,3,4]; track i) {
+    <div class="card skeleton-card">
+      <div class="card-body">
+        <div class="skeleton-row"><span class="placeholder col-5"></span><span class="placeholder col-3"></span></div>
+        <div class="placeholder title-p"></div>
+        <div class="placeholder meta-p"></div>
+        <div class="skeleton-row"><span class="placeholder col-2"></span><span class="placeholder col-2"></span></div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+  @if (!loading && events.length === 0) {
+  <div class="empty">
+    <i class="bi bi-calendar-x display-4 text-muted mb-3 d-block"></i>
+    <h3 class="h5 text-secondary">Empty agenda</h3>
+    <p class="text-muted">No upcoming events in your agenda.</p>
+  </div>
+  }
+
+  @if (!loading && events.length > 0) {
+  @if (viewMode === 'list') {
+  <div class="events-list">
+    @for (e of events; track e.id) {
+    <div class="event-card-v2">
+      <div class="card-header">
+        <div class="type-status">
+          <span class="type-badge">{{ e.type }}</span>
+          @if (isLearner && e.regStatus) {
+          <span class="status-badge" [class.open]="e.regStatus === 'REGISTERED'"
+            [class.full]="e.regStatus === 'WAITLISTED'">
+            {{ e.regStatus === 'WAITLISTED' ? 'Pending' : 'Confirmed' }}
+          </span>
+          } @else {
+          <span class="status-badge" [class]="getEventStatus(e).class">
+            {{ getEventStatus(e).label }}
+          </span>
+          }
+        </div>
+        <div class="registration-info">
+          <i class="bi bi-people"></i>
+          <span>{{ getParticipantCount(e) }}/{{ e.maxParticipants }} registered</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <h3 class="event-title">
+          <a (click)="goToEvent(e)" style="cursor: pointer;">{{ e.title }}</a>
+        </h3>
+
+        <div class="event-meta-grid">
+          <div class="meta-item">
+            <i class="bi bi-calendar-event"></i>
+            <span>{{ e.dateStart | date:'dd MMM yyyy HH:mm' }}</span>
+          </div>
+          <div class="meta-item">
+            <i class="bi bi-hourglass-split"></i>
+            <span>{{ formatDuration(e) }}</span>
+          </div>
+          <div class="meta-item">
+            <i class="bi bi-{{ e.mode === 'ONLINE' ? 'broadcast' : 'geo-alt' }}"></i>
+            <span>
+              {{ e.mode === 'ONLINE' ? 'Online — Zoom' : ('Onsite — ' + (e.location || 'Tunis, Lac 2')) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="trainer-info">
+          <div class="trainer-details">
+            <span class="trainer-label">Trainer</span>
+            <span class="trainer-name">{{ e.trainerFirstName }} {{ e.trainerLastName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <div class="quick-btns">
+          <button class="icon-btn" title="Share" (click)="shareEvent(e)">
+            <i class="bi bi-share"></i>
+          </button>
+          <button class="icon-btn" title="Add to calendar" (click)="addToCalendar(e)">
+            <i class="bi bi-calendar-plus"></i>
+          </button>
+        </div>
+        <div class="main-btns">
+          <a (click)="goToEvent(e)" class="btn-link">Details</a>
+          <button type="button" class="btn btn-outline-danger btn-sm" (click)="unregister(e)"
+            [disabled]="unregisteringId === e.id">
+            Unregister
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="calendar-view">
+    <div class="calendar-header-controls">
+      <button type="button" class="btn-clean" (click)="prevMonth()">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <h4><strong>{{ currentMonth | date:'MMMM yyyy' }}</strong></h4>
+      <button type="button" class="btn-clean" (click)="nextMonth()">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="calendar-wrapper">
+      <div class="weekdays-row">
+        @for (day of weekDays; track day) {
+        <div class="weekday">{{ day }}</div>
+        }
+      </div>
+
+      <div class="days-grid">
+        @for (day of calendarDays; track day.date.getTime()) {
+        <div class="day-cell" [class.other-month]="!day.isCurrentMonth" [class.today]="day.isToday">
+          <div class="day-header">
+            <span class="day-number">{{ day.date | date:'d' }}</span>
+          </div>
+
+          <div class="day-events-stack">
+            @for (e of day.events; track e.id) {
+            <a (click)="goToEvent(e)" class="event-pill" [class.online]="e.mode==='ONLINE'" [title]="e.title"
+              style="cursor: pointer;">
+              <span class="pill-time">{{ e.dateStart | date:'HH:mm' }}</span>
+              <span class="pill-text">{{ e.title }}</span>
+            </a>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+  }
+</div>
