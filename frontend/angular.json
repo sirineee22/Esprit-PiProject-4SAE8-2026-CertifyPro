@@ -43,6 +43,8 @@
               "node_modules/remixicon/fonts/remixicon.css",
               "node_modules/boxicons/css/boxicons.min.css",
               "node_modules/intl-tel-input/build/css/intlTelInput.css",
+              "node_modules/leaflet/dist/leaflet.css",
+
               "src/styles.css"
             ],
             "scripts": [

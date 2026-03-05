@@ -22,6 +22,9 @@ public class UpdateUserRequest {
 
     private String phoneNumber;
 
+    @Size(max = 500)
+    private String profileImageUrl;
+
     private Boolean active;
 
     private Role role;
@@ -38,6 +41,8 @@ public class UpdateUserRequest {
     public void setEmail(String email) { this.email = email; }
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getProfileImageUrl() { return profileImageUrl; }
+    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
     public Role getRole() { return role; }

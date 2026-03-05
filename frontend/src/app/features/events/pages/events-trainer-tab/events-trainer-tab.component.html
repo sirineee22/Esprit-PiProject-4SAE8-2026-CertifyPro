@@ -1,0 +1,89 @@
+<div class="trainer-tab">
+  @if (error) {
+  <div class="error mb-4">{{ error }}</div>
+  }
+
+  @if (loading) {
+  <div class="events-grid">
+    @for (i of [1,2,3,4,5,6]; track i) {
+    <div class="skeleton-card card-body">
+      <div class="placeholder title-p mb-3"></div>
+      <div class="placeholder meta-p mb-2"></div>
+      <div class="placeholder date-p mb-4"></div>
+      <div class="d-flex gap-2 mt-auto">
+        <div class="placeholder action-p w-50"></div>
+        <div class="placeholder action-p w-50"></div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+  @if (!loading && events.length === 0) {
+  <div class="empty-state">
+    <i class="bi bi-calendar-plus display-4 text-muted mb-3 d-block"></i>
+    <h3 class="h5 text-secondary">No events created</h3>
+    <p class="text-muted">You have not created any events yet.</p>
+  </div>
+  }
+
+  @if (!loading && events.length > 0) {
+  <div class="events-grid">
+    @for (e of events; track e.id) {
+    <div class="event-card-modern">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <span class="badge bg-light text-dark border">{{ e.type }}</span>
+          <span class="badge"
+            [ngClass]="e.status === 'UPCOMING' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+            {{ e.status === 'UPCOMING' ? 'Upcoming' : e.status === 'CANCELLED' ? 'Cancelled' : 'Finished' }}
+          </span>
+        </div>
+
+        <h3 class="card-title">
+          <a (click)="goToEvent(e)" style="cursor: pointer;">{{ e.title }}</a>
+        </h3>
+
+        <div class="event-meta">
+          <span><i class="bi bi-calendar-event"></i> {{ formatDate(e.dateStart) }}</span>
+          <span><i class="bi bi-{{ e.mode === 'ONLINE' ? 'laptop' : 'geo-alt' }}"></i>
+            {{ e.mode === 'ONLINE' ? 'Online' : (e.location || 'Onsite') }}
+          </span>
+          <div class="participant-stats mt-2">
+            <span class="stat-item" [title]="'Registered: ' + (e.participantCount || 0) + '/' + e.maxParticipants">
+              <i class="bi bi-people-fill text-primary"></i>
+              <strong>{{ e.participantCount || 0 }}</strong> / {{ e.maxParticipants }}
+            </span>
+            @if (e.waitlistCount && e.waitlistCount > 0) {
+            <span class="stat-item ms-3" title="Waitlist">
+              <i class="bi bi-hourglass-split text-warning"></i>
+              <strong class="text-warning">{{ e.waitlistCount }}</strong> pending
+            </span>
+            }
+          </div>
+        </div>
+
+        <div class="actions">
+          <a (click)="goToEvent(e)" class="btn-action btn-primary-soft" style="cursor: pointer;">
+            <i class="bi bi-eye me-2"></i> View
+          </a>
+          <a [routerLink]="['/events', e.id, 'participants']" class="btn-action btn-primary-soft">
+            <i class="bi bi-people me-2"></i> Participants
+          </a>
+
+          @if (e.status === 'UPCOMING') {
+          <button type="button" class="btn-action btn-edit" (click)="edit.emit(e)">
+            <i class="bi bi-pencil me-2"></i> Edit
+          </button>
+          <button type="button" class="btn-action btn-cancel" (click)="cancelEvent(e)"
+            [disabled]="cancellingId === e.id">
+            <i class="bi bi-x-circle me-2"></i> Cancel
+          </button>
+          }
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

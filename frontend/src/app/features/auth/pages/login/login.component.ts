@@ -74,25 +74,16 @@ import { User } from '../../../../shared/models/user.model';
                 <label class="input-label">WORK EMAIL ADDRESS</label>
                 <div class="input-container">
                   <i class="bi bi-envelope"></i>
-                  <input type="email" formControlName="email" placeholder="sirine@organization.com" class="auth-input" [class.input-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                  <input type="email" formControlName="email" placeholder="sirine@organization.com" class="auth-input">
                 </div>
-                @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-                  <span class="error-message">
-                    @if (loginForm.get('email')?.errors?.['required']) { Email is required. }
-                    @if (loginForm.get('email')?.errors?.['email']) { Please enter a valid email address. }
-                  </span>
-                }
               </div>
 
               <div class="form-group">
                 <label class="input-label">SECURE CREDENTIAL</label>
                 <div class="input-container">
                   <i class="bi bi-shield-lock"></i>
-                  <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.input-error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                  <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input">
                 </div>
-                @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-                  <span class="error-message">Password is required.</span>
-                }
                 <button type="button" class="forgot-btn">FORGOT ACCESS?</button>
               </div>
 
@@ -385,14 +376,6 @@ import { User } from '../../../../shared/models/user.model';
       box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
 
-    .auth-input.input-error { border-color: #dc2626; }
-    .error-message {
-      display: block;
-      font-size: 0.8rem;
-      color: #dc2626;
-      margin-top: 0.35rem;
-    }
-
     .forgot-btn {
       position: absolute;
       right: 0;
@@ -542,9 +525,7 @@ export class LoginComponent {
     }
 
     this.isSubmitting = true;
-    const raw = this.loginForm.value as { email: string; password: string };
-    const email = (raw.email ?? '').trim().toLowerCase();
-    const password = (raw.password ?? '').trim();
+    const { email, password } = this.loginForm.value as { email: string; password: string };
     this.authService.login(email, password).subscribe({
       next: (response: LoginResponse) => {
         this.authService.setSession(response.user, response.token);
@@ -557,13 +538,11 @@ export class LoginComponent {
       error: (e: unknown) => {
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 401) {
-          const message = typeof e.error === 'string' && e.error ? e.error : 'Invalid email or password.';
-          alert(message);
+          alert('Invalid email or password.');
           return;
         }
         if (e instanceof HttpErrorResponse && e.status === 500) {
-          const message = typeof e.error === 'string' && e.error ? e.error : 'Server error. Please try again or contact support.';
-          alert(message);
+          alert('Server error. Please try again or contact support.');
           return;
         }
         alert('Login failed. Please try again.');

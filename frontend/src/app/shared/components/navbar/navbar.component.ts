@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
+import { API_BASE_URL } from '../../../core/api/api.config';
 
 @Component({
   selector: 'app-navbar',
@@ -42,7 +43,11 @@ import { User } from '../../models/user.model';
           <div class="welcome-text">Bienvenue, {{currentUser?.firstName}}!</div>
           <div class="user-profile-nav-wrapper">
             <div class="user-profile-nav-modern" (click)="toggleDropdown($event)">
-               <i class="bi bi-person-circle"></i>
+               <div class="nav-avatar">
+                 <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="navAvatarImgError = true">
+                 <span *ngIf="(!avatarUrl() || navAvatarImgError) && initials()" class="nav-avatar-initials">{{ initials() }}</span>
+                 <i *ngIf="(!avatarUrl() || navAvatarImgError) && !initials()" class="bi bi-person-circle"></i>
+               </div>
                <span class="user-name-modern">{{ currentUser?.firstName }}</span>
                <i class="bi bi-chevron-down dropdown-arrow" [class.rotate]="isDropdownOpen"></i>
             </div>
@@ -114,7 +119,11 @@ import { User } from '../../models/user.model';
            <div class="d-flex flex-column gap-2">
              <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded shadow-sm">
                <div class="d-flex align-items-center gap-2">
-                 <i class="bi bi-person-circle text-primary"></i>
+                 <div class="nav-avatar nav-avatar-mobile">
+                   <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="navAvatarImgError = true">
+                   <span *ngIf="(!avatarUrl() || navAvatarImgError) && initials()" class="nav-avatar-initials">{{ initials() }}</span>
+                   <i *ngIf="(!avatarUrl() || navAvatarImgError) && !initials()" class="bi bi-person-circle text-primary"></i>
+                 </div>
                  <span class="fw-bold">{{ currentUser?.firstName }}</span>
                </div>
                <button (click)="logout()" class="btn btn-sm btn-outline-danger">Logout</button>
@@ -133,6 +142,7 @@ export class NavbarComponent implements OnDestroy {
   isMenuOpen = false;
   isDropdownOpen = false;
   currentUser: User | null = null;
+  navAvatarImgError = false;
   private router = inject(Router);
   private readonly subscriptions = new Subscription();
 
@@ -143,6 +153,21 @@ export class NavbarComponent implements OnDestroy {
         this.isLoggedIn = !!user;
       })
     );
+  }
+
+  avatarUrl(): string | null {
+    const url = this.currentUser?.profileImageUrl;
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return API_BASE_URL + url;
+  }
+
+  initials(): string {
+    const u = this.currentUser;
+    if (!u?.firstName && !u?.lastName) return '';
+    const f = (u.firstName || '').trim().charAt(0).toUpperCase();
+    const l = (u.lastName || '').trim().charAt(0).toUpperCase();
+    return (f + l) || '';
   }
 
   get isAdmin(): boolean {

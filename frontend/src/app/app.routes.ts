@@ -35,6 +35,7 @@ export const routes: Routes = [
             { path: 'trainings', component: CoursesListComponent },
             { path: 'help', redirectTo: '', pathMatch: 'full' },
             { path: 'about', component: AboutComponent },
+            { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
             { path: 'forum', redirectTo: '', pathMatch: 'full' },
