@@ -15,9 +15,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     List<QuizAttempt> findByStudentIdAndQuizId(Long studentId, Long quizId);
 
-    @Query("SELECT a FROM QuizAttempt a WHERE a.quiz.formation.trainer.id = :trainerId")
+    @Query("SELECT a FROM QuizAttempt a WHERE a.quiz.formation.trainerId = :trainerId")
     List<QuizAttempt> findByTrainerId(@Param("trainerId") Long trainerId);
 
-    @Query("SELECT COUNT(DISTINCT a.student.id) FROM QuizAttempt a WHERE a.quiz.formation.trainer.id = :trainerId")
+    @Query("SELECT COUNT(DISTINCT a.studentId) FROM QuizAttempt a WHERE a.quiz.formation.trainerId = :trainerId")
     long countDistinctStudentsByTrainerId(@Param("trainerId") Long trainerId);
 }

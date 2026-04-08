@@ -31,7 +31,6 @@ public class Formation {
 
     private String contentUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trainer_id")
-    private User trainer;
+    @Column(name = "trainer_id")
+    private Long trainerId;
 }

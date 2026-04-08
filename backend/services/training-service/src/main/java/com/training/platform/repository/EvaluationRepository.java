@@ -14,9 +14,9 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
     List<Evaluation> findByFormationId(Long formationId);
 
-    @Query("SELECT e FROM Evaluation e WHERE e.formation.trainer.id = :trainerId")
+    @Query("SELECT e FROM Evaluation e WHERE e.formation.trainerId = :trainerId")
     List<Evaluation> findByTrainerId(@Param("trainerId") Long trainerId);
 
-    @Query("SELECT COUNT(DISTINCT e.student.id) FROM Evaluation e WHERE e.formation.trainer.id = :trainerId")
+    @Query("SELECT COUNT(DISTINCT e.studentId) FROM Evaluation e WHERE e.formation.trainerId = :trainerId")
     long countDistinctStudentsByTrainerId(@Param("trainerId") Long trainerId);
 }

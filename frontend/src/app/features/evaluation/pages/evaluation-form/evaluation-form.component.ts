@@ -55,8 +55,13 @@ import { EvaluationType } from '../../../../shared/models/evaluation.model';
             </div>
 
             <div class="field full-width">
-              <label>Remarks</label>
-              <textarea formControlName="remarks" rows="3" placeholder="Provide constructive feedback..."></textarea>
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Remarks / Keywords</span>
+                <button type="button" class="btn-ai" (click)="generateFeedback()" [disabled]="isGeneratingAi() || !evalForm.get('formationId')?.value">
+                  ✨ {{ isGeneratingAi() ? 'AI thinking...' : 'Generate with AI' }}
+                </button>
+              </label>
+              <textarea formControlName="remarks" rows="5" placeholder="Enter bullet points or short keywords, then click Generate with AI..."></textarea>
             </div>
           </div>
 
@@ -135,9 +140,24 @@ import { EvaluationType } from '../../../../shared/models/evaluation.model';
       cursor: pointer;
     }
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .btn-ai {
+      background: linear-gradient(135deg, #8b5cf6, #d946ef);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-ai:hover { opacity: 0.9; }
+    .btn-ai:disabled { opacity: 0.5; cursor: not-allowed; animation: pulse 1.5s infinite; }
 
     .animate-slide-up { animation: slideUp 0.5s ease-out; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
   `]
 })
 export class EvaluationFormComponent implements OnInit {
@@ -149,6 +169,7 @@ export class EvaluationFormComponent implements OnInit {
 
     evalForm: FormGroup;
     isSubmitting = signal(false);
+    isGeneratingAi = signal(false);
     students = signal<User[]>([]);
     trainings = signal<Training[]>([]);
 
@@ -201,5 +222,29 @@ export class EvaluationFormComponent implements OnInit {
 
     onCancel() {
         this.router.navigate(['/evaluations']);
+    }
+
+    generateFeedback() {
+        const score = this.evalForm.get('score')?.value || 0;
+        const formationId = this.evalForm.get('formationId')?.value;
+        const currentRemarks = this.evalForm.get('remarks')?.value || '';
+        
+        if (!formationId) return;
+
+        const formation = this.trainings().find(t => t.id == formationId);
+        const title = formation ? formation.title : 'Formation';
+
+        this.isGeneratingAi.set(true);
+        this.evalService.generateAiFeedback(score, title, currentRemarks).subscribe({
+            next: (res) => {
+                this.evalForm.patchValue({ remarks: res.generatedFeedback });
+                this.isGeneratingAi.set(false);
+            },
+            error: (err) => {
+                console.error('AI Generation failed', err);
+                this.isGeneratingAi.set(false);
+                alert("L'IA n'a pas pu générer le feedback.");
+            }
+        });
     }
 }

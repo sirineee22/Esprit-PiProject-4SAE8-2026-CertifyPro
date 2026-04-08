@@ -1,6 +1,9 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.AiFeedbackRequestDTO;
+import com.training.platform.dto.AiFeedbackResponseDTO;
 import com.training.platform.entity.Evaluation;
+import com.training.platform.service.AiFeedbackMockService;
 import com.training.platform.service.EvaluationService;
 import com.training.platform.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EvaluationController {
     private final EvaluationService evaluationService;
+    private final AiFeedbackMockService aiFeedbackMockService;
 
     @GetMapping
     public List<Evaluation> getAllEvaluations() {
@@ -31,6 +35,12 @@ public class EvaluationController {
     @PostMapping
     public ResponseEntity<Evaluation> createEvaluation(@RequestBody Evaluation evaluation) {
         return ResponseEntity.ok(evaluationService.createEvaluation(evaluation));
+    }
+
+    @PostMapping("/ai-feedback")
+    // @PreAuthorize("hasRole('TRAINER')") // Optionnel, selon le degré de sécurité souhaité
+    public ResponseEntity<AiFeedbackResponseDTO> generateAiFeedback(@RequestBody AiFeedbackRequestDTO requestDTO) {
+        return ResponseEntity.ok(aiFeedbackMockService.generateFeedback(requestDTO));
     }
 
     @GetMapping("/me")

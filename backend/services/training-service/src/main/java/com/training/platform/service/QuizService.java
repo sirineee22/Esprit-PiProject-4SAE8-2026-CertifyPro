@@ -43,7 +43,7 @@ public class QuizService {
     }
 
     @Transactional
-    public QuizAttempt submitQuizAttempt(User student, Long quizId, Map<?, ?> answers) {
+    public QuizAttempt submitQuizAttempt(Long studentId, Long quizId, Map<?, ?> answers) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
 
@@ -75,7 +75,7 @@ public class QuizService {
         double score = totalQuestions > 0 ? (double) correctAnswers / totalQuestions * 100 : 0;
 
         QuizAttempt attempt = new QuizAttempt();
-        attempt.setStudent(student);
+        attempt.setStudentId(studentId);
         attempt.setQuiz(quiz);
         attempt.setScore(score);
         attempt.setCompletedAt(LocalDateTime.now());

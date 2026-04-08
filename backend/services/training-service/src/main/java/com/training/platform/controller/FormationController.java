@@ -1,8 +1,11 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.FormationDTO;
 import com.training.platform.entity.Formation;
 import com.training.platform.entity.TrainingType;
 import com.training.platform.service.FormationService;
+import com.training.platform.client.UserClient;
+import com.training.platform.client.UserDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -11,6 +14,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,24 +29,52 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FormationController {
     private final FormationService formationService;
-    private final com.training.platform.repository.UserRepository userRepository;
+    private final UserClient userClient;
     private final String UPLOAD_DIR = "uploads/";
 
     @GetMapping
-    public ResponseEntity<Page<Formation>> getAllFormations(
+    public ResponseEntity<Page<FormationDTO>> getAllFormations(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        return ResponseEntity.ok(formationService.getAllFormations(PageRequest.of(page, size)));
+
+        Page<Formation> formations = formationService.getAllFormations(PageRequest.of(page, size));
+        Page<FormationDTO> dtos = formations.map(this::mapToDTO);
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Formation> getFormationById(@PathVariable("id") Long id) {
+    public ResponseEntity<FormationDTO> getFormationById(@PathVariable("id") Long id) {
         return formationService.getFormationById(id)
+                .map(this::mapToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    private FormationDTO mapToDTO(Formation formation) {
+        FormationDTO dto = FormationDTO.builder()
+                .id(formation.getId())
+                .title(formation.getTitle())
+                .description(formation.getDescription())
+                .level(formation.getLevel())
+                .duration(formation.getDuration())
+                .trainingType(formation.getTrainingType())
+                .contentUrl(formation.getContentUrl())
+                .trainerId(formation.getTrainerId())
+                .build();
+
+        try {
+            if (formation.getTrainerId() != null) {
+                UserDTO trainer = userClient.getUserById(formation.getTrainerId());
+                dto.setTrainer(trainer);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch trainer with ID " + formation.getTrainerId() + ": " + e.getMessage());
+        }
+        return dto;
+    }
+
     @PostMapping(consumes = { "multipart/form-data" })
+    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
     public ResponseEntity<?> createFormation(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
@@ -70,7 +102,7 @@ public class FormationController {
             formation.setContentUrl("/api/formations/files/" + fileName);
 
             if (trainerId != null) {
-                userRepository.findById(trainerId).ifPresent(formation::setTrainer);
+                formation.setTrainerId(trainerId);
             }
 
             return ResponseEntity.ok(formationService.createFormation(formation));
@@ -80,6 +112,7 @@ public class FormationController {
     }
 
     @PostMapping(value = "/{id}/update", consumes = { "multipart/form-data" })
+    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
     public ResponseEntity<?> updateFormation(
             @PathVariable("id") Long id,
             @RequestParam(value = "title", required = false) String title,
@@ -121,7 +154,7 @@ public class FormationController {
                 }
 
                 if (trainerId != null) {
-                    userRepository.findById(trainerId).ifPresent(existing::setTrainer);
+                    existing.setTrainerId(trainerId);
                 }
 
                 return ResponseEntity.ok(formationService.createFormation(existing));
@@ -132,6 +165,7 @@ public class FormationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteFormation(@PathVariable("id") Long id) {
         return formationService.getFormationById(id).map(formation -> {
             try {

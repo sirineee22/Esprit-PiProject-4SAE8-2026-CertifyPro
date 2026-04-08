@@ -42,12 +42,12 @@ public class StatisticsService {
                 // 2. Aggregate student IDs for global count
                 Set<Long> allStudentIds = new HashSet<>();
                 evaluations.forEach(e -> {
-                        if (e.getStudent() != null)
-                                allStudentIds.add(e.getStudent().getId());
+                        if (e.getStudentId() != null)
+                                allStudentIds.add(e.getStudentId());
                 });
                 quizAttempts.forEach(a -> {
-                        if (a.getStudent() != null)
-                                allStudentIds.add(a.getStudent().getId());
+                        if (a.getStudentId() != null)
+                                allStudentIds.add(a.getStudentId());
                 });
 
                 // 3. Combine scores for global average
@@ -73,7 +73,7 @@ public class StatisticsService {
                                                         && e.getFormation().getId().equals(f.getId()))
                                         .forEach(e -> {
                                                 fScores.add(e.getScore());
-                                                fStudents.add(e.getStudent().getId());
+                                                fStudents.add(e.getStudentId());
                                         });
 
                         // Filter quiz attempts for this formation
@@ -82,7 +82,7 @@ public class StatisticsService {
                                                         && a.getQuiz().getFormation().getId().equals(f.getId()))
                                         .forEach(a -> {
                                                 fScores.add(a.getScore());
-                                                fStudents.add(a.getStudent().getId());
+                                                fStudents.add(a.getStudentId());
                                         });
 
                         double fAvg = fScores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);

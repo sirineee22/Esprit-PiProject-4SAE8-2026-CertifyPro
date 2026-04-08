@@ -3,10 +3,8 @@ package com.training.platform.service;
 import com.training.platform.entity.Formation;
 import com.training.platform.entity.Progression;
 import com.training.platform.entity.ProgressStatus;
-import com.training.platform.entity.User;
 import com.training.platform.repository.FormationRepository;
 import com.training.platform.repository.ProgressionRepository;
-import com.training.platform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +17,6 @@ import java.util.Optional;
 public class ProgressionService {
 
     private final ProgressionRepository progressionRepository;
-    private final UserRepository userRepository;
     private final FormationRepository formationRepository;
 
     public List<Progression> getUserProgressions(Long userId) {
@@ -35,11 +32,9 @@ public class ProgressionService {
         Progression progression = progressionRepository.findByUserIdAndFormationId(userId, formationId)
                 .orElseGet(() -> {
                     Progression newProgression = new Progression();
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found"));
                     Formation formation = formationRepository.findById(formationId)
                             .orElseThrow(() -> new RuntimeException("Formation not found"));
-                    newProgression.setUser(user);
+                    newProgression.setUserId(userId);
                     newProgression.setFormation(formation);
                     return newProgression;
                 });

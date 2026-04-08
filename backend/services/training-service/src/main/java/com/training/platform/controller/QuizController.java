@@ -4,7 +4,6 @@ import com.training.platform.entity.Quiz;
 import com.training.platform.entity.QuizAttempt;
 import com.training.platform.security.JwtAuthenticationFilter;
 import com.training.platform.service.QuizService;
-import com.training.platform.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -41,9 +40,7 @@ public class QuizController {
         if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationFilter.JwtUserDetails) {
             JwtAuthenticationFilter.JwtUserDetails details = (JwtAuthenticationFilter.JwtUserDetails) authentication
                     .getDetails();
-            User trainer = new User();
-            trainer.setId(details.userId);
-            quiz.setTrainer(trainer);
+            quiz.setTrainerId(details.userId);
         }
         return ResponseEntity.ok(quizService.createQuiz(quiz));
     }
@@ -57,10 +54,7 @@ public class QuizController {
         if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationFilter.JwtUserDetails) {
             JwtAuthenticationFilter.JwtUserDetails details = (JwtAuthenticationFilter.JwtUserDetails) authentication
                     .getDetails();
-            User user = new User();
-            user.setId(details.userId);
-
-            return ResponseEntity.ok(quizService.submitQuizAttempt(user, quizId, answers));
+            return ResponseEntity.ok(quizService.submitQuizAttempt(details.userId, quizId, answers));
         }
         return ResponseEntity.status(401).build();
     }

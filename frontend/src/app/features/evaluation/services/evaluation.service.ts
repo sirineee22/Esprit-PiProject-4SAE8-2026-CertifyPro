@@ -67,4 +67,12 @@ export class EvaluationService {
     getEvaluationsByFormation(formationId: number) {
         return this.http.get<Evaluation[]>(`${API_ENDPOINTS.evaluations}/formation/${formationId}`);
     }
+
+    generateAiFeedback(score: number, formationTitle: string, shortKeywords: string) {
+        return this.http.post<{ generatedFeedback: string }>(`${API_ENDPOINTS.evaluations}/ai-feedback`, {
+            score,
+            formationTitle,
+            shortKeywords
+        });
+    }
 }

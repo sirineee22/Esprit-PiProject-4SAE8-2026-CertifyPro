@@ -28,9 +28,8 @@ public class Quiz {
     @JoinColumn(name = "formation_id")
     private Formation formation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trainer_id")
-    private User trainer;
+    @Column(name = "trainer_id")
+    private Long trainerId;
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions;

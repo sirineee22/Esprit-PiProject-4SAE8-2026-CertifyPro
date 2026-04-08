@@ -26,9 +26,8 @@ public class Evaluation {
     @Column(columnDefinition = "TEXT")
     private String remarks;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    private User student;
+    @Column(name = "student_id")
+    private Long studentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "formation_id")
