@@ -1,74 +1,223 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Post } from '../models/post.model';
-import { Comment } from '../models/comment.model';
-import { API_BASE_URL } from '../../core/api/api.config';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+export interface ForumUser {
+  id: number;
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  photo?: string | null;
+}
+
+// ====================================================
+// COMMENT
+// ====================================================
+export interface ForumComment {
+  id: number;
+  content: string;
+  userId: number;
+  date?: string;
+
+  // user data
+  user?: ForumUser;
+}
+
+// ====================================================
+// POST
+// ====================================================
+export interface ForumPost {
+  id: number;
+
+  title: string;
+  content: string;
+
+  imageUrl?: string | null;
+  createdAt?: string;
+
+  userId: number;
+
+  // user data
+  user?: ForumUser;
+
+  // backend stats
+  reactionCount: number;
+  commentCount: number;
+  isLikedByCurrentUser: boolean;
+
+  // comments
+  comments: ForumComment[];
+
+  // ====================================================
+  // UI STATE
+  // ====================================================
+  showComments?: boolean;
+  showCommentForm?: boolean;
+  isEditing?: boolean;
+  isLoading?: boolean;
+
+  // translation
+  isTranslating?: boolean;
+  isTranslated?: boolean;
+  translatedTitle?: string;
+  translatedContent?: string;
+
+  // forms
+  newComment?: string;
+  editTitle?: string;
+  editContent?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class ForumService {
+  private readonly uploadBase = 'http://localhost:8084/uploads';
 
-  private POST_API = API_BASE_URL + '/api/forum/posts';
-  private COMMENT_API = API_BASE_URL + '/api/forum/comments';
-
+  private apiUrl = 'http://localhost:8081/api/forum/posts';
+ 
   constructor(private http: HttpClient) {}
 
-  private authHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return new HttpHeaders({
-      Authorization: 'Bearer ' + token
-    });
-  }
-
-  // ========================
-  // POSTS
-  // ========================
-
-  getAllPosts(): Observable<Post[]> {
-    return this.http.get<Post[]>(this.POST_API, { headers: this.authHeaders() });
-  }
-
-  getPostById(id: number): Observable<Post> {
-    return this.http.get<Post>(`${this.POST_API}/${id}`, { headers: this.authHeaders() });
-  }
-
-  createPost(formData: FormData): Observable<Post> {
-    return this.http.post<Post>(this.POST_API, formData, { headers: this.authHeaders() });
-  }
-
-  reactToPost(postId: number): Observable<any> {
-    return this.http.post(`${this.POST_API}/${postId}/react`, {}, { headers: this.authHeaders() });
-  }
-
-  deletePost(postId: number): Observable<any> {
-    return this.http.delete(`${this.POST_API}/${postId}`, { headers: this.authHeaders() });
-  }
-
-  // ========================
-  // COMMENTS
-  // ========================
-
-  getCommentsByPostId(postId: number): Observable<Comment[]> {
-    return this.http.get<Comment[]>(`${this.POST_API}/${postId}/comments`, { headers: this.authHeaders() });
-  }
-
-  createComment(postId: number, content: string): Observable<Comment> {
-    return this.http.post<Comment>(
-      `${this.POST_API}/${postId}/comments`,
-      { content },
-      { headers: this.authHeaders() }
+  // =========================
+  // 🔥 GET POSTS (NORMALIZED)
+  // =========================
+  getPosts(): Observable<ForumPost[]> {
+    return this.http.get<any[]>(this.apiUrl).pipe(
+      map(posts => posts.map(p => ({
+        ...p,
+        reactionCount: p.reactionCount ?? p.reactionsCount ?? 0,
+        commentCount: p.commentCount ?? (Array.isArray(p.comments) ? p.comments.length : 0),
+        isLikedByCurrentUser: p.isLikedByCurrentUser ?? false,
+        comments: Array.isArray(p.comments) ? p.comments : [],
+        user: p.user ?? null,
+        imageUrl: p.imageUrl ? `${this.uploadBase}/${p.imageUrl}` : null
+      })))
     );
   }
 
-  // 🔹 ADMIN METHODS
+  // =========================
+  // CREATE POST
+  // =========================
+  createPost(data: {
+    userId: number;
+    title: string;
+    content: string;
+    image?: File;
+  }): Observable<ForumPost> {
 
-  getAllComments(): Observable<Comment[]> {
-    return this.http.get<Comment[]>(this.COMMENT_API, { headers: this.authHeaders() });
+    const formData = new FormData();
+    formData.append('userId', data.userId.toString());
+    formData.append('title', data.title);
+    formData.append('content', data.content);
+
+    if (data.image) {
+      formData.append('image', data.image);
+    }
+    //location refresh 
+
+
+    return this.http.post<ForumPost>(this.apiUrl, formData);
   }
 
-  deleteComment(id: number): Observable<any> {
-    return this.http.delete(`${this.COMMENT_API}/${id}`, { headers: this.authHeaders() });
+  // =========================
+  // UPDATE POST
+  // =========================
+  updatePost(id: number, post: { title: string; content: string }): Observable<ForumPost> {
+    return this.http.put<ForumPost>(`${this.apiUrl}/${id}`, post);
+  }
+
+  // =========================
+  // DELETE POST
+  // =========================
+  deletePost(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  // =========================
+  // LIKE / UNLIKE
+  // =========================
+  toggleReaction(postId: number, userId: number): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${postId}/react?userId=${userId}`,
+      {}
+    );
+  }
+
+  // =========================
+  // COMMENTS
+  // =========================
+  addComment(postId: number, userId: number, content: string): Observable<ForumComment> {
+    return this.http.post<ForumComment>(
+      `${this.apiUrl}/${postId}/comments?userId=${userId}&content=${encodeURIComponent(content)}`,
+      {}
+    );
+  }
+
+  updateComment(commentId: number, content: string): Observable<ForumComment> {
+    return this.http.put<ForumComment>(
+      `${this.apiUrl}/comments/${commentId}`,
+      { content }
+    );
+  }
+
+  deleteComment(commentId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/comments/${commentId}`);
+  }
+
+
+
+
+  translatePost(
+    title: string,
+    content: string,
+    from: string,
+    to: string
+  ): Observable<any> {
+  
+    return this.http.post<any>(
+      `${this.apiUrl}/translate`,
+      {
+        title,
+        content,
+        from,
+        to
+      }
+    );
+  }
+
+
+
+  getUploadUrl(filename?: string): string {
+    return filename ? `${this.uploadBase}/${filename}` : '';
+  }
+
+
+
+
+
+
+
+
+  private decodeUtf(text: string): string {
+    try {
+      return decodeURIComponent(text);
+    } catch {
+      return text;
+    }
+  }
+
+  generatePostWithAi(prompt: string): Observable<any> {
+    return this.http.post<any>(
+      'http://localhost:8081/api/forum/posts/ai-generate',
+      { prompt }
+    ).pipe(
+      map((res) => {
+  
+        return {
+          title: this.decodeUtf(res?.title || ''),
+          content: this.decodeUtf(res?.content || '')
+        };
+  
+      })
+    );
   }
 }
