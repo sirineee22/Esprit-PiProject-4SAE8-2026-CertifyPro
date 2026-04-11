@@ -40,7 +40,7 @@ import { User } from '../../models/user.model';
             <i class="bi bi-people-fill"></i>
             <span>User Management</span>
           </a>
-          <a routerLink="/admin/forum" routerLinkActive="active" class="nav-link">
+          <a routerLink="/admin/posts" routerLinkActive="active" class="nav-link">
             <i class="bi bi-chat-left-text-fill"></i>
             <span>Forum Management</span>
           </a>
