@@ -1,9 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { parseExamFeeUsd } from '../utils/exam-payment.utils';
 
 /** Shape returned by GET /api/certifications/{id} */
 interface ApiCertification {
@@ -205,10 +207,10 @@ interface CertView {
         <aside class="detail-sidebar">
           <div class="sidebar-card sticky-card">
 
-            <!-- Price block -->
-            <div class="price-block" *ngIf="cert.price">
+            <!-- Price block (paid certifications only) -->
+            <div class="price-block" *ngIf="showPaidExamFee()">
               <p class="sidebar-label">Exam Fee</p>
-              <p class="sidebar-price">{{ cert.price }}</p>
+              <p class="sidebar-price">{{ paidFeeDisplay() }}</p>
             </div>
 
             <button class="btn-register" *ngIf="!isTrainer" (click)="registerForExam()">
@@ -558,7 +560,8 @@ export class CertificationDetailComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private auth: AuthService
+    private auth: AuthService,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -639,9 +642,52 @@ export class CertificationDetailComponent implements OnInit {
     };
   }
 
-  registerForExam() {
-    if (this.cert) {
-      this.router.navigate(['/certifications', this.cert.id, 'exam']);
+  showPaidExamFee(): boolean {
+    return !!this.cert && parseExamFeeUsd(this.cert.price) > 0;
+  }
+
+  paidFeeDisplay(): string {
+    if (!this.cert) {
+      return '';
     }
+    const n = parseExamFeeUsd(this.cert.price);
+    return n > 0 ? `$${n.toFixed(2)}` : '';
+  }
+
+  registerForExam() {
+    if (!this.cert) {
+      return;
+    }
+    const feeUsd = parseExamFeeUsd(this.cert.price);
+    if (feeUsd > 0) {
+      if (!this.auth.isLoggedIn() || !this.auth.getCurrentUser()?.id) {
+        this.router.navigate(['/login'], {
+          queryParams: { returnUrl: `/certifications/${this.cert.id}` },
+        });
+        return;
+      }
+      this.http
+        .post<{ url: string }>(`${API_ENDPOINTS.payments}/checkout-session`, {
+          certificationId: this.cert.id,
+        })
+        .subscribe({
+          next: (res) => {
+            if (res.url) {
+              window.location.href = res.url;
+            } else {
+              this.toast.error('Could not start payment.');
+            }
+          },
+          error: (err: HttpErrorResponse) => {
+            const msg =
+              typeof err.error === 'string' && err.error
+                ? err.error
+                : 'Payment could not be started. Check Stripe configuration.';
+            this.toast.error(msg);
+          },
+        });
+      return;
+    }
+    this.router.navigate(['/certifications', this.cert.id, 'exam']);
   }
 }

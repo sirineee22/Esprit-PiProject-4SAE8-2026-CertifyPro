@@ -5,5 +5,6 @@ export const API_ENDPOINTS = {
   auth: `${API_BASE_URL}/api/auth`,
   certifications: `${API_BASE_URL}/api/certifications`,
   certificationExams: `${API_BASE_URL}/api/certification-exams`,
+  payments: `${API_BASE_URL}/api/payments`,
 };
 

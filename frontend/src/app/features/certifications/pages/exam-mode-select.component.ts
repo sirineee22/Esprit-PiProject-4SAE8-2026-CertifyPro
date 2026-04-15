@@ -1,6 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { API_ENDPOINTS } from '../../../core/api/api.config';
+import {
+  isExamFeePaid,
+  parseExamFeeFromCriteriaJson,
+  setExamFeePaid,
+} from '../utils/exam-payment.utils';
+
+interface ApiCertLite {
+  criteriaDescription: string | null;
+}
 
 @Component({
   selector: 'app-exam-mode-select',
@@ -8,7 +19,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="mode-page">
-      <div class="mode-card">
+      <div class="mode-card" *ngIf="!verifyingPayment">
         <a class="back-link" [routerLink]="['/certifications', certId]">
           <i class="bi bi-arrow-left"></i>
           Back to certification
@@ -33,6 +44,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
           </button>
         </div>
       </div>
+
+      <div class="mode-card verify-card" *ngIf="verifyingPayment">
+        <div class="spinner"></div>
+        <p>Confirming your payment…</p>
+      </div>
     </div>
   `,
   styles: [`
@@ -53,6 +69,24 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
       padding: 2rem;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
+    .verify-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+      color: #475569;
+      font-weight: 600;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .back-link {
       display: inline-flex;
       align-items: center;
@@ -121,17 +155,60 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 })
 export class ExamModeSelectComponent implements OnInit {
   certId = 0;
+  verifyingPayment = false;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
     this.certId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.certId) {
       this.router.navigate(['/certifications']);
+      return;
     }
+
+    const sessionId = this.route.snapshot.queryParamMap.get('session_id');
+    if (sessionId) {
+      this.verifyingPayment = true;
+      this.http
+        .get<{ verified: boolean; certificationId: number }>(
+          `${API_ENDPOINTS.payments}/verify-session`,
+          { params: { sessionId } }
+        )
+        .subscribe({
+          next: (r) => {
+            this.verifyingPayment = false;
+            if (r.verified && r.certificationId === this.certId) {
+              setExamFeePaid(this.certId);
+              this.router.navigate(['/certifications', this.certId, 'exam'], { replaceUrl: true });
+            } else {
+              this.router.navigate(['/certifications', this.certId]);
+            }
+          },
+          error: () => {
+            this.verifyingPayment = false;
+            this.router.navigate(['/certifications', this.certId]);
+          },
+        });
+      return;
+    }
+
+    this.ensurePaidAccessIfNeeded();
+  }
+
+  private ensurePaidAccessIfNeeded(): void {
+    this.http.get<ApiCertLite>(`${API_ENDPOINTS.certifications}/${this.certId}`).subscribe({
+      next: (api) => {
+        const fee = parseExamFeeFromCriteriaJson(api.criteriaDescription);
+        if (fee > 0 && !isExamFeePaid(this.certId)) {
+          this.router.navigate(['/certifications', this.certId]);
+        }
+      },
+      error: () => this.router.navigate(['/certifications']),
+    });
   }
 
   goToMode(mode: 'practice' | 'real'): void {

@@ -28,6 +28,10 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**,/api/roles/**
+        - id: payments-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/payments/**
         - id: auth-service
           uri: lb://USER-SERVICE
           predicates:

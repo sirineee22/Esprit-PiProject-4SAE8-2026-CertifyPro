@@ -6,6 +6,10 @@ import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 import { AuthService } from '../../../core/auth/auth.service';
+import {
+  isExamFeePaid,
+  parseExamFeeFromCriteriaJson,
+} from '../utils/exam-payment.utils';
 
 interface QuizQuestion {
   questionText: string;
@@ -299,6 +303,13 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
     this.http.get<any>(`${API_ENDPOINTS.certifications}/${this.certId}`).subscribe({
       next: (cert) => {
+        const feeUsd = parseExamFeeFromCriteriaJson(cert.criteriaDescription);
+        if (feeUsd > 0 && !isExamFeePaid(this.certId)) {
+          this.zone.run(() => {
+            this.router.navigate(['/certifications', this.certId]);
+          });
+          return;
+        }
         this.examTitle = cert.name + (this.isPracticeMode() ? ' Practice' : ' Exam');
         if (this.isPracticeMode() && this.tryPracticeMetadataQuestions(cert)) {
           return;

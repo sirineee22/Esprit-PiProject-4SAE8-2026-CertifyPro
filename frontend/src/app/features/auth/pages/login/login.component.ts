@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, LoginResponse } from '../../../../core/auth/auth.service';
-import { User } from '../../../../shared/models/user.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -88,7 +87,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                 <button type="button" class="forgot-btn">FORGOT ACCESS?</button>
               </div>
 
-              <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isSubmitting">
+              <button type="submit" class="submit-btn">
                 <span *ngIf="!isSubmitting">Access Portal <i class="bi bi-chevron-right"></i></span>
                 <span *ngIf="isSubmitting">Signing in…</span>
               </button>
@@ -512,6 +511,7 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private toast: ToastService
   ) {
@@ -533,6 +533,13 @@ export class LoginComponent {
     this.authService.login(email, password).subscribe({
       next: (response: LoginResponse) => {
         this.authService.setSession(response.user, response.token);
+        this.isSubmitting = false;
+        this.toast.success('Login successful.');
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+          this.router.navigateByUrl(returnUrl);
+          return;
+        }
         if (response.user.role?.name === 'ADMIN') {
           this.router.navigate(['/admin/dashboard']);
         } else {
@@ -542,7 +549,9 @@ export class LoginComponent {
       error: (e: unknown) => {
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 401) {
-          const message = typeof e.error === 'string' && e.error ? e.error : 'Invalid email or password.';
+          const message = typeof e.error === 'string' && e.error
+            ? e.error
+            : 'Invalid email or password.';
           this.toast.error(message);
           return;
         }
