@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { jsPDF } from 'jspdf';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 
 interface QuizQuestion {
@@ -119,8 +120,13 @@ interface QuizQuestion {
               <p>Correct Answers: <strong>{{ correctCount }} / {{ questions.length }}</strong></p>
               <p *ngIf="isPracticeMode()">This mode is for learning only and does not affect certification status.</p>
             </div>
-            
-            <button class="btn-primary" (click)="goBack()">Return to Certification</button>
+
+            <div class="result-actions">
+              <button class="btn-submit" *ngIf="isPracticeMode()" (click)="downloadPracticeReport()">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Download Repport PDF
+              </button>
+              <button class="btn-primary" (click)="goBack()">Return to Certification</button>
+            </div>
           </div>
         </div>
       </ng-template>
@@ -206,6 +212,12 @@ interface QuizQuestion {
     .score-details { margin: 1.5rem 0 2rem; padding: 1rem; background: #f8fafc; border-radius: 12px; }
     .score-details p { margin: 0.5rem 0; color: #475569; }
     .score-details strong { color: #1e293b; }
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
 
     @media (max-width: 600px) {
       .question-card, .quiz-header, .quiz-footer { max-width: 100%; padding: 1.5rem; }
@@ -439,6 +451,163 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/certifications', this.certId]);
+  }
+
+  async downloadPracticeReport(): Promise<void> {
+    if (!this.isPracticeMode()) {
+      return;
+    }
+
+    const wrongItems = this.questions
+      .map((question, index) => ({ question, index }))
+      .filter(({ question, index }) => this.selectedAnswers[index] !== question.correctOptionIndex);
+
+    const doc = new jsPDF();
+    let y = 14;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const maxWidth = 182;
+    const brandBlue = '#1d4ed8';
+    const brandSlate = '#0f172a';
+    const brandMuted = '#475569';
+    const brandSoft = '#e2e8f0';
+
+    const addParagraph = (text: string, lineHeight = 6, color = brandMuted) => {
+      doc.setTextColor(color);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line: string) => {
+        if (y > pageHeight - 14) {
+          doc.addPage();
+          y = 16;
+        }
+        doc.text(line, margin, y);
+        y += lineHeight;
+      });
+    };
+
+    const logoDataUrl = await this.loadLogoDataUrl();
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', margin, y, 74, 16);
+      y += 16;
+    }
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, y, 196, y);
+    y += 8;
+
+    doc.setTextColor(brandSlate);
+    doc.setFontSize(18);
+    doc.text('Practice Mode Repport', margin, y);
+    y += 8;
+    doc.setFontSize(11);
+    addParagraph('Personalized post-practice analysis to help you prepare for the real exam.', 5.5);
+    y += 1;
+
+    // Summary panel
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y, 182, 24, 2, 2, 'F');
+    doc.setTextColor(brandMuted);
+    doc.setFontSize(10);
+    doc.text(`Certification: ${this.examTitle}`, margin + 3, y + 7);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, margin + 3, y + 13);
+    doc.setTextColor(brandBlue);
+    doc.setFontSize(12);
+    doc.text(`Score: ${this.finalScore.toFixed(0)}%`, 145, y + 8);
+    doc.setFontSize(10);
+    doc.text(`Correct: ${this.correctCount}/${this.questions.length}`, 145, y + 14);
+    y += 30;
+
+    if (wrongItems.length === 0) {
+      doc.setFillColor(240, 253, 244);
+      doc.roundedRect(margin, y, 182, 14, 2, 2, 'F');
+      doc.setTextColor('#047857');
+      doc.setFontSize(12);
+      doc.text('Excellent work. No wrong answers found in this practice attempt.', margin + 3, y + 8);
+    } else {
+      doc.setTextColor(brandSlate);
+      doc.setFontSize(12);
+      doc.text(`Wrong answers to review (${wrongItems.length})`, margin, y);
+      y += 6;
+
+      wrongItems.forEach(({ question, index }, i) => {
+        const selected = this.selectedAnswers[index];
+        const selectedText = selected === undefined ? 'No answer selected' : (question.options[selected] ?? 'Unknown option');
+        const correctText = question.options[question.correctOptionIndex] ?? 'Unknown option';
+        const questionText = question.questionText || question['question'] || `Question ${index + 1}`;
+
+        if (y > pageHeight - 42) {
+          doc.addPage();
+          y = 16;
+        }
+
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(margin, y, 182, 38, 2, 2, 'FD');
+        y += 6;
+
+        doc.setTextColor(brandSlate);
+        doc.setFontSize(11);
+        addParagraph(`${i + 1}) ${questionText}`, 5, brandSlate);
+        doc.setFontSize(10);
+        addParagraph(`Your answer: ${selectedText}`, 5, '#b91c1c');
+        addParagraph(`Correct answer: ${correctText}`, 5, '#047857');
+        addParagraph(`Explanation: ${this.buildLearningExplanation(questionText, selectedText, correctText)}`, 5, brandMuted);
+        y += 3;
+      });
+    }
+
+    const cleanTitle = this.examTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    doc.save(`repport-${cleanTitle || 'practice-exam'}.pdf`);
+  }
+
+  private buildLearningExplanation(questionText: string, selectedText: string, correctText: string): string {
+    const q = questionText.toLowerCase();
+    if (q.includes('security') || q.includes('secure') || q.includes('risk')) {
+      return `Review security principles behind this item. Compare why "${correctText}" mitigates risk better than "${selectedText}".`;
+    }
+    if (q.includes('database') || q.includes('sql') || q.includes('data')) {
+      return `Focus on core data concepts and query logic. Recheck assumptions that led to "${selectedText}" and verify why "${correctText}" is more accurate.`;
+    }
+    if (q.includes('cloud') || q.includes('aws') || q.includes('azure')) {
+      return `Revisit cloud service responsibilities and architecture choices. "${correctText}" matches the expected scenario constraints better than "${selectedText}".`;
+    }
+    return `Read the question keywords carefully and map them to the concept being tested. "${correctText}" aligns with the requirement more directly than "${selectedText}".`;
+  }
+
+  private loadLogoDataUrl(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const candidatePaths = [
+        "/assets/Capture d'écran 2026-04-15 174848.png",
+        '/assets/Capture d\u2019\u00e9cran 2026-04-15 174848.png',
+        '/assets/certifypro-logo.svg'
+      ];
+
+      const tryLoadAt = (index: number) => {
+        if (index >= candidatePaths.length) {
+          resolve(null);
+          return;
+        }
+
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+          ctx.drawImage(image, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => tryLoadAt(index + 1);
+        image.src = encodeURI(candidatePaths[index]);
+      };
+
+      tryLoadAt(0);
+    });
   }
 
   private tryPracticeMetadataQuestions(cert: any): boolean {
