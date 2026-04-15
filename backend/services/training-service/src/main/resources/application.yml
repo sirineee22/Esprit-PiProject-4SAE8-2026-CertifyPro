@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8086
 
 spring:
   application:
@@ -7,13 +7,13 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/userdb
     username: postgres
-    password: ${DB_PASSWORD:0511249527}
+    password: ${DB_PASSWORD:root}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
   cache:
-    type: redis
+    type: simple
   jpa:
     hibernate:
       ddl-auto: update

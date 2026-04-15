@@ -1,35 +1,20 @@
-<<<<<<< HEAD
-import { Component, ChangeDetectorRef } from '@angular/core';
-=======
-import { Component } from '@angular/core';
->>>>>>> origin/Trainings-Evaluation
+import { Component, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-<<<<<<< HEAD
+import { NgxIntlTelInputModule, CountryISO, SearchCountryField } from 'ngx-intl-tel-input';
 import { UserService } from '../../../users/services/users.api';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
 import { catchError, finalize, switchMap, throwError, timeout } from 'rxjs';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
-=======
-import { NgxIntlTelInputModule, CountryISO, SearchCountryField } from 'ngx-intl-tel-input';
-import { UserService } from '../../../users/services/users.api';
-import { AuthService } from '../../../../core/auth/auth.service';
-import { User } from '../../../../shared/models/user.model';
-import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
 import { passwordStrengthValidator } from '../../../../core/validators/password-strength.validator';
->>>>>>> origin/Trainings-Evaluation
 
 @Component({
   selector: 'app-register',
   standalone: true,
-<<<<<<< HEAD
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-=======
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgxIntlTelInputModule],
->>>>>>> origin/Trainings-Evaluation
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, NgxIntlTelInputModule],
   template: `
     <div class="page-container">
       <!-- Back to Home -->
@@ -104,13 +89,6 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
               <!-- Basic Info Section -->
               <div *ngIf="selectedRole === 'LEARNER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
                 <div class="row gx-3">
-<<<<<<< HEAD
-                    <div class="col-6">
-                      <div class="form-group">
-                        <label class="input-label">FIRST NAME</label>
-                        <input type="text" formControlName="firstName" placeholder="sirine" class="auth-input no-icon" [class.is-invalid]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
-                        <div class="error-msg" *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">Prénom requis</div>
-=======
                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">FIRST NAME</label>
@@ -121,16 +99,11 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                             @if (registerForm.get('firstName')?.errors?.['minlength']) { First name must be at least 2 characters. }
                           </span>
                         }
->>>>>>> origin/Trainings-Evaluation
                       </div>
                    </div>
                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">LAST NAME</label>
-<<<<<<< HEAD
-                        <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon" [class.is-invalid]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
-                        <div class="error-msg" *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">Nom requis</div>
-=======
                         <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon" [class.input-error]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
                         @if (registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched) {
                           <span class="error-message">
@@ -138,7 +111,6 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                             @if (registerForm.get('lastName')?.errors?.['minlength']) { Last name must be at least 2 characters. }
                           </span>
                         }
->>>>>>> origin/Trainings-Evaluation
                       </div>
                    </div>
                 </div>
@@ -147,11 +119,6 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                   <label class="input-label">EMAIL ADDRESS</label>
                   <div class="input-container">
                     <i class="bi bi-envelope"></i>
-<<<<<<< HEAD
-                    <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input" [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-                  </div>
-                  <div class="error-msg" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">Email invalide</div>
-=======
                     <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input" [class.input-error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
                   </div>
                   @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
@@ -160,18 +127,10 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                       @if (registerForm.get('email')?.errors?.['email']) { Please enter a valid email address. }
                     </span>
                   }
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">PHONE NUMBER</label>
-<<<<<<< HEAD
-                  <div class="input-container">
-                    <i class="bi bi-telephone"></i>
-                    <input type="tel" formControlName="phoneNumber" placeholder="+216 12 345 678" class="auth-input" [class.is-invalid]="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched">
-                  </div>
-                  <div class="error-msg" *ngIf="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched">Format invalide</div>
-=======
                   <div class="phone-input-wrapper">
                     <ngx-intl-tel-input
                       formControlName="phoneNumber"
@@ -187,18 +146,12 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                   @if (registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched && registerForm.get('phoneNumber')?.value) {
                     <span class="error-message">Please enter a valid phone number for the selected country.</span>
                   }
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">SET PASSWORD</label>
                   <div class="input-container">
                     <i class="bi bi-shield-lock"></i>
-<<<<<<< HEAD
-                    <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
-                  </div>
-                  <div class="error-msg" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">8 caractères minimum</div>
-=======
                     <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.input-error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
                   </div>
                   <p class="password-hint">Password must contain: at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character (e.g. !@#$%^&*).</p>
@@ -211,37 +164,16 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                         <div class="password-requirements">
                           <span class="requirement-label">Password must contain:</span>
                           <ul class="requirement-list">
-                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['minLength']) {
-                              <li class="requirement-item invalid">At least 8 characters</li>
-                            } @else {
-                              <li class="requirement-item valid">At least 8 characters</li>
-                            }
-                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasUppercase']) {
-                              <li class="requirement-item invalid">One uppercase letter (A-Z)</li>
-                            } @else {
-                              <li class="requirement-item valid">One uppercase letter (A-Z)</li>
-                            }
-                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasLowercase']) {
-                              <li class="requirement-item invalid">One lowercase letter (a-z)</li>
-                            } @else {
-                              <li class="requirement-item valid">One lowercase letter (a-z)</li>
-                            }
-                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasDigit']) {
-                              <li class="requirement-item invalid">One digit (0-9)</li>
-                            } @else {
-                              <li class="requirement-item valid">One digit (0-9)</li>
-                            }
-                            @if (registerForm.get('password')?.errors?.['passwordStrength']?.['hasSpecialChar']) {
-                              <li class="requirement-item invalid">One special character (!@#$%^&*...)</li>
-                            } @else {
-                              <li class="requirement-item valid">One special character (!@#$%^&*...)</li>
-                            }
+                            <li class="requirement-item" [class.invalid]="registerForm.get('password')?.errors?.['passwordStrength']?.['minLength']" [class.valid]="!registerForm.get('password')?.errors?.['passwordStrength']?.['minLength']">At least 8 characters</li>
+                            <li class="requirement-item" [class.invalid]="registerForm.get('password')?.errors?.['passwordStrength']?.['hasUppercase']" [class.valid]="!registerForm.get('password')?.errors?.['passwordStrength']?.['hasUppercase']">One uppercase letter (A-Z)</li>
+                            <li class="requirement-item" [class.invalid]="registerForm.get('password')?.errors?.['passwordStrength']?.['hasLowercase']" [class.valid]="!registerForm.get('password')?.errors?.['passwordStrength']?.['hasLowercase']">One lowercase letter (a-z)</li>
+                            <li class="requirement-item" [class.invalid]="registerForm.get('password')?.errors?.['passwordStrength']?.['hasDigit']" [class.valid]="!registerForm.get('password')?.errors?.['passwordStrength']?.['hasDigit']">One digit (0-9)</li>
+                            <li class="requirement-item" [class.invalid]="registerForm.get('password')?.errors?.['passwordStrength']?.['hasSpecialChar']" [class.valid]="!registerForm.get('password')?.errors?.['passwordStrength']?.['hasSpecialChar']">One special character (!@#$%^&*...)</li>
                           </ul>
                         </div>
                       }
                     </div>
                   }
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <!-- Next Button (Trainer Step 1) -->
@@ -267,47 +199,29 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                 
                 <div class="form-group">
                   <label class="input-label">SUBJECTS YOU CAN TEACH</label>
-<<<<<<< HEAD
-                  <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon" [class.is-invalid]="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">
-                  <small class="field-hint">Separate multiple subjects with commas</small>
-                  <div class="error-msg" *ngIf="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">Sujets requis</div>
-=======
                   <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon" [class.input-error]="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">
                   @if (registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched) {
                     <span class="error-message">Subjects are required.</span>
                   }
                   <small class="field-hint">Separate multiple subjects with commas</small>
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">YEARS OF EXPERIENCE</label>
-<<<<<<< HEAD
-                  <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon" [class.is-invalid]="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">
-                  <div class="error-msg" *ngIf="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">Expérience requise</div>
-=======
                   <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon" [class.input-error]="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">
                   @if (registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched) {
                     <span class="error-message">Years of experience is required.</span>
                   }
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">LINKEDIN PROFILE (optional) </label>
                   <input type="url" formControlName="certificatesLink" placeholder="https://..." class="auth-input no-icon">
-<<<<<<< HEAD
-=======
                   <small class="field-hint">Link to your certificates or portfolio</small>
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">WHY DO YOU WANT TO BE A TRAINER?</label>
-<<<<<<< HEAD
-                  <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea" [class.is-invalid]="registerForm.get('message')?.invalid && registerForm.get('message')?.touched"></textarea>
-                  <div class="error-msg" *ngIf="registerForm.get('message')?.invalid && registerForm.get('message')?.touched">Précisez votre motivation (20 chars min)</div>
-=======
                   <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea" [class.input-error]="registerForm.get('message')?.invalid && registerForm.get('message')?.touched"></textarea>
                   @if (registerForm.get('message')?.invalid && registerForm.get('message')?.touched) {
                     <span class="error-message">
@@ -315,7 +229,6 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
                       @if (registerForm.get('message')?.errors?.['minlength']) { Message must be at least 20 characters. }
                     </span>
                   }
->>>>>>> origin/Trainings-Evaluation
                 </div>
 
                 <div class="step-actions">
@@ -334,7 +247,7 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
           </div>
           
           <div class="copyright">
-             © 2024 CERTIFYPRO GLOBAL ENTERPRISE
+             © 2026 CERTIFYPRO GLOBAL ENTERPRISE
           </div>
         </div>
       </div>
@@ -574,31 +487,12 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
     }
 
     .auth-input.no-icon, .auth-textarea { padding-left: 1rem; }
-<<<<<<< HEAD
-    
-    .auth-input.is-invalid, .auth-textarea.is-invalid {
-      border-color: #ef4444;
-      background: #fef2f2;
-    }
-
-    .error-msg {
-      color: #ef4444;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-top: 0.25rem;
-    }
-=======
->>>>>>> origin/Trainings-Evaluation
-
     .auth-input:focus, .auth-textarea:focus {
       outline: none;
       border-color: #f59e0b;
       background: white;
       box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
-
-<<<<<<< HEAD
-=======
     .auth-input.input-error, .auth-textarea.input-error { border-color: #dc2626; }
     .error-message {
       display: block;
@@ -614,33 +508,10 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
       line-height: 1.4;
     }
 
-    .password-requirements {
-      margin-top: 0.5rem;
-    }
-
-    .requirement-label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 0.5rem;
-    }
-
-    .requirement-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-size: 0.75rem;
-    }
-
-    .requirement-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.25rem;
-      padding-left: 1.25rem;
-      position: relative;
-    }
-
+    .password-requirements { margin-top: 0.5rem; }
+    .requirement-label { display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
+    .requirement-list { list-style: none; padding: 0; margin: 0; font-size: 0.75rem; }
+    .requirement-item { display: flex; align-items: center; margin-bottom: 0.25rem; padding-left: 1.25rem; position: relative; }
     .requirement-item::before {
       content: '';
       position: absolute;
@@ -652,46 +523,15 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
       align-items: center;
       justify-content: center;
     }
+    .requirement-item.invalid { color: #dc2626; }
+    .requirement-item.invalid::before { content: '✗'; background: #fee2e2; color: #dc2626; font-size: 0.7rem; font-weight: bold; }
+    .requirement-item.valid { color: #059669; }
+    .requirement-item.valid::before { content: '✓'; background: #d1fae5; color: #059669; font-size: 0.7rem; font-weight: bold; }
 
-    .requirement-item.invalid {
-      color: #dc2626;
-    }
-
-    .requirement-item.invalid::before {
-      content: '✗';
-      background: #fee2e2;
-      color: #dc2626;
-      font-size: 0.7rem;
-      font-weight: bold;
-    }
-
-    .requirement-item.valid {
-      color: #059669;
-    }
-
-    .requirement-item.valid::before {
-      content: '✓';
-      background: #d1fae5;
-      color: #059669;
-      font-size: 0.7rem;
-      font-weight: bold;
-    }
-
-    .phone-input-wrapper {
-      width: 100%;
-    }
-    .phone-input-wrapper ::ng-deep .iti {
-      width: 100%;
-    }
-    .phone-input-wrapper ::ng-deep .iti__flag-container {
-      border-radius: 10px 0 0 10px;
-      border: 1px solid #e5e7eb;
-      border-right: none;
-      background: #f9fafb;
-    }
-    .phone-input-wrapper ::ng-deep .iti__selected-flag {
-      padding: 0 0 0 12px;
-    }
+    .phone-input-wrapper { width: 100%; }
+    .phone-input-wrapper ::ng-deep .iti { width: 100%; }
+    .phone-input-wrapper ::ng-deep .iti__flag-container { border-radius: 10px 0 0 10px; border: 1px solid #e5e7eb; border-right: none; background: #f9fafb; }
+    .phone-input-wrapper ::ng-deep .iti__selected-flag { padding: 0 0 0 12px; }
     .phone-input-wrapper ::ng-deep input.auth-phone-input {
       padding-left: 52px;
       border-radius: 0 10px 10px 0;
@@ -702,20 +542,9 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
       padding-bottom: 0.8rem;
       font-size: 0.95rem;
     }
-    .phone-input-wrapper ::ng-deep input.auth-phone-input:focus {
-      outline: none;
-      border-color: #f59e0b;
-      background: white;
-      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
-    }
+    .phone-input-wrapper ::ng-deep input.auth-phone-input:focus { outline: none; border-color: #f59e0b; background: white; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1); }
 
->>>>>>> origin/Trainings-Evaluation
-    .field-hint {
-      display: block;
-      font-size: 0.75rem;
-      color: #9ca3af;
-      margin-top: 0.25rem;
-    }
+    .field-hint { display: block; font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
 
     .submit-btn {
       width: 100%;
@@ -739,147 +568,31 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
     .submit-btn:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .next-btn {
-      background: #f59e0b;
-      box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.25);
-    }
+    .next-btn { background: #f59e0b; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.25); }
     .next-btn:hover:not(:disabled) { background: #d97706; }
 
-    .step-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #e5e7eb;
-    }
+    .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+    .step-indicator { font-size: 0.75rem; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 0.25rem 0.75rem; border-radius: 20px; }
+    .step-actions { display: flex; align-items: center; gap: 1.5rem; margin-top: 2rem; }
 
-    .step-indicator {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.1);
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-    }
+    .back-link-btn { background: none; border: none; display: flex; align-items: center; gap: 0.5rem; color: #6b7280; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .back-link-btn:hover { color: #0b1120; transform: translateX(-4px); }
 
-    .step-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
+    .trainer-fields .section-title { border-top: none; margin: 0; padding-top: 0; }
 
-    .back-link-btn {
-      background: none;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #6b7280;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .back-link-btn:hover {
-      color: #0b1120;
-      transform: translateX(-4px);
-    }
-
-    .trainer-fields .section-title {
-      border-top: none;
-      margin: 0;
-      padding-top: 0;
-    }
-
-    .copyright {
-      padding-top: 2rem;
-      text-align: center;
-      font-size: 0.7rem;
-      font-weight: 800;
-      color: #d1d5db;
-      letter-spacing: 0.1em;
-    }
+    .copyright { padding-top: 2rem; text-align: center; font-size: 0.7rem; font-weight: 800; color: #d1d5db; letter-spacing: 0.1em; }
 
     /* Success Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 20000;
-      animation: fadeIn 0.3s;
-    }
-
-    .success-modal {
-      background: white;
-      border-radius: 16px;
-      padding: 3rem;
-      max-width: 500px;
-      text-align: center;
-      animation: slideUp 0.3s;
-    }
-
-    .success-icon {
-      width: 80px;
-      height: 80px;
-      background: rgba(34, 197, 94, 0.1);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1.5rem;
-    }
-
-    .success-icon i {
-      font-size: 3rem;
-      color: #22c55e;
-    }
-
-    .success-modal h2 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: #0b1f3b;
-      margin-bottom: 1rem;
-    }
-
-    .success-modal p {
-      color: #6b7280;
-      margin-bottom: 1rem;
-      line-height: 1.6;
-    }
-
-    .modal-message {
-      font-weight: 500;
-    }
-
-    .modal-note {
-      background: rgba(245, 158, 11, 0.1);
-      border-left: 3px solid #f59e0b;
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: left;
-      margin-top: 1.5rem;
-    }
-
-    .modal-btn {
-      margin-top: 2rem;
-      padding: 0.875rem 2rem;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .modal-btn:hover {
-      background: #1d4ed8;
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 20000; animation: fadeIn 0.3s; }
+    .success-modal { background: white; border-radius: 16px; padding: 3rem; max-width: 500px; text-align: center; animation: slideUp 0.3s; }
+    .success-icon { width: 80px; height: 80px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .success-icon i { font-size: 3rem; color: #22c55e; }
+    .success-modal h2 { font-size: 1.75rem; font-weight: 800; color: #0b1f3b; margin-bottom: 1rem; }
+    .success-modal p { color: #6b7280; margin-bottom: 1rem; line-height: 1.6; }
+    .modal-message { font-weight: 500; }
+    .modal-note { background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 1rem; border-radius: 8px; text-align: left; margin-top: 1.5rem; }
+    .modal-btn { margin-top: 2rem; padding: 0.875rem 2rem; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .modal-btn:hover { background: #1d4ed8; }
 
     .animate-fade-in { animation: fadeIn 0.8s ease-out; }
     .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -895,39 +608,29 @@ import { passwordStrengthValidator } from '../../../../core/validators/password-
   `]
 })
 export class RegisterComponent {
-<<<<<<< HEAD
-=======
   readonly CountryISO = CountryISO;
   readonly SearchCountryField = SearchCountryField;
->>>>>>> origin/Trainings-Evaluation
+  
   registerForm: FormGroup;
   selectedRole: 'LEARNER' | 'TRAINER' | null = null;
   trainerStep: number = 1;
   isSubmitting = false;
   showSuccessModal = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private userService: UserService,
-    private authService: AuthService,
-    private trainerRequestService: TrainerRequestService,
-<<<<<<< HEAD
-    private router: Router,
-    private cdr: ChangeDetectorRef
-=======
-    private router: Router
->>>>>>> origin/Trainings-Evaluation
-  ) {
+  private fb = inject(FormBuilder);
+  private userService = inject(UserService);
+  private authService = inject(AuthService);
+  private trainerRequestService = inject(TrainerRequestService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       phoneNumber: [''],
-<<<<<<< HEAD
-      password: ['', [Validators.required, Validators.minLength(8)]],
-=======
       password: ['', [Validators.required, passwordStrengthValidator()]],
->>>>>>> origin/Trainings-Evaluation
       // Trainer-specific fields
       subjects: [''],
       experience: [''],
@@ -940,7 +643,6 @@ export class RegisterComponent {
     this.selectedRole = role;
     this.trainerStep = 1;
 
-    // Add validators for trainer fields
     if (role === 'TRAINER') {
       this.registerForm.get('subjects')?.setValidators([Validators.required]);
       this.registerForm.get('experience')?.setValidators([Validators.required]);
@@ -954,16 +656,17 @@ export class RegisterComponent {
     this.registerForm.get('subjects')?.updateValueAndValidity();
     this.registerForm.get('experience')?.updateValueAndValidity();
     this.registerForm.get('message')?.updateValueAndValidity();
+    this.cdr.detectChanges();
   }
 
   changeRole() {
     this.selectedRole = null;
     this.trainerStep = 1;
     this.registerForm.reset();
+    this.cdr.detectChanges();
   }
 
   nextStep() {
-    // Only proceed if basic info fields are valid
     const basicFields = ['firstName', 'lastName', 'email', 'password'];
     let isValid = true;
 
@@ -977,23 +680,20 @@ export class RegisterComponent {
 
     if (isValid) {
       this.trainerStep = 2;
-      // Scroll to top of form
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    this.cdr.detectChanges();
   }
 
   prevStep() {
     this.trainerStep = 1;
+    this.cdr.detectChanges();
   }
 
   onSubmit() {
     if (this.registerForm.invalid || this.isSubmitting) return;
-
     this.isSubmitting = true;
-<<<<<<< HEAD
     this.cdr.detectChanges();
-=======
->>>>>>> origin/Trainings-Evaluation
 
     if (this.selectedRole === 'LEARNER') {
       this.registerAsLearner();
@@ -1002,33 +702,12 @@ export class RegisterComponent {
     }
   }
 
-<<<<<<< HEAD
-  private registerAsLearner() {
-    const user: User = {
-      ...this.registerForm.value,
-=======
-  /**
-   * Normalizes phone from form value. ngx-intl-tel-input sets an object
-   * (e.g. { e164Number, internationalNumber, number, ... }), not a string.
-   * We extract a string from that object or use the value as-is if it's already a string.
-   */
-  private normalizePhone(val: unknown): string | undefined {
-    if (val == null) return undefined;
-    if (typeof val === 'string') {
-      const cleaned = val.trim().replace(/\s/g, '');
-      return cleaned || undefined;
-    }
-    if (typeof val === 'object' && val !== null) {
-      const o = val as Record<string, unknown>;
-      const str =
-        (typeof o['e164Number'] === 'string' && o['e164Number']) ||
-        (typeof o['internationalNumber'] === 'string' && o['internationalNumber']) ||
-        (typeof o['nationalNumber'] === 'string' && o['nationalNumber']) ||
-        (typeof o['number'] === 'string' && o['number']);
-      if (str) {
-        const cleaned = String(str).trim().replace(/\s/g, '');
-        return cleaned || undefined;
-      }
+  private normalizePhone(val: any): string | undefined {
+    if (!val) return undefined;
+    if (typeof val === 'string') return val.trim().replace(/\s/g, '') || undefined;
+    if (typeof val === 'object') {
+      const str = val.e164Number || val.internationalNumber || val.nationalNumber || val.number;
+      if (str) return String(str).trim().replace(/\s/g, '') || undefined;
     }
     return undefined;
   }
@@ -1040,150 +719,96 @@ export class RegisterComponent {
       ...form,
       email: (form.email ?? '').trim().toLowerCase(),
       password: (form.password ?? '').trim(),
-      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined,
->>>>>>> origin/Trainings-Evaluation
+      phoneNumber: this.normalizePhone(phoneRaw),
       active: true
     };
 
     this.userService.create(user).subscribe({
       next: (createdUser: User) => {
-<<<<<<< HEAD
-        console.log('Learner registered successfully:', createdUser);
-        this.authService.setSession(createdUser);
-        this.router.navigate(['/']);
-      },
-      error: (e: unknown) => {
-        this.isSubmitting = false;
-        this.cdr.detectChanges();
-=======
-        // Auto-login to get JWT token (email is already lowercase)
-        const email = (user.email ?? '').trim();
-        const password = (user.password ?? '').trim();
-        this.authService.login(email, password).subscribe({
+        // Auto-login
+        this.authService.login(user.email!, user.password!).subscribe({
           next: (loginRes) => {
-            this.authService.setSession(loginRes.user, loginRes.token);
+            if (loginRes.user) {
+              this.authService.setSession(loginRes.user, loginRes.token);
+            } else {
+              this.authService.setSession(createdUser, loginRes.token);
+            }
             this.isSubmitting = false;
             this.router.navigate(['/']);
+            this.cdr.detectChanges();
           },
           error: () => {
             this.authService.setSession(createdUser);
             this.isSubmitting = false;
             this.router.navigate(['/']);
+            this.cdr.detectChanges();
           }
         });
       },
-      error: (e: unknown) => {
+      error: (e: any) => {
         this.isSubmitting = false;
->>>>>>> origin/Trainings-Evaluation
-        console.error('Registration failed', e);
+        this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
-          alert('Email already exists. Please use a different email.');
-          return;
+          alert('Email already exists.');
+        } else {
+          alert('Registration failed.');
         }
-        alert('Registration failed. Please try again.');
       }
     });
   }
 
   private registerAsTrainer() {
-<<<<<<< HEAD
-    const user: User = {
-      firstName: this.registerForm.value.firstName,
-      lastName: this.registerForm.value.lastName,
-      email: this.registerForm.value.email,
-      phoneNumber: this.registerForm.value.phoneNumber,
-      password: this.registerForm.value.password,
-=======
     const form = this.registerForm.value;
     const phoneRaw = this.registerForm.get('phoneNumber')?.value;
     const user: User = {
-      firstName: form.firstName,
-      lastName: form.lastName,
+      ...form,
       email: (form.email ?? '').trim().toLowerCase(),
-      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined,
       password: (form.password ?? '').trim(),
->>>>>>> origin/Trainings-Evaluation
+      phoneNumber: this.normalizePhone(phoneRaw),
       active: false
     };
 
-
     this.userService.create(user).subscribe({
       next: (createdUser: User) => {
-
         if (!createdUser?.id) {
-          console.error('ERROR: No user ID in response');
           this.isSubmitting = false;
-<<<<<<< HEAD
           this.cdr.detectChanges();
-=======
->>>>>>> origin/Trainings-Evaluation
-          alert('Registration failed. Please try again.');
+          alert('Registration failed.');
           return;
         }
 
-        // Show success after submit click has completed
-        this.isSubmitting = false;
-<<<<<<< HEAD
-        this.showSuccessModal = true;
-        this.cdr.detectChanges();
-
-=======
-        setTimeout(() => {
-          this.showSuccessModal = true;
-        }, 0);
-
-        // Submit trainer request in background
->>>>>>> origin/Trainings-Evaluation
         const request = {
           userId: createdUser.id,
-          subjects: this.registerForm.value.subjects,
-          message: this.registerForm.value.message,
-          experience: this.registerForm.value.experience,
-          certificatesLink: this.registerForm.value.certificatesLink
+          subjects: form.subjects,
+          message: form.message,
+          experience: form.experience,
+          certificatesLink: form.certificatesLink
         };
 
-<<<<<<< HEAD
-        // Trainer request requires JWT; obtain session then submit
-        this.authService
-          .login(this.registerForm.value.email, this.registerForm.value.password)
-          .pipe(
-            switchMap((loginRes) => {
-              if (loginRes.user && loginRes.token) {
-                this.authService.setSession(loginRes.user, loginRes.token);
-              }
-              return this.trainerRequestService.submitRequest(request);
-            })
-          )
-          .subscribe({
-            next: (response) => {
-              console.log('Trainer request submitted', response);
-            },
-            error: (e: unknown) => {
-              console.error('Trainer request or login failed', e);
-            }
-          });
-=======
+        // Submit trainer request
         this.trainerRequestService.submitRequest(request).subscribe({
           next: () => {
+            this.isSubmitting = false;
+            this.showSuccessModal = true;
+            this.cdr.detectChanges();
           },
-          error: (e: unknown) => {
-            console.error('Trainer request failed', e);
+          error: (err) => {
+            console.error('Request failed', err);
+            // Even if request fails, user is created? Usually we'd want both to succeed.
+            this.isSubmitting = false;
+            this.showSuccessModal = true; // Still show success since account is created
+            this.cdr.detectChanges();
           }
         });
->>>>>>> origin/Trainings-Evaluation
       },
-      error: (e: unknown) => {
-        console.error('Trainer registration failed', e);
+      error: (e: any) => {
         this.isSubmitting = false;
-<<<<<<< HEAD
         this.cdr.detectChanges();
-=======
->>>>>>> origin/Trainings-Evaluation
         if (e instanceof HttpErrorResponse && e.status === 409) {
-          alert('Email already exists. Please use a different email.');
-          return;
+          alert('Email already exists.');
+        } else {
+          alert('Registration failed.');
         }
-        alert('Registration failed. Please try again.');
       }
     });
   }

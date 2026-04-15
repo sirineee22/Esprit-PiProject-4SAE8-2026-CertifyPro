@@ -16,12 +16,9 @@ dist/
 # ENV
 .env
 
-<<<<<<< HEAD
 # Uploaded files (e.g. profile images)
 uploads/
 
-=======
->>>>>>> origin/Trainings-Evaluation
 # OS
 .DS_Store
 Thumbs.db

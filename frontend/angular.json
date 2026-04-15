@@ -26,11 +26,8 @@
               }
             ],
             "styles": [
-<<<<<<< HEAD
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "node_modules/leaflet/dist/leaflet.css",
-=======
->>>>>>> origin/Trainings-Evaluation
               "src/styles.css"
             ]
           },
@@ -44,13 +41,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-<<<<<<< HEAD
                   "maximumWarning": "16kB",
                   "maximumError": "32kB"
-=======
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
->>>>>>> origin/Trainings-Evaluation
                 }
               ],
               "outputHashing": "all"

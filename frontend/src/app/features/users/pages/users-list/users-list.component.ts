@@ -63,6 +63,7 @@ export class UsersListComponent implements OnInit {
         this.userService.getAll().subscribe({
             next: (data: User[]) => {
                 this.users = data;
+                this.cdr.detectChanges();
             },
             error: (e: unknown) => {
                 console.error('Error loading users:', e);
@@ -74,6 +75,7 @@ export class UsersListComponent implements OnInit {
         this.http.get<Role[]>(`${API_BASE_URL}/api/roles`).subscribe({
             next: (data: Role[]) => {
                 this.roles = data;
+                this.cdr.detectChanges();
             },
             error: (e: unknown) => console.error('Error loading roles:', e)
         });
@@ -237,14 +239,11 @@ export class UsersListComponent implements OnInit {
             this.deleteUser(user.id, `${user.firstName} ${user.lastName}`);
         }
     }
-<<<<<<< HEAD
 
-    formatDate(d: string) {
+    formatDate(d: string | undefined) {
         if (!d) return 'Never';
         return new Date(d).toLocaleDateString('fr-FR', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
         });
     }
-=======
->>>>>>> origin/Trainings-Evaluation
 }

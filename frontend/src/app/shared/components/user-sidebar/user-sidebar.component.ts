@@ -373,81 +373,46 @@ import { AppNotification, UserService } from '../../../features/users/services/u
     .user-profile-section {
       padding: 1rem 0.75rem 1.5rem;
       border-top: 1px solid var(--sidebar-border);
+      position: relative;
     }
 
     .profile-card {
-      background: #F2F5F9;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 0.65rem 0.75rem;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all var(--transition-speed) var(--transition-ease);
+    }
+
+    .collapsed-card {
+      padding: 0.75rem 0.25rem;
+      align-items: center;
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .profile-card-link {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      text-decoration: none !important;
+      color: inherit;
     }
 
-    .action-btn {
-      width: 36px;
-      height: 36px;
-      border: none;
-      background: white;
-      color: #64748b;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+    .user-avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
     }
-
-    .action-btn.logout-btn { color: #ef4444; }
-
-    .bell-btn { position: relative; }
-
-    .notif-badge {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      min-width: 16px;
-      height: 16px;
-      background: #ef4444;
-      color: white;
-      font-size: 0.62rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .notifications-panel {
-      margin-top: 0.75rem;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 0.5rem;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    .notif-item {
-      width: 100%;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      background: #f8fafc;
-      padding: 0.4rem;
-      display: flex;
-      gap: 0.5rem;
-      text-align: left;
-      margin-bottom: 0.35rem;
-    }
-
-    .notif-dot.unread { background: #f59e0b; width: 8px; height: 8px; border-radius: 50%; }
-
-    .notif-title { font-size: 0.8rem; font-weight: 700; }
-    .notif-message { font-size: 0.75rem; color: #475569; }
 
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       background: white;
-      border: 1px solid #e2e8f0;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
       border-radius: 50%;
       overflow: hidden;
       display: flex;
@@ -455,10 +420,186 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       justify-content: center;
     }
 
-    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-    .user-name { font-size: 0.9rem; font-weight: 700; margin: 0; }
-    .user-role { font-size: 0.7rem; color: #64748b; margin: 0; }
+    .avatar-initials {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .status-indicator {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .status-indicator.online { background: #10b981; }
+
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #0b1f3b;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-decoration: none !important;
+    }
+
+    .user-role {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin: 2px 0 0 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-decoration: none !important;
+    }
+
+    .profile-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.4rem;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .collapsed-actions {
+      flex-direction: column;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 0.75rem;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #f1f5f9;
+      color: #0b1f3b;
+    }
+
+    .action-btn i { font-size: 1.1rem; }
+
+    .bell-btn { position: relative; }
+
+    .notif-badge {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      min-width: 16px;
+      height: 16px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    .logout-btn:hover {
+      background: #fef2f2;
+      color: #ef4444;
+    }
+
+    /* Notifications Panel */
+    .notifications-panel {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0.75rem;
+      right: 0.75rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 0;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      overflow: hidden;
+      animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUpFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notifications-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notifications-list {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .notif-item {
+      width: 100%;
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2px;
+    }
+
+    .notif-item:hover { background: #f8fafc; }
+
+    .notif-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .notif-dot.unread { background: #f59e0b; }
+
+    .notif-content { flex: 1; }
+    .notif-title { font-size: 0.85rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+    .notif-message { font-size: 0.75rem; color: #64748b; margin-top: 2px; line-height: 1.4; }
+    .notif-time { font-size: 0.65rem; color: #94a3b8; margin-top: 4px; font-weight: 600; }
+
   `]
 })
 export class UserSidebarComponent implements OnInit, OnDestroy {

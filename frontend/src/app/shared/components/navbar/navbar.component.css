@@ -188,7 +188,6 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
 }
 
-<<<<<<< HEAD
 .nav-avatar {
   width: 32px;
   height: 32px;
@@ -221,8 +220,6 @@
   font-size: 1rem;
 }
 
-=======
->>>>>>> origin/Trainings-Evaluation
 .user-name-modern {
   font-weight: 700;
   color: #1e293b;
@@ -357,7 +354,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 1.5rem;
-  color: #0b1f3b;
+  color: #0b1120;
   cursor: pointer;
   padding: 4px 8px;
   display: flex;

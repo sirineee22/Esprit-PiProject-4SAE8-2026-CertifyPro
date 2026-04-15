@@ -7,12 +7,6 @@
         </button>
     </div>
 
-<<<<<<< HEAD
- 
-
-    <!-- Users Table -->
-    <div class="users-card" >
-=======
     <!-- Loading Spinner -->
     <div *ngIf="isLoading" class="loading-container">
         <div class="spinner"></div>
@@ -21,7 +15,6 @@
 
     <!-- Users Table -->
     <div class="users-card" *ngIf="!isLoading">
->>>>>>> origin/Trainings-Evaluation
         <table class="users-table">
             <thead>
                 <tr>
@@ -29,10 +22,7 @@
                     <th>Email</th>
                     <th>Role</th>
                     <th>Status</th>
-<<<<<<< HEAD
                     <th>Last Login</th>
-=======
->>>>>>> origin/Trainings-Evaluation
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -52,12 +42,9 @@
                             {{ user.active ? 'Active' : 'Inactive' }}
                         </span>
                     </td>
-<<<<<<< HEAD
                     <td class="small text-muted">
                         {{ user.lastLogin ? formatDate(user.lastLogin) : 'Never' }}
                     </td>
-=======
->>>>>>> origin/Trainings-Evaluation
                     <td class="actions-cell">
                         <button class="btn-edit" (click)="handleEditClick(user)">
                             <i class="bi bi-pencil"></i> Edit
@@ -108,7 +95,7 @@
                 <label>Password</label>
                 <input type="password" [(ngModel)]="editedUser.password" class="form-input"
                     placeholder="e.g. SecurePass1!">
-                <small class="field-hint">Min 8 chars, uppercase, lowercase, digit, special character (!@#$%)</small>
+                <small class="field-hint">Min 8 chars, uppercase, lowercase, digit, and special character (!@#$%)</small>
             </div>
             <div class="form-group">
                 <label>Phone Number</label>

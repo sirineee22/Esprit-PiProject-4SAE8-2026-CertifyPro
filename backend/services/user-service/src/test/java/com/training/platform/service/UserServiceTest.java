@@ -9,11 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-<<<<<<< HEAD
 import java.util.Arrays;
 import java.util.List;
-=======
->>>>>>> origin/Trainings-Evaluation
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +26,6 @@ public class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-<<<<<<< HEAD
     private User testUser;
 
     @BeforeEach
@@ -94,39 +90,10 @@ public class UserServiceTest {
         });
 
         assertEquals("Error: Email is already in use!", exception.getMessage());
-=======
-    private User user;
-
-    @BeforeEach
-    void setUp() {
-        user = new User();
-        user.setId(1L);
-        user.setEmail("test@esprit.tn");
-        user.setFirstName("Khalil");
-        user.setLastName("Test");
-    }
-
-    @Test
-    void getUserById_ShouldReturnUser() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        Optional<User> result = userService.getUserById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals("test@esprit.tn", result.get().getEmail());
-    }
-
-    @Test
-    void createUser_WithExistingEmail_ShouldThrowException() {
-        when(userRepository.existsByEmail("test@esprit.tn")).thenReturn(true);
-
-        assertThrows(RuntimeException.class, () -> userService.createUser(user));
->>>>>>> origin/Trainings-Evaluation
         verify(userRepository, never()).save(any());
     }
 
     @Test
-<<<<<<< HEAD
     void updateUser_WhenUserExists_ShouldUpdateAndSave() {
         // Arrange
         User updatedDetails = new User();
@@ -167,33 +134,5 @@ public class UserServiceTest {
 
         // Assert
         verify(userRepository, times(1)).deleteById(1L);
-=======
-    void createUser_WithNewEmail_ShouldSaveUser() {
-        when(userRepository.existsByEmail("test@esprit.tn")).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenReturn(user);
-
-        User savedUser = userService.createUser(user);
-
-        assertNotNull(savedUser);
-        assertEquals("test@esprit.tn", savedUser.getEmail());
-        verify(userRepository).save(any(User.class));
-    }
-
-    @Test
-    void updateUser_ExistingUser_ShouldSuccess() {
-        User details = new User();
-        details.setFirstName("Updated");
-        details.setLastName("User");
-        details.setEmail("updated@esprit.tn");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenReturn(user);
-
-        User result = userService.updateUser(1L, details);
-
-        assertNotNull(result);
-        assertEquals("Updated", user.getFirstName());
-        verify(userRepository).save(user);
->>>>>>> origin/Trainings-Evaluation
     }
 }

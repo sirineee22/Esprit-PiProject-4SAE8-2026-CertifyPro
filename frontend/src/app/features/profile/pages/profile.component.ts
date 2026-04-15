@@ -1,31 +1,17 @@
-<<<<<<< HEAD
 import { Component, OnInit, signal, WritableSignal, ChangeDetectorRef, NgZone, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-=======
-import { Component, OnInit, signal, WritableSignal, ChangeDetectorRef, NgZone } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
->>>>>>> origin/Trainings-Evaluation
 import { firstValueFrom, timeout } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserService } from '../../users/services/users.api';
 import { ThemeService } from '../../../core/services/theme.service';
-<<<<<<< HEAD
 import { User, UserProgress } from '../../../shared/models/user.model';
 import { API_BASE_URL } from '../../../core/api/api.config';
-=======
-import { User } from '../../../shared/models/user.model';
->>>>>>> origin/Trainings-Evaluation
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-<<<<<<< HEAD
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
-=======
-  imports: [CommonModule, ReactiveFormsModule],
->>>>>>> origin/Trainings-Evaluation
   template: `
     <div class="profile-premium-wrapper">
       <!-- Profile Header -->
@@ -37,7 +23,6 @@ import { User } from '../../../shared/models/user.model';
         <div class="profile-container">
           <div class="profile-header-card">
             <div class="profile-header-avatar">
-<<<<<<< HEAD
               <div class="avatar-circle clickable" [class.has-image]="avatarImageUrl() && !imgError" (click)="triggerFileInput()" title="Changer la photo">
                 <input #fileInput type="file" accept="image/jpeg,image/png,image/gif,image/webp" (change)="onFileSelected($event)" class="avatar-file-input">
                 <img *ngIf="avatarImageUrl() && !imgError" [src]="avatarImageUrl()" alt="Profile" (error)="imgError = true">
@@ -45,34 +30,25 @@ import { User } from '../../../shared/models/user.model';
                 <i *ngIf="(!avatarImageUrl() || imgError) && !initials()" class="bi bi-person-fill"></i>
                 <span class="avatar-overlay" *ngIf="!uploadingImage()"><i class="bi bi-camera"></i> Photo</span>
                 <span class="avatar-overlay uploading" *ngIf="uploadingImage()">...</span>
-=======
-              <div class="avatar-circle">
-                <i class="bi bi-person-fill"></i>
->>>>>>> origin/Trainings-Evaluation
               </div>
             </div>
             <div class="profile-header-info">
               <h1 class="profile-header-name">{{currentUser()?.firstName}} {{currentUser()?.lastName}}</h1>
               <div class="profile-header-meta">
                 <span class="meta-item">
-<<<<<<< HEAD
                    <i class="bi bi-envelope"></i>
                    {{currentUser()?.email}}
-=======
-                  <i class="bi bi-envelope"></i>
-                  {{currentUser()?.email}}
->>>>>>> origin/Trainings-Evaluation
                 </span>
                 <span class="meta-item">
-                  <i class="bi bi-geo-alt"></i>
-                  Membre CertifyPro
+                   <i class="bi bi-geo-alt"></i>
+                   Membre CertifyPro
                 </span>
                 <span class="meta-item">
-                  <i class="bi bi-calendar3"></i>
-                  Membre depuis 2026
+                   <i class="bi bi-calendar3"></i>
+                   Membre depuis 2026
                 </span>
               </div>
-<<<<<<< HEAD
+              
               <div class="xp-strip" *ngIf="progress() as p">
                 <div class="xp-top">
                   <span class="xp-level">Level {{ p.levelNumber }} - {{ p.levelLabel }}</span>
@@ -86,8 +62,6 @@ import { User } from '../../../shared/models/user.model';
                   <span class="badge-pill" *ngFor="let b of p.badges | slice:0:4">{{ b.badgeLabel }}</span>
                 </div>
               </div>
-=======
->>>>>>> origin/Trainings-Evaluation
             </div>
             <div class="profile-header-actions">
               <button class="btn-modifier" (click)="toggleEdit()" *ngIf="!isEditMode()" type="button" title="Modifier">
@@ -151,13 +125,10 @@ import { User } from '../../../shared/models/user.model';
                       <label>Phone Number</label>
                       <div class="detail-value">{{currentUser()?.phoneNumber || 'No verified number'}}</div>
                     </div>
-<<<<<<< HEAD
                     <div class="detail-block wide">
                       <label>Profile Picture</label>
                       <div class="detail-value">{{currentUser()?.profileImageUrl ? 'Set' : 'Not set'}}</div>
                     </div>
-=======
->>>>>>> origin/Trainings-Evaluation
                   </div>
 
                   <!-- Edit Mode -->
@@ -180,14 +151,11 @@ import { User } from '../../../shared/models/user.model';
                         <label>Phone Number</label>
                         <input type="tel" formControlName="phoneNumber" class="premium-field">
                       </div>
-<<<<<<< HEAD
                       <div class="control-wrap wide">
                         <label>Profile picture URL</label>
                         <input type="url" formControlName="profileImageUrl" class="premium-field" placeholder="https://example.com/your-photo.jpg">
                         <p class="field-hint">Paste a link to your profile image. Leave empty to use initials.</p>
                       </div>
-=======
->>>>>>> origin/Trainings-Evaluation
                     </div>
 
                     <div class="form-footer-actions">
@@ -238,7 +206,6 @@ import { User } from '../../../shared/models/user.model';
                   <div class="premium-divider"></div>
 
                   <div class="security-list-modern">
-<<<<<<< HEAD
                     <div class="security-card-flat" [class.enabled]="currentUser()?.isTwoFactorEnabled">
                       <div class="sec-card-icon"><i class="bi bi-shield-shaded"></i></div>
                       <div class="sec-card-info">
@@ -278,18 +245,6 @@ import { User } from '../../../shared/models/user.model';
                           </button>
                         </div>
                       </div>
-=======
-                    <div class="security-card-flat">
-                      <div class="sec-card-icon"><i class="bi bi-shield-shaded"></i></div>
-                      <div class="sec-card-info">
-                        <strong>Two-Factor Authentication</strong>
-                        <div class="status-pill warning">
-                          <span class="pulse-dot"></span> NOT ENABLED
-                        </div>
-                        <p>Add an extra layer of protection by requiring a verification code in addition to your password.</p>
-                      </div>
-                      <button class="btn-action-outline">Enable Security</button>
->>>>>>> origin/Trainings-Evaluation
                     </div>
                   </div>
                 </div>
@@ -369,11 +324,8 @@ import { User } from '../../../shared/models/user.model';
       --text-muted: #64748b;
       --shadow-premium: 0 15px 35px rgba(11, 31, 59, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03);
       --border-soft: rgba(30, 58, 95, 0.08);
-<<<<<<< HEAD
       --color-success: #10b981;
       --color-danger: #ef4444;
-=======
->>>>>>> origin/Trainings-Evaluation
     }
 
     .profile-premium-wrapper {
@@ -391,11 +343,7 @@ import { User } from '../../../shared/models/user.model';
       padding: 0 2rem;
     }
 
-<<<<<<< HEAD
     /* --- PROFILE HEADER --- */
-=======
-    /* --- PROFILE HEADER (neutral background) --- */
->>>>>>> origin/Trainings-Evaluation
     .profile-header-section {
       padding: calc(0.5rem + 72px) 0 1rem;
       background: var(--bg-cream);
@@ -444,7 +392,6 @@ import { User } from '../../../shared/models/user.model';
       justify-content: center;
       color: var(--primary);
       font-size: 2.5rem;
-<<<<<<< HEAD
       overflow: hidden;
       position: relative;
     }
@@ -479,8 +426,6 @@ import { User } from '../../../shared/models/user.model';
     .profile-header-avatar .avatar-circle:hover .avatar-overlay:not(.uploading),
     .profile-header-avatar .avatar-overlay.uploading {
       opacity: 1;
-=======
->>>>>>> origin/Trainings-Evaluation
     }
     .profile-header-info { flex: 1; min-width: 0; }
     .profile-header-name {
@@ -507,7 +452,6 @@ import { User } from '../../../shared/models/user.model';
       color: #1e3a5f;
       font-size: 1rem;
     }
-<<<<<<< HEAD
     .xp-strip {
       margin-top: 1rem;
       max-width: 520px;
@@ -541,8 +485,6 @@ import { User } from '../../../shared/models/user.model';
       border-radius: 999px;
       padding: 0.15rem 0.55rem;
     }
-=======
->>>>>>> origin/Trainings-Evaluation
     .profile-header-actions { flex-shrink: 0; }
     .btn-modifier {
       display: inline-flex;
@@ -564,11 +506,7 @@ import { User } from '../../../shared/models/user.model';
     }
     .btn-modifier i { font-size: 1.2rem; }
 
-<<<<<<< HEAD
     /* --- CONTENT SECTION --- */
-=======
-    /* --- CONTENT SECTION (cream + blue accent like home) --- */
->>>>>>> origin/Trainings-Evaluation
     .profile-content-section {
       background: var(--bg-cream);
       padding: 1rem 0 5rem;
@@ -629,7 +567,6 @@ import { User } from '../../../shared/models/user.model';
       transition: all 0.25s ease;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
-<<<<<<< HEAD
     .tab-pill i { font-size: 1.1rem; opacity: 0.9; }
     .tab-pill:hover { background: #eef4fc; color: var(--primary); border-color: rgba(30, 58, 95, 0.15); }
     .tab-pill.active { background: #f2f5f9; color: var(--primary-dark); border-color: rgba(30, 58, 95, 0.2); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
@@ -638,34 +575,6 @@ import { User } from '../../../shared/models/user.model';
     .content-surface { max-width: 800px; margin: 0 auto; }
 
     /* --- CONTENT CARD --- */
-=======
-    .tab-pill i {
-      font-size: 1.1rem;
-      opacity: 0.9;
-    }
-    .tab-pill:hover {
-      background: #eef4fc;
-      color: var(--primary);
-      border-color: rgba(30, 58, 95, 0.15);
-    }
-    .tab-pill.active {
-      background: #f2f5f9;
-      color: var(--primary-dark);
-      border-color: rgba(30, 58, 95, 0.2);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-    .tab-pill.active i {
-      color: var(--accent-orange);
-      opacity: 1;
-    }
-
-    .content-surface {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    /* --- CONTENT CARD (home step-card style) --- */
->>>>>>> origin/Trainings-Evaluation
     .content-card-premium {
       background: white;
       border-radius: 20px;
@@ -675,18 +584,8 @@ import { User } from '../../../shared/models/user.model';
       overflow: hidden;
       transition: box-shadow 0.3s ease;
     }
-<<<<<<< HEAD
     .content-card-premium:hover { box-shadow: 0 25px 50px rgba(30, 58, 95, 0.1); }
     .card-title-group { padding: 2rem 2.5rem; border-bottom: 2px solid rgba(30, 58, 95, 0.12); position: relative; }
-=======
-    .content-card-premium:hover {
-      box-shadow: 0 25px 50px rgba(30, 58, 95, 0.1);
-    }
-    .card-title-group {
-      padding: 2rem 2.5rem;
-      border-bottom: 2px solid rgba(30, 58, 95, 0.12);
-      position: relative;
-    }
     .card-title-group::after {
       content: '';
       position: absolute;
@@ -697,7 +596,6 @@ import { User } from '../../../shared/models/user.model';
       background: var(--accent-orange);
       border-radius: 0 1px 0 0;
     }
->>>>>>> origin/Trainings-Evaluation
     .card-title-group h3 { font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); margin: 0; }
     .card-title-group p { font-size: 0.95rem; color: #64748b; margin: 0.4rem 0 0; }
 
@@ -708,17 +606,11 @@ import { User } from '../../../shared/models/user.model';
     .detail-block label { 
       display: block; font-size: 0.7rem; font-weight: 800; 
       text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 0.75rem;
-<<<<<<< HEAD
-    }
-    .detail-value { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); }
-    .detail-block.wide { grid-column: span 2; }
-=======
       opacity: 0.85;
     }
     .detail-value { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); }
     .detail-block.wide { grid-column: span 2; }
     .email-value { color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
->>>>>>> origin/Trainings-Evaluation
 
     /* Premium Form */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -733,16 +625,6 @@ import { User } from '../../../shared/models/user.model';
       font-size: 1rem; font-weight: 500; transition: all 0.3s ease;
     }
     .premium-field:focus { outline: none; border-color: var(--primary); background: var(--bg-card); }
-<<<<<<< HEAD
-    
-    .form-footer-actions { display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem; margin-top: 3rem; }
-    .btn-cancel-flat { background: none; border: none; font-weight: 700; color: var(--primary); cursor: pointer; }
-    .btn-save-glow {
-      background: var(--primary); color: white; border: none; padding: 0.875rem 2rem;
-      border-radius: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s ease;
-    }
-    .btn-save-glow:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(30, 58, 95, 0.3); }
-=======
     .premium-field.readonly { background: #eef4fc; cursor: not-allowed; opacity: 0.9; }
     
     .field-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
@@ -750,24 +632,14 @@ import { User } from '../../../shared/models/user.model';
     .form-footer-actions { display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem; margin-top: 3rem; }
     .btn-cancel-flat { background: none; border: none; font-weight: 700; color: var(--primary); cursor: pointer; }
     .btn-save-glow {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.875rem 2rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      background: var(--primary); color: white; border: none; padding: 0.875rem 2rem;
+      border-radius: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s ease;
     }
     .btn-save-glow:hover:not(:disabled) {
       background: var(--primary-dark);
       transform: translateY(-2px);
       box-shadow: 0 4px 14px rgba(30, 58, 95, 0.3);
     }
->>>>>>> origin/Trainings-Evaluation
 
     /* Security Settings */
     .password-field-wrap { position: relative; }
@@ -776,7 +648,6 @@ import { User } from '../../../shared/models/user.model';
     .premium-divider { height: 1px; background: rgba(30, 58, 95, 0.08); margin: 3rem 0; }
 
     .security-card-flat {
-<<<<<<< HEAD
       background: #f8f9fa; border: 1px solid #e2e8f0; padding: 2rem;
       border-radius: 16px; display: flex; align-items: center; gap: 2rem; position: relative;
     }
@@ -785,31 +656,12 @@ import { User } from '../../../shared/models/user.model';
     .sec-card-icon {
       width: 56px; height: 56px; background: white; border-radius: 14px;
       display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #e67e00;
-=======
-      background: #f8f9fa;
-      border: 1px solid #e2e8f0;
-      padding: 2rem;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-    }
-    .sec-card-icon {
-      width: 56px;
-      height: 56px;
-      background: white;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: #e67e00;
->>>>>>> origin/Trainings-Evaluation
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .sec-card-info { flex: 1; }
     .sec-card-info strong { display: block; font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 0.5rem; }
-<<<<<<< HEAD
+    .sec-card-info p { font-size: 0.9rem; color: var(--text-muted); margin: 0.5rem 0 0; line-height: 1.6; }
+    
     .status-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.85rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; }
     .status-pill.warning { background: #fff1f2; color: #e11d48; }
     .status-pill.success { background: #dcfce7; color: #166534; }
@@ -858,41 +710,6 @@ import { User } from '../../../shared/models/user.model';
     }
     .btn-verify-enable:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Toast */
-    .toast-portal { position: fixed; bottom: 2.5rem; right: 2.5rem; z-index: 1000; opacity: 0; transform: translateY(40px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .toast-portal.active { opacity: 1; transform: translateY(0); }
-    .toast-box { background: var(--primary-dark); color: white; padding: 1rem 1.75rem; border-radius: 16px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 15px 30px rgba(11, 31, 59, 0.25); }
-    .toast-portal.error .toast-box { background: #991b1b; }
-
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
-    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-=======
-    .sec-card-info p { font-size: 0.9rem; color: var(--text-muted); margin: 0.5rem 0 0; line-height: 1.6; }
-
-    .status-pill {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.4rem 0.85rem; border-radius: 100px;
-      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
-    }
-    .status-pill.warning { background: #fff1f2; color: #e11d48; }
-    .pulse-dot { width: 8px; height: 8px; background: #e11d48; border-radius: 50%; animation: pulse 2s infinite; }
-
-    .btn-action-outline {
-      background: white;
-      border: 2px solid #0b1f3b;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      color: #0b1f3b;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-action-outline:hover {
-      background: #0b1f3b;
-      color: white;
-    }
-
     /* Appearance Shelf */
     .theme-shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
     .theme-card-premium {
@@ -940,7 +757,8 @@ import { User } from '../../../shared/models/user.model';
 
     /* Keyframes */
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
-    @keyframes float-slow { 0% { transform: translate(0,0); } 100% { transform: translate(40px, -40px); } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     @media (max-width: 768px) {
       .profile-header-card {
@@ -959,22 +777,17 @@ import { User } from '../../../shared/models/user.model';
       .form-grid { grid-template-columns: 1fr; }
       .profile-content-section .section-title { font-size: 1.85rem; }
     }
->>>>>>> origin/Trainings-Evaluation
   `]
 })
 export class ProfileComponent implements OnInit {
   currentUser = signal<User | null>(null);
-<<<<<<< HEAD
   progress = signal<UserProgress | null>(null);
-=======
->>>>>>> origin/Trainings-Evaluation
   activeTab: string = 'general';
   isEditMode = signal<boolean>(false);
   isSaving = signal<boolean>(false);
   isSavingSecurity = signal<boolean>(false);
   profileForm: FormGroup;
   securityForm: FormGroup;
-<<<<<<< HEAD
   imgError = false;
   uploadingImage = signal(false);
   @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
@@ -985,8 +798,6 @@ export class ProfileComponent implements OnInit {
   qrCodeUrl = signal<string | null>(null);
   twoFactorSecret = signal<string | null>(null);
   verificationCode = '';
-=======
->>>>>>> origin/Trainings-Evaluation
 
   // Feedback
   showToast = false;
@@ -1004,12 +815,8 @@ export class ProfileComponent implements OnInit {
     this.profileForm = this.fb.group({
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-<<<<<<< HEAD
       phoneNumber: [''],
       profileImageUrl: ['']
-=======
-      phoneNumber: ['']
->>>>>>> origin/Trainings-Evaluation
     });
 
     this.securityForm = this.fb.group({
@@ -1025,20 +832,38 @@ export class ProfileComponent implements OnInit {
 
   loadUser() {
     const user = this.authService.getCurrentUser();
-<<<<<<< HEAD
-    if (user) {
+    if (!user?.id) {
       this.currentUser.set(user);
-      this.profileForm.patchValue({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: user.phoneNumber,
-        profileImageUrl: user.profileImageUrl
-      });
-      this.userService.getMyProgress().subscribe({
-        next: (p) => this.progress.set(p),
-        error: () => this.progress.set(null)
-      });
+      return;
     }
+    this.userService.getById(user.id).subscribe({
+      next: (freshUser) => {
+        this.currentUser.set(freshUser);
+        this.authService.setSession(freshUser);
+        this.profileForm.patchValue({
+          firstName: freshUser.firstName,
+          lastName: freshUser.lastName,
+          phoneNumber: freshUser.phoneNumber || '',
+          profileImageUrl: freshUser.profileImageUrl || ''
+        });
+        
+        this.userService.getMyProgress().subscribe({
+          next: (p) => this.progress.set(p),
+          error: () => this.progress.set(null)
+        });
+        
+        this.cd.detectChanges();
+      },
+      error: () => {
+        this.currentUser.set(user);
+        this.profileForm.patchValue({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phoneNumber: user.phoneNumber || '',
+          profileImageUrl: user.profileImageUrl || ''
+        });
+      }
+    });
   }
 
   progressPercent(): number {
@@ -1083,10 +908,10 @@ export class ProfileComponent implements OnInit {
         this.isEnabling.set(false);
         this.isSettingUp2fa.set(false);
         this.notify('Double authentification activée !');
-        // Refresh user data
         this.userService.getById(this.currentUser()!.id!).subscribe(u => {
             this.currentUser.set(u);
             this.authService.setSession(u);
+            this.cd.detectChanges();
         });
       },
       error: (err) => {
@@ -1108,89 +933,19 @@ export class ProfileComponent implements OnInit {
         this.userService.getById(this.currentUser()!.id!).subscribe(u => {
             this.currentUser.set(u);
             this.authService.setSession(u);
+            this.cd.detectChanges();
         });
       },
       error: () => this.notify('Erreur lors de la désactivation', true)
     });
   }
 
-  // --- Original logic below ---
-
-  toggleEdit() { this.isEditMode.update(v => !v); }
-
-  saveProfile() {
-    if (this.profileForm.invalid || !this.currentUser()?.id) return;
-    this.isSaving.set(true);
-    this.userService.update(this.currentUser()!.id!, this.profileForm.value).subscribe({
-      next: (user) => {
-        this.currentUser.set(user);
-        this.authService.setSession(user);
-        this.isEditMode.set(false);
-        this.isSaving.set(false);
-        this.notify('Profil mis à jour !');
-      },
-      error: () => {
-        this.isSaving.set(false);
-        this.notify('Erreur lors de la mise à jour', true);
-=======
-    if (!user?.id) {
-      this.currentUser.set(user);
-      return;
-    }
-    this.userService.getById(user.id).subscribe({
-      next: (freshUser) => {
-        this.currentUser.set(freshUser);
-        this.authService.setSession(freshUser);
-        this.profileForm.patchValue({
-          firstName: freshUser.firstName,
-          lastName: freshUser.lastName,
-          phoneNumber: freshUser.phoneNumber || ''
-        });
-        this.cd.detectChanges();
-      },
-      error: () => {
-        this.currentUser.set(user);
-        this.profileForm.patchValue({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phoneNumber: user.phoneNumber || ''
-        });
->>>>>>> origin/Trainings-Evaluation
-      }
-    });
-  }
-
-<<<<<<< HEAD
-  updatePassword() {
-    if (this.securityForm.invalid || !this.currentUser()?.id) return;
-    const { newPassword, confirmPassword } = this.securityForm.value;
-    if (newPassword !== confirmPassword) {
-      this.notify('Les mots de passe ne correspondent pas', true);
-      return;
-    }
-    this.isSavingSecurity.set(true);
-    this.userService.update(this.currentUser()!.id!, { password: newPassword } as any).subscribe({
-      next: () => {
-        this.isSavingSecurity.set(false);
-        this.securityForm.reset();
-        this.notify('Mot de passe mis à jour !');
-      },
-      error: () => {
-        this.isSavingSecurity.set(false);
-        this.notify('Erreur lors de la mise à jour', true);
-      }
-    });
-  }
-
-  notify(msg: string, isError = false) {
-    this.toastMessage = msg;
-=======
   toggleEdit() {
     this.isEditMode.set(!this.isEditMode());
-    this.isSaving.set(false); // ALWAYS reset saving flag on toggle
+    this.isSaving.set(false);
 
     if (!this.isEditMode()) {
-      this.loadUser(); // Reset form on cancel
+      this.loadUser(); 
     }
     this.cd.detectChanges();
   }
@@ -1204,21 +959,19 @@ export class ProfileComponent implements OnInit {
 
     this.userService.update(current.id, { ...current, ...this.profileForm.value } as User).subscribe({
       next: (user: User) => {
-        // Unlock button immediately
         this.isSaving.set(false);
         this.cd.detectChanges();
 
-        // Background session sync
         setTimeout(() => {
           try {
             this.authService.setSession(user);
             this.currentUser.set(user);
+            this.cd.detectChanges();
           } catch (e) {
             console.error('[Profile] Sync Error:', e);
           }
         }, 50);
 
-        // Defer toast and edit-mode change to avoid ExpressionChangedAfterItHasBeenCheckedError
         setTimeout(() => {
           this.notify('Profile updated successfully!');
           setTimeout(() => {
@@ -1235,7 +988,6 @@ export class ProfileComponent implements OnInit {
       }
     });
 
-    // 10 second absolute failsafe
     setTimeout(() => {
       if (this.isSaving()) {
         this.isSaving.set(false);
@@ -1257,8 +1009,6 @@ export class ProfileComponent implements OnInit {
     this.isSavingSecurity.set(true);
     this.cd.detectChanges();
 
-    // In a real app, you'd verify currentPassword first. 
-    // Here we use the generic update endpoint which handles the password field.
     const updatedData = {
       ...current,
       password: newPassword
@@ -1279,7 +1029,6 @@ export class ProfileComponent implements OnInit {
       }
     });
 
-    // Failsafe
     setTimeout(() => {
       if (this.isSavingSecurity()) {
         this.isSavingSecurity.set(false);
@@ -1290,12 +1039,13 @@ export class ProfileComponent implements OnInit {
 
   notify(message: string, isError = false) {
     this.toastMessage = message;
->>>>>>> origin/Trainings-Evaluation
     this.isToastError = isError;
     this.showToast = true;
-    setTimeout(() => this.showToast = false, 3000);
+    setTimeout(() => {
+      this.showToast = false;
+      this.cd.detectChanges();
+    }, 3000);
   }
-<<<<<<< HEAD
 
   initials(): string {
     const u = this.currentUser();
@@ -1316,21 +1066,20 @@ export class ProfileComponent implements OnInit {
     const file = input?.files?.[0];
     if (!file || !this.currentUser()?.id) return;
     this.uploadingImage.set(true);
+    this.cd.detectChanges();
     this.userService.uploadProfileImage(this.currentUser()!.id!, file).subscribe({
       next: (user) => {
         this.currentUser.set(user);
         this.authService.setSession(user);
         this.uploadingImage.set(false);
         this.notify('Photo mise à jour !');
+        this.cd.detectChanges();
       },
       error: () => {
         this.uploadingImage.set(false);
         this.notify('Erreur upload', true);
+        this.cd.detectChanges();
       }
     });
   }
 }
-=======
-}
-
->>>>>>> origin/Trainings-Evaluation

@@ -26,12 +26,6 @@ import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests
         </div>
       </header>
 
-<<<<<<< HEAD
-       
-
-      <!-- Requests Grid -->
-      <div class="requests-grid" >
-=======
       <!-- Loading State -->
       <div class="loading-container" *ngIf="isLoading">
         <div class="spinner"></div>
@@ -40,7 +34,6 @@ import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests
 
       <!-- Requests Grid -->
       <div class="requests-grid" *ngIf="!isLoading && pendingRequests.length > 0">
->>>>>>> origin/Trainings-Evaluation
         <div class="request-card" *ngFor="let request of pendingRequests">
           <!-- Card Header -->
           <div class="card-header">
@@ -133,11 +126,7 @@ import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests
       </div>
 
       <!-- Empty State -->
-<<<<<<< HEAD
-      <div class="empty-state" >
-=======
       <div class="empty-state" *ngIf="!isLoading && pendingRequests.length === 0">
->>>>>>> origin/Trainings-Evaluation
         <div class="empty-icon">
           <i class="bi bi-inbox"></i>
         </div>
@@ -569,48 +558,36 @@ export class TrainerRequestsComponent implements OnInit {
   }
 
   approveRequest(request: TrainerRequest) {
-    if (!confirm(`Approve ${request.user.firstName} ${request.user.lastName} as a trainer?\n\nThis will:\n• Change their role to TRAINER\n• Activate their account\n• Grant them trainer privileges`)) {
+    if (!confirm(`Approve ${request.user.firstName} ${request.user.lastName} as a trainer?`)) {
       return;
     }
 
     this.isProcessing = true;
     this.trainerRequestService.approveRequest(request.id).subscribe({
       next: () => {
-        alert(`✅ Success!\n\n${request.user.firstName} ${request.user.lastName} is now an approved trainer.\n\nImportant: They must log out and log in again to access trainer features (their session still has the old role).`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
       error: (err) => {
         console.error('Failed to approve request', err);
-        let message = 'Failed to approve request. Please try again.';
-        if (err.error) {
-          message = typeof err.error === 'string' ? err.error : err.error.message || message;
-        }
-        alert('❌ Error: ' + message);
         this.isProcessing = false;
       }
     });
   }
 
   rejectRequest(request: TrainerRequest) {
-    if (!confirm(`Decline ${request.user.firstName} ${request.user.lastName}'s trainer application?\n\nThey can reapply after 7 days.`)) {
+    if (!confirm(`Decline ${request.user.firstName} ${request.user.lastName}'s trainer application?`)) {
       return;
     }
 
     this.isProcessing = true;
     this.trainerRequestService.rejectRequest(request.id).subscribe({
       next: () => {
-        alert(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
       error: (err) => {
         console.error('Failed to reject request', err);
-        let message = 'Failed to reject request. Please try again.';
-        if (err.error) {
-          message = typeof err.error === 'string' ? err.error : err.error.message || message;
-        }
-        alert('❌ Error: ' + message);
         this.isProcessing = false;
       }
     });

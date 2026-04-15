@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-=======
-import { Component, OnInit } from '@angular/core';
->>>>>>> origin/Trainings-Evaluation
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -25,21 +21,14 @@ export class UserLayoutComponent implements OnInit {
 
     constructor(
         private authService: AuthService,
-<<<<<<< HEAD
         private router: Router,
         private cdr: ChangeDetectorRef
-=======
-        private router: Router
->>>>>>> origin/Trainings-Evaluation
     ) {}
 
     ngOnInit() {
         this.authService.currentUser$.subscribe(user => {
             this.isLoggedIn = !!user;
-<<<<<<< HEAD
             this.cdr.detectChanges();
-=======
->>>>>>> origin/Trainings-Evaluation
         });
 
         // Check if we're on home page

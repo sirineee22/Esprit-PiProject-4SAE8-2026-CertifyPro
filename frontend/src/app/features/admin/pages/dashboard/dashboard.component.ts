@@ -1,43 +1,29 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-<<<<<<< HEAD
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { UserService } from '../../../users/services/users.api';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
 import { EventsApiService } from '../../../events/services/events.api';
 import { User } from '../../../../shared/models/user.model';
 import { AuditLog } from '../../../../shared/models/audit.model';
-import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS } from '../../../../core/api/api.config';
-=======
-import { forkJoin } from 'rxjs';
-import { UserService } from '../../../users/services/users.api';
-import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
-import { User } from '../../../../shared/models/user.model';
->>>>>>> origin/Trainings-Evaluation
 
 interface DashboardStats {
     totalUsers: number;
     totalLearners: number;
     totalTrainers: number;
     pendingRequests: number;
-<<<<<<< HEAD
     totalEvents: number;
     upcomingEvents: number;
     totalRegistrations: number;
-=======
->>>>>>> origin/Trainings-Evaluation
 }
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-<<<<<<< HEAD
     imports: [CommonModule, RouterLink],
-=======
-    imports: [CommonModule],
->>>>>>> origin/Trainings-Evaluation
     template: `
     <div class="dashboard-container">
       <header class="dashboard-header">
@@ -45,15 +31,6 @@ interface DashboardStats {
           <h1>Admin Dashboard</h1>
           <p>Welcome back! Here's what's happening on CertifyPro today.</p>
         </div>
-<<<<<<< HEAD
-       
-      </header>
-
-     
-
-      <!-- Dashboard Content -->
-      <div  >
-=======
         <div class="header-actions">
           <button class="btn-refresh" (click)="loadDashboardData()" [disabled]="isLoading">
             <i class="bi bi-arrow-clockwise" [class.spinning]="isLoading"></i>
@@ -70,7 +47,6 @@ interface DashboardStats {
 
       <!-- Dashboard Content -->
       <div *ngIf="!isLoading">
->>>>>>> origin/Trainings-Evaluation
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon users">
@@ -122,8 +98,9 @@ interface DashboardStats {
                 <span class="trend warning">Review</span>
               </div>
             </div>
-<<<<<<< HEAD
-            <div class="stat-card">
+          </div>
+
+          <div class="stat-card">
             <div class="stat-icon sessions">
               <i class="bi bi-calendar-check-fill"></i>
             </div>
@@ -136,11 +113,6 @@ interface DashboardStats {
             </div>
           </div>
         </div>
-        </div>
-=======
-          </div>
-        </div>
->>>>>>> origin/Trainings-Evaluation
 
         <div class="dashboard-content">
           <!-- Recent Users -->
@@ -171,7 +143,6 @@ interface DashboardStats {
             </div>
           </div>
 
-<<<<<<< HEAD
           <!-- Recent Activity (Audit) -->
           <div class="card recent-audit">
             <div class="card-header">
@@ -179,8 +150,7 @@ interface DashboardStats {
               <button class="btn-text" routerLink="/admin/audit-logs">History</button>
             </div>
             <div class="activity-list">
-              @for (log of recentLogs; track log.id) {
-              <div class="activity-item">
+              <div class="activity-item" *ngFor="let log of recentLogs">
                 <div class="item-icon" [ngClass]="getActionClass(log.action)">
                    <i class="bi" [ngClass]="getActionIcon(log.action)"></i>
                 </div>
@@ -192,17 +162,13 @@ interface DashboardStats {
                   <span class="email">{{ log.details }} — {{ formatTime(log.createdAt) }}</span>
                 </div>
               </div>
-              } @empty {
-              <div class="empty-message">
+              <div class="empty-message" *ngIf="recentLogs.length === 0">
                 <i class="bi bi-clock-history"></i>
                 <p>No recent activity</p>
               </div>
-              }
             </div>
           </div>
 
-=======
->>>>>>> origin/Trainings-Evaluation
           <!-- User Distribution -->
           <div class="platform-health card">
             <div class="card-header">
@@ -238,7 +204,6 @@ interface DashboardStats {
                   <div class="bar-fill pending" [style.width.%]="getPendingPercentage()"></div>
                 </div>
               </div>
-<<<<<<< HEAD
 
               <div class="metric">
                 <div class="metric-header">
@@ -249,8 +214,6 @@ interface DashboardStats {
                   <div class="bar-fill sessions" [style.width.%]="70"></div>
                 </div>
               </div>
-=======
->>>>>>> origin/Trainings-Evaluation
             </div>
           </div>
         </div>
@@ -353,7 +316,7 @@ interface DashboardStats {
     /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
       margin-bottom: 2.5rem;
     }
@@ -390,10 +353,7 @@ interface DashboardStats {
     .stat-icon.learners { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
     .stat-icon.trainers { background: linear-gradient(135deg, #10b981, #059669); color: white; }
     .stat-icon.pending { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
-<<<<<<< HEAD
     .stat-icon.sessions { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
-=======
->>>>>>> origin/Trainings-Evaluation
 
     .stat-details {
       flex: 1;
@@ -446,6 +406,7 @@ interface DashboardStats {
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       border: 1px solid #e5e7eb;
       overflow: hidden;
+      margin-bottom: 2rem;
     }
 
     .card-header {
@@ -480,7 +441,7 @@ interface DashboardStats {
 
     /* Activity List */
     .activity-list {
-      max-height: 400px;
+      max-height: 480px;
       overflow-y: auto;
     }
 
@@ -489,11 +450,9 @@ interface DashboardStats {
       gap: 1rem;
       padding: 1.25rem 1.5rem;
       border-bottom: 1px solid #f1f5f9;
-      transition: background 0.2s;
     }
 
     .activity-item:last-child { border-bottom: none; }
-    .activity-item:hover { background: #f8fafc; }
 
     .item-icon {
       width: 40px;
@@ -520,7 +479,7 @@ interface DashboardStats {
     .item-info .text {
       font-size: 0.9375rem;
       color: #0b1120;
-      margin-bottom: 0.375rem;
+      margin: 0 0 0.25rem 0;
       display: flex;
       align-items: center;
       gap: 0.75rem;
@@ -532,7 +491,6 @@ interface DashboardStats {
       padding: 0.25rem 0.625rem;
       border-radius: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.025em;
     }
 
     .role-badge.learner { background: #dbeafe; color: #1e40af; }
@@ -550,12 +508,6 @@ interface DashboardStats {
       color: #9ca3af;
     }
 
-    .empty-message i {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      opacity: 0.5;
-    }
-
     /* Health Metrics */
     .health-metrics {
       padding: 1.75rem;
@@ -571,48 +523,18 @@ interface DashboardStats {
       margin-bottom: 0.75rem;
     }
 
-    .metric-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #6b7280;
-    }
-
-    .metric-value {
-      font-size: 1.125rem;
-      font-weight: 800;
-      color: #0b1120;
-    }
-
-    .metric-bar {
-      height: 10px;
-      background: #f1f5f9;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      border-radius: 5px;
-      transition: width 0.6s ease-out;
-    }
+    .metric-label { font-size: 0.875rem; font-weight: 600; color: #6b7280; }
+    .metric-value { font-size: 1.125rem; font-weight: 800; color: #0b1120; }
+    .metric-bar { height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 5px; }
 
     .bar-fill.learner { background: linear-gradient(90deg, #3b82f6, #2563eb); }
     .bar-fill.trainer { background: linear-gradient(90deg, #10b981, #059669); }
     .bar-fill.pending { background: linear-gradient(90deg, #f59e0b, #d97706); }
-<<<<<<< HEAD
     .bar-fill.sessions { background: linear-gradient(90deg, #ec4899, #db2777); }
-=======
->>>>>>> origin/Trainings-Evaluation
 
     @media (max-width: 1024px) {
       .dashboard-content { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (max-width: 640px) {
-      .dashboard-container { padding: 1.5rem; }
-      .stats-grid { grid-template-columns: 1fr; }
-      .dashboard-header { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
     }
   `]
 })
@@ -621,7 +543,6 @@ export class DashboardComponent implements OnInit {
         totalUsers: 0,
         totalLearners: 0,
         totalTrainers: 0,
-<<<<<<< HEAD
         pendingRequests: 0,
         totalEvents: 0,
         upcomingEvents: 0,
@@ -629,21 +550,13 @@ export class DashboardComponent implements OnInit {
     };
     recentUsers: User[] = [];
     recentLogs: AuditLog[] = [];
-=======
-        pendingRequests: 0
-    };
-    recentUsers: User[] = [];
->>>>>>> origin/Trainings-Evaluation
     isLoading = true;
 
     constructor(
         private userService: UserService,
         private trainerRequestService: TrainerRequestService,
-<<<<<<< HEAD
         private eventService: EventsApiService,
         private http: HttpClient,
-=======
->>>>>>> origin/Trainings-Evaluation
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -656,50 +569,31 @@ export class DashboardComponent implements OnInit {
 
         forkJoin({
             users: this.userService.getAll(),
-<<<<<<< HEAD
             requests: this.trainerRequestService.getPendingRequests(),
             eventStats: this.eventService.adminStats()
         }).subscribe({
             next: ({ users, requests, eventStats }) => {
-=======
-            requests: this.trainerRequestService.getPendingRequests()
-        }).subscribe({
-            next: ({ users, requests }) => {
->>>>>>> origin/Trainings-Evaluation
-                // Calculate stats
                 this.stats.totalUsers = users.length;
                 this.stats.totalLearners = users.filter(u => u.role?.name === 'LEARNER').length;
                 this.stats.totalTrainers = users.filter(u => u.role?.name === 'TRAINER').length;
                 this.stats.pendingRequests = requests.length;
 
-<<<<<<< HEAD
-                // Event stats
                 this.stats.totalEvents = eventStats.totalEvents;
                 this.stats.upcomingEvents = eventStats.upcoming;
                 this.stats.totalRegistrations = eventStats.totalRegistrations;
 
-                // Get recent users (last 3, excluding admins)
                 this.recentUsers = users
                     .filter(u => u.role?.name !== 'ADMIN')
                     .slice(-3)
                     .reverse();
 
-                // Fetch recent audit logs from API
                 this.http.get<AuditLog[]>(API_ENDPOINTS.audit).subscribe({
                     next: (logs) => {
-                        this.recentLogs = logs.slice(0, 4); // Top 4
+                        this.recentLogs = logs.slice(0, 4);
                         this.cdr.detectChanges();
                     }
                 });
 
-=======
-                // Get recent users (last 5, excluding admins)
-                this.recentUsers = users
-                    .filter(u => u.role?.name !== 'ADMIN')
-                    .slice(-5)
-                    .reverse();
-
->>>>>>> origin/Trainings-Evaluation
                 this.isLoading = false;
                 this.cdr.detectChanges();
             },
@@ -734,22 +628,19 @@ export class DashboardComponent implements OnInit {
     }
 
     getPendingPercentage(): number {
-        const total = this.stats.totalUsers + this.stats.pendingRequests;
-        if (total === 0) return 0;
-        return (this.stats.pendingRequests / total) * 100;
+        if (this.stats.totalUsers === 0) return 0;
+        return (this.stats.pendingRequests / (this.stats.totalUsers + this.stats.pendingRequests)) * 100;
     }
-<<<<<<< HEAD
 
     getActionClass(action: string) {
-        if (action.includes('DELETE')) return 'admin'; // Red/Orange
-        if (action.includes('UPDATE')) return 'trainer'; // Green/Teal
-        return 'learner'; // Blue
+        if (action.includes('DELETE')) return 'admin';
+        if (action.includes('UPDATE')) return 'trainer';
+        return 'learner';
     }
 
     getActionIcon(action: string) {
         if (action.includes('DELETE')) return 'bi-trash';
         if (action.includes('UPDATE')) return 'bi-pencil-square';
-        if (action.includes('USER')) return 'bi-person-badge';
         return 'bi-activity';
     }
 
@@ -763,6 +654,4 @@ export class DashboardComponent implements OnInit {
         if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
         return date.toLocaleDateString();
     }
-=======
->>>>>>> origin/Trainings-Evaluation
 }
