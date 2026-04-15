@@ -8,6 +8,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
 import { catchError, finalize, switchMap, throwError, timeout } from 'rxjs';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -628,7 +629,8 @@ export class RegisterComponent {
     private userService: UserService,
     private authService: AuthService,
     private trainerRequestService: TrainerRequestService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -737,10 +739,10 @@ export class RegisterComponent {
         this.isSubmitting = false;
         console.error('Registration failed', e);
         if (e instanceof HttpErrorResponse && e.status === 409) {
-          alert('Email already exists. Please use a different email.');
+          this.toast.error('Email already exists. Please use a different email.');
           return;
         }
-        alert('Registration failed. Please try again.');
+        this.toast.error('Registration failed. Please try again.');
       }
     });
   }
@@ -763,7 +765,7 @@ export class RegisterComponent {
         if (!createdUser?.id) {
           console.error('ERROR: No user ID in response');
           this.isSubmitting = false;
-          alert('Registration failed. Please try again.');
+          this.toast.error('Registration failed. Please try again.');
           return;
         }
 
@@ -794,10 +796,10 @@ export class RegisterComponent {
         console.error('Trainer registration failed', e);
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 409) {
-          alert('Email already exists. Please use a different email.');
+          this.toast.error('Email already exists. Please use a different email.');
           return;
         }
-        alert('Registration failed. Please try again.');
+        this.toast.error('Registration failed. Please try again.');
       }
     });
   }

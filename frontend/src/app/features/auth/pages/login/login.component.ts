@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, LoginResponse } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -511,7 +512,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private toast: ToastService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -541,15 +543,15 @@ export class LoginComponent {
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse && e.status === 401) {
           const message = typeof e.error === 'string' && e.error ? e.error : 'Invalid email or password.';
-          alert(message);
+          this.toast.error(message);
           return;
         }
         if (e instanceof HttpErrorResponse && e.status === 500) {
           const message = typeof e.error === 'string' && e.error ? e.error : 'Server error. Please try again or contact support.';
-          alert(message);
+          this.toast.error(message);
           return;
         }
-        alert('Login failed. Please try again.');
+        this.toast.error('Login failed. Please try again.');
       }
     });
   }

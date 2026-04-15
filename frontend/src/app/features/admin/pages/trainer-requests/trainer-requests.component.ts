@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests/services/trainer-request.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-trainer-requests',
@@ -534,7 +535,8 @@ export class TrainerRequestsComponent implements OnInit {
 
   constructor(
     private trainerRequestService: TrainerRequestService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -565,7 +567,7 @@ export class TrainerRequestsComponent implements OnInit {
     this.isProcessing = true;
     this.trainerRequestService.approveRequest(request.id).subscribe({
       next: () => {
-        alert(`✅ Success!\n\n${request.user.firstName} ${request.user.lastName} is now an approved trainer.`);
+        this.toast.success(`${request.user.firstName} ${request.user.lastName} is now an approved trainer.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
@@ -575,7 +577,7 @@ export class TrainerRequestsComponent implements OnInit {
         if (err.error) {
           message = typeof err.error === 'string' ? err.error : err.error.message || message;
         }
-        alert('❌ Error: ' + message);
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });
@@ -589,7 +591,7 @@ export class TrainerRequestsComponent implements OnInit {
     this.isProcessing = true;
     this.trainerRequestService.rejectRequest(request.id).subscribe({
       next: () => {
-        alert(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
+        this.toast.info(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
@@ -599,7 +601,7 @@ export class TrainerRequestsComponent implements OnInit {
         if (err.error) {
           message = typeof err.error === 'string' ? err.error : err.error.message || message;
         }
-        alert('❌ Error: ' + message);
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });

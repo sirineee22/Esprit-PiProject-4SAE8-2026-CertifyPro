@@ -6,6 +6,7 @@ import { User } from '../../../../shared/models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../../core/api/api.config';
 import { forkJoin } from 'rxjs';
+import { ToastService } from '../../../../core/services/toast.service';
 
 interface Role {
     id: number;
@@ -31,7 +32,8 @@ export class UsersListComponent implements OnInit {
     constructor(
         private userService: UserService,
         private http: HttpClient,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private toast: ToastService
     ) { }
 
     ngOnInit(): void {
@@ -133,19 +135,19 @@ export class UsersListComponent implements OnInit {
 
     private createUser(): void {
         if (!this.editedUser.password) {
-            alert('Password is required for new users!');
+            this.toast.warning('Password is required for new users.');
             return;
         }
 
         this.userService.create(this.editedUser as User).subscribe({
             next: () => {
-                alert('✅ User created successfully!');
+                this.toast.success('User created successfully.');
                 this.loadData();
                 this.closeEditModal();
             },
             error: (e: unknown) => {
                 console.error('ERROR creating user:', e);
-                alert('❌ Failed to create user. Check console for details.');
+                this.toast.error('Failed to create user. Check console for details.');
             }
         });
     }
@@ -158,13 +160,13 @@ export class UsersListComponent implements OnInit {
 
         this.userService.update(this.editedUser.id, this.editedUser as User).subscribe({
             next: () => {
-                alert('✅ User updated successfully!');
+                this.toast.success('User updated successfully.');
                 this.loadData();
                 this.closeEditModal();
             },
             error: (e: unknown) => {
                 console.error('ERROR updating user:', e);
-                alert('❌ Failed to update user. Check console for details.');
+                this.toast.error('Failed to update user. Check console for details.');
             }
         });
     }
@@ -173,12 +175,12 @@ export class UsersListComponent implements OnInit {
         if (confirm(`Delete ${userName}?`)) {
             this.userService.delete(id).subscribe({
                 next: () => {
-                    alert('✅ User deleted successfully!');
+                    this.toast.success('User deleted successfully.');
                     this.users = this.users.filter(u => u.id !== id);
                 },
                 error: (e: unknown) => {
                     console.error('Error deleting user:', e);
-                    alert('❌ Failed to delete user');
+                    this.toast.error('Failed to delete user.');
                 }
             });
         }

@@ -1,0 +1,24 @@
+<div class="toast-container">
+  <div
+    class="toast-item"
+    *ngFor="let toast of toastService.toasts()"
+    [class.toast-success]="toast.type === 'success'"
+    [class.toast-error]="toast.type === 'error'"
+    [class.toast-info]="toast.type === 'info'"
+    [class.toast-warning]="toast.type === 'warning'"
+  >
+    <i
+      class="bi"
+      [ngClass]="{
+        'bi-check-circle-fill': toast.type === 'success',
+        'bi-x-circle-fill': toast.type === 'error',
+        'bi-info-circle-fill': toast.type === 'info',
+        'bi-exclamation-triangle-fill': toast.type === 'warning'
+      }"
+    ></i>
+    <span>{{ toast.text }}</span>
+    <button type="button" (click)="dismiss(toast)" aria-label="Dismiss notification">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+</div>

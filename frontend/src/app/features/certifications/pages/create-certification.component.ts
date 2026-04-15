@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/auth/auth.service';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
 import { AiService } from '../../../core/services/ai.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { timeout, TimeoutError } from 'rxjs';
 
 interface QuizQuestion {
@@ -1639,7 +1640,8 @@ export class CreateCertificationComponent implements OnInit {
     private auth: AuthService,
     private http: HttpClient,
     private router: Router,
-    private aiService: AiService
+    private aiService: AiService,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -1839,7 +1841,7 @@ export class CreateCertificationComponent implements OnInit {
     if (file && file.type === 'application/pdf') {
       this.form.examPdfName = file.name;
     } else if (file) {
-      alert('Please select a valid PDF file.');
+      this.toast.warning('Please select a valid PDF file.');
     }
   }
 
