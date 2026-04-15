@@ -267,7 +267,10 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
     this.http.get<any>(`${API_ENDPOINTS.certifications}/${this.certId}`).subscribe({
       next: (cert) => {
-        this.examTitle = cert.name + ' Exam';
+        this.examTitle = cert.name + (this.isPracticeMode() ? ' Practice' : ' Exam');
+        if (this.isPracticeMode() && this.tryPracticeMetadataQuestions(cert)) {
+          return;
+        }
         const certCode = cert.code;
         console.log('[ExamQuiz] Step 1: Loaded cert', certCode);
 
@@ -327,13 +330,13 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     console.log(`[ExamQuiz] FALLBACK Triggered (Reason: ${reason})`);
     try {
       const criteria = cert.criteriaDescription ? JSON.parse(cert.criteriaDescription) : {};
-      const metaQuestions = criteria.quizQuestions;
+      const metaQuestions = this.isPracticeMode() ? criteria.practiceQuizQuestions : criteria.quizQuestions;
 
       this.zone.run(() => {
         if (Array.isArray(metaQuestions) && metaQuestions.length > 0) {
           this.questions = metaQuestions;
           this.selectedAnswers = {};
-          this.requiredScore = cert.requiredScore || 70;
+          this.requiredScore = this.isPracticeMode() ? 0 : (cert.requiredScore || 70);
           this.durationMinutes = criteria.examDurationMinutes || 0;
           if (this.isPracticeMode() && this.durationMinutes > 0) {
             this.startTimer(this.durationMinutes);
@@ -436,5 +439,32 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/certifications', this.certId]);
+  }
+
+  private tryPracticeMetadataQuestions(cert: any): boolean {
+    try {
+      const criteria = cert.criteriaDescription ? JSON.parse(cert.criteriaDescription) : {};
+      const practiceQuestions = criteria.practiceQuizQuestions;
+      if (!Array.isArray(practiceQuestions) || practiceQuestions.length === 0) {
+        return false;
+      }
+
+      this.zone.run(() => {
+        this.questions = practiceQuestions;
+        this.selectedAnswers = {};
+        this.requiredScore = 0;
+        this.durationMinutes = criteria.examDurationMinutes || 0;
+        if (this.durationMinutes > 0) {
+          this.startTimer(this.durationMinutes);
+        }
+        this.isLoading = false;
+        this.errorMessage = '';
+        this.cdr.detectChanges();
+      });
+      return true;
+    } catch (e) {
+      console.error('[ExamQuiz] Practice metadata parse failed.', e);
+      return false;
+    }
   }
 }

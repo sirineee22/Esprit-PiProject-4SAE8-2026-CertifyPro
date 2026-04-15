@@ -43,6 +43,7 @@ interface CreateCertificationForm {
   examIsActive: boolean;
   examPdfName: string | null;       // stores attached PDF filename
   quizQuestions: QuizQuestion[];    // array of quiz questions
+  practiceQuizQuestions: QuizQuestion[]; // separate quiz set for practice mode
 }
 
 @Component({
@@ -577,12 +578,12 @@ interface CreateCertificationForm {
             </div>
           </div>
 
-          <!-- Quiz Builder -->
+          <!-- Real Exam Quiz Builder -->
           <div class="field full-width" style="margin-top: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <div>
                 <label style="margin-bottom: 0;">Quiz / Exam Questions <span class="badge-optional">Optional</span></label>
-                <span class="field-hint" style="display: block; margin-top: 0.2rem;">Add multiple-choice questions for the exam</span>
+                <span class="field-hint" style="display: block; margin-top: 0.2rem;">Add multiple-choice questions for the real exam</span>
               </div>
               <div style="display: flex; gap: 0.75rem;">
                 <button 
@@ -636,6 +637,72 @@ interface CreateCertificationForm {
                 </div>
 
                 <button class="btn-add-opt" (click)="addQuizOption(qIdx)">
+                  <i class="bi bi-plus"></i> Add Option
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Practice Mode Quiz Builder -->
+          <div class="field full-width" style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <div>
+                <label style="margin-bottom: 0;">Practice Mode Questions <span class="badge-optional">Optional</span></label>
+                <span class="field-hint" style="display: block; margin-top: 0.2rem;">
+                  Add a dedicated quiz set used only in Practice Mode (instant correction, no grading).
+                </span>
+              </div>
+              <div style="display: flex; gap: 0.75rem;">
+                <button
+                  type="button"
+                  class="btn-ai-gen quiz-ai-btn"
+                  (click)="generateAiPracticeQuiz()"
+                  [disabled]="isGeneratingQuiz || (!form.description && !form.criteriaDescription)"
+                  title="Generate practice questions using AI"
+                >
+                  <i class="bi" [class.bi-magic]="!isGeneratingQuiz" [class.bi-hourglass-split]="isGeneratingQuiz" [class.spinning]="isGeneratingQuiz"></i>
+                  {{ isGeneratingQuiz ? 'Brainstorming...' : 'AI Generate Practice Quiz' }}
+                </button>
+                <button class="btn-add-question" (click)="addPracticeQuizQuestion()">
+                  <i class="bi bi-plus-circle"></i> Add Practice Question
+                </button>
+              </div>
+            </div>
+
+            <div class="quiz-builder">
+              <div class="no-questions" *ngIf="form.practiceQuizQuestions.length === 0">
+                <i class="bi bi-clipboard2-x"></i>
+                <p>No practice questions added yet.</p>
+              </div>
+
+              <div class="question-card" *ngFor="let q of form.practiceQuizQuestions; let qIdx = index">
+                <div class="q-header">
+                  <strong>Practice Question {{ qIdx + 1 }}</strong>
+                  <button type="button" class="btn-delete-q" (click)="removePracticeQuizQuestion(qIdx)" title="Remove Question">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+
+                <div class="input-wrap full-width" style="margin-bottom: 1rem;">
+                  <input type="text" placeholder="Enter your practice question..." [(ngModel)]="q.questionText" [name]="'practice_qtext' + qIdx">
+                </div>
+
+                <div class="options-list">
+                  <div class="option-row" *ngFor="let opt of q.options; let oIdx = index; trackBy: trackByIndex">
+                    <label class="custom-radio" title="Mark as correct answer">
+                      <input type="radio" [name]="'practice_correctOption_' + qIdx" [value]="oIdx" [(ngModel)]="q.correctOptionIndex">
+                      <span class="radio-mark"></span>
+                    </label>
+                    <div class="input-wrap">
+                      <input type="text" placeholder="Option text..." [(ngModel)]="q.options[oIdx]" [name]="'practice_opt_' + qIdx + '_' + oIdx">
+                    </div>
+                    <button type="button" class="btn-remove-opt" (click)="removePracticeQuizOption(qIdx, oIdx)" *ngIf="q.options.length > 2">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button class="btn-add-opt" (click)="addPracticeQuizOption(qIdx)">
                   <i class="bi bi-plus"></i> Add Option
                 </button>
               </div>
@@ -744,7 +811,8 @@ interface CreateCertificationForm {
                 </strong>
               </div>
               <div class="review-row"><span>PDF Attached</span><strong>{{ form.examPdfName || 'None' }}</strong></div>
-              <div class="review-row"><span>Quiz Questions</span><strong>{{ form.quizQuestions.length }} questions</strong></div>
+              <div class="review-row"><span>Real Exam Questions</span><strong>{{ form.quizQuestions.length }} questions</strong></div>
+              <div class="review-row"><span>Practice Questions</span><strong>{{ form.practiceQuizQuestions.length }} questions</strong></div>
             </div>
 
             <div class="review-section full-review">
@@ -863,7 +931,7 @@ interface CreateCertificationForm {
     .progress-bar-wrap {
       background: white;
       border-bottom: 1px solid #e2e8f0;
-      padding: 1.25rem 2rem;
+      padding: 1.25rem clamp(0.75rem, 2.5vw, 2rem);
     }
 
     .progress-inner {
@@ -871,6 +939,7 @@ interface CreateCertificationForm {
       margin: 0 auto;
       display: flex;
       align-items: center;
+      min-width: 620px;
     }
 
     .step {
@@ -927,19 +996,20 @@ interface CreateCertificationForm {
 
     /* ===== LAYOUT ===== */
     .form-layout {
-      max-width: 900px;
+      width: min(100%, 980px);
       margin: 2.5rem auto;
-      padding: 0 2rem 4rem;
+      padding: 0 clamp(0.75rem, 2.5vw, 2rem) 4rem;
     }
 
     /* ===== FORM CARD ===== */
     .form-card {
       background: white;
       border-radius: 20px;
-      padding: 2.5rem;
+      padding: clamp(1.25rem, 2.8vw, 2.5rem);
       border: 1px solid #e2e8f0;
       box-shadow: 0 4px 20px rgba(0,0,0,0.04);
       animation: slideIn 0.3s ease;
+      overflow-x: hidden;
     }
 
     @keyframes slideIn {
@@ -1159,7 +1229,7 @@ interface CreateCertificationForm {
     /* ===== REVIEW ===== */
     .review-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
       gap: 1.5rem;
       margin-bottom: 2rem;
     }
@@ -1274,14 +1344,29 @@ interface CreateCertificationForm {
     .review-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 1rem;
       padding: 0.4rem 0;
       border-bottom: 1px dashed #e2e8f0;
     }
 
     .review-row:last-child { border-bottom: none; }
-    .review-row span { font-size: 0.85rem; color: #94a3b8; }
-    .review-row strong { font-size: 0.9rem; color: #1e293b; text-align: right; }
+    .review-row span {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      flex: 0 0 40%;
+      min-width: 100px;
+    }
+    .review-row strong {
+      font-size: 0.9rem;
+      color: #1e293b;
+      text-align: right;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
 
     .active-badge { color: #16a34a !important; }
     .inactive-badge { color: #dc2626 !important; }
@@ -1554,12 +1639,41 @@ interface CreateCertificationForm {
     .btn-add-opt { background: #f8fafc; color: #475569; border: 1px dashed #cbd5e1; width: 100%; border-radius: 8px; padding: 0.6rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     .btn-add-opt:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
 
+    @media (max-width: 1024px) {
+      .review-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 840px) {
+      .progress-bar-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
     @media (max-width: 700px) {
       .form-grid { grid-template-columns: 1fr; }
       .review-grid { grid-template-columns: 1fr; }
       .form-card { padding: 1.5rem; }
       .header-text h1 { font-size: 1.7rem; }
       .progress-inner { gap: 0.25rem; }
+      .step-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .step-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+      .review-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+      }
+      .review-row span { flex: 1; min-width: 0; }
+      .review-row strong { text-align: left; }
+      .tag-input-row { grid-template-columns: 1fr; }
+      .duration-group { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -1628,7 +1742,8 @@ export class CreateCertificationComponent implements OnInit {
     examMaxAttempts: null,
     examIsActive: true,
     examPdfName: null,
-    quizQuestions: []
+    quizQuestions: [],
+    practiceQuizQuestions: []
   };
 
   /** Used to prevent trackBy focus loss in ngFor inputs */
@@ -1690,9 +1805,16 @@ export class CreateCertificationComponent implements OnInit {
         try {
           const questions = JSON.parse(jsonString);
           if (Array.isArray(questions)) {
-            const validQuestions = questions.filter(q => q.questionText && Array.isArray(q.options) && q.options.length >= 2);
+            const validQuestions = this.filterUniqueQuestions(
+              questions,
+              this.form.quizQuestions,
+              this.form.practiceQuizQuestions
+            );
             this.form.quizQuestions = [...this.form.quizQuestions, ...validQuestions];
-            this.successMessage = `✨ AI successfully generated ${validQuestions.length} questions for your exam!`;
+            const skipped = questions.length - validQuestions.length;
+            this.successMessage = skipped > 0
+              ? `✨ AI generated ${validQuestions.length} exam questions (${skipped} skipped as duplicates with practice/real sets).`
+              : `✨ AI successfully generated ${validQuestions.length} questions for your exam!`;
             setTimeout(() => this.successMessage = '', 4000);
           }
         } catch (e) {
@@ -1704,6 +1826,47 @@ export class CreateCertificationComponent implements OnInit {
       error: (err) => {
         console.error('AI Quiz Error:', err);
         this.errorMessage = 'Failed to generate AI quiz. Please check your connection.';
+        this.isGeneratingQuiz = false;
+      }
+    });
+  }
+
+  generateAiPracticeQuiz() {
+    const context = this.form.criteriaDescription || this.form.description;
+    if (!context || context.trim().length < 10) {
+      this.errorMessage = 'Please provide a certification description first so the AI can generate relevant questions.';
+      return;
+    }
+
+    this.isGeneratingQuiz = true;
+    this.errorMessage = '';
+
+    this.aiService.generateQuiz(context).subscribe({
+      next: (jsonString) => {
+        try {
+          const questions = JSON.parse(jsonString);
+          if (Array.isArray(questions)) {
+            const validQuestions = this.filterUniqueQuestions(
+              questions,
+              this.form.practiceQuizQuestions,
+              this.form.quizQuestions
+            );
+            this.form.practiceQuizQuestions = [...this.form.practiceQuizQuestions, ...validQuestions];
+            const skipped = questions.length - validQuestions.length;
+            this.successMessage = skipped > 0
+              ? `✨ AI generated ${validQuestions.length} practice questions (${skipped} skipped as duplicates with exam/practice sets).`
+              : `✨ AI successfully generated ${validQuestions.length} questions for practice mode!`;
+            setTimeout(() => this.successMessage = '', 4000);
+          }
+        } catch (e) {
+          console.error('Practice Quiz Parsing Error:', e);
+          this.errorMessage = 'Failed to parse the AI generated practice quiz. Please try again.';
+        }
+        this.isGeneratingQuiz = false;
+      },
+      error: (err) => {
+        console.error('AI Practice Quiz Error:', err);
+        this.errorMessage = 'Failed to generate AI practice quiz. Please check your connection.';
         this.isGeneratingQuiz = false;
       }
     });
@@ -1878,9 +2041,38 @@ export class CreateCertificationComponent implements OnInit {
     }
   }
 
+  addPracticeQuizQuestion() {
+    this.form.practiceQuizQuestions.push({
+      questionText: '',
+      options: ['', ''],
+      correctOptionIndex: 0
+    });
+  }
+
+  removePracticeQuizQuestion(index: number) {
+    this.form.practiceQuizQuestions.splice(index, 1);
+  }
+
+  addPracticeQuizOption(qIndex: number) {
+    this.form.practiceQuizQuestions[qIndex].options.push('');
+  }
+
+  removePracticeQuizOption(qIndex: number, optIndex: number) {
+    if (this.form.practiceQuizQuestions[qIndex].options.length <= 2) return;
+
+    this.form.practiceQuizQuestions[qIndex].options.splice(optIndex, 1);
+    if (this.form.practiceQuizQuestions[qIndex].correctOptionIndex >= this.form.practiceQuizQuestions[qIndex].options.length) {
+      this.form.practiceQuizQuestions[qIndex].correctOptionIndex = 0;
+    }
+  }
+
   submit() {
     this.errorMessage = '';
     this.successMessage = '';
+    if (this.hasCrossModeDuplicates()) {
+      this.errorMessage = 'Practice and real exam questions must be different. Please remove duplicate question text before publishing.';
+      return;
+    }
 
     const user = this.auth.getCurrentUser();
     if (!user?.id) {
@@ -1911,7 +2103,9 @@ export class CreateCertificationComponent implements OnInit {
       examPdfName: this.form.examPdfName,
       examDurationMinutes: this.form.examDurationMinutes,
       examQuestions: this.form.quizQuestions ? this.form.quizQuestions.length : 0,
-      quizQuestions: this.form.quizQuestions
+      quizQuestions: this.form.quizQuestions,
+      practiceQuestions: this.form.practiceQuizQuestions ? this.form.practiceQuizQuestions.length : 0,
+      practiceQuizQuestions: this.form.practiceQuizQuestions
     });
 
     // -- Step 1: Create the Certification --
@@ -1983,5 +2177,36 @@ export class CreateCertificationComponent implements OnInit {
           }
         }
       });
+  }
+
+  private normalizeQuestionText(text: string): string {
+    return (text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  private filterUniqueQuestions(
+    questions: any[],
+    targetExisting: QuizQuestion[],
+    otherModeExisting: QuizQuestion[]
+  ): QuizQuestion[] {
+    const existing = new Set<string>([
+      ...targetExisting.map(q => this.normalizeQuestionText(q.questionText)),
+      ...otherModeExisting.map(q => this.normalizeQuestionText(q.questionText))
+    ]);
+
+    return questions
+      .filter(q => q.questionText && Array.isArray(q.options) && q.options.length >= 2)
+      .filter((q: QuizQuestion) => {
+        const key = this.normalizeQuestionText(q.questionText);
+        if (!key || existing.has(key)) {
+          return false;
+        }
+        existing.add(key);
+        return true;
+      });
+  }
+
+  private hasCrossModeDuplicates(): boolean {
+    const real = new Set(this.form.quizQuestions.map(q => this.normalizeQuestionText(q.questionText)));
+    return this.form.practiceQuizQuestions.some(q => real.has(this.normalizeQuestionText(q.questionText)));
   }
 }

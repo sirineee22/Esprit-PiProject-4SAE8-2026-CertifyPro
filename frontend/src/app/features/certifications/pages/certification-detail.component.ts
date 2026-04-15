@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
+import { AuthService } from '../../../core/auth/auth.service';
 
 /** Shape returned by GET /api/certifications/{id} */
 interface ApiCertification {
@@ -210,7 +211,7 @@ interface CertView {
               <p class="sidebar-price">{{ cert.price }}</p>
             </div>
 
-            <button class="btn-register" (click)="registerForExam()">
+            <button class="btn-register" *ngIf="!isTrainer" (click)="registerForExam()">
               <i class="bi bi-pencil-square"></i>
               Register for Exam
             </button>
@@ -274,7 +275,11 @@ interface CertView {
     </div>
   `,
   styles: [`
-    :host { display: block; background: #f8fafc; min-height: 100vh; }
+    :host {
+      display: block;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      min-height: 100vh;
+    }
 
     /* ======= STATES ======= */
     .state-center {
@@ -291,19 +296,30 @@ interface CertView {
     .error-state h2 { font-size: 1.4rem; color: #475569; }
 
     /* ======= HERO ======= */
-    .cert-hero { position: relative; overflow: hidden; }
+    .cert-hero {
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,0.12);
+    }
     .hero-overlay {
       background: linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 100%);
-      padding: 3rem 2rem 4rem;
+      padding: 3.2rem clamp(1rem, 3vw, 2.5rem) 4.2rem;
     }
-    .hero-inner { max-width: 1200px; margin: 0 auto; }
+    .hero-inner {
+      width: min(100%, 1500px);
+      margin: 0 auto;
+    }
     .back-link {
       display: inline-flex; align-items: center; gap: 0.5rem;
       color: rgba(255,255,255,0.85); text-decoration: none;
       font-size: 0.9rem; font-weight: 600; margin-bottom: 2rem; transition: color 0.2s;
     }
     .back-link:hover { color: white; }
-    .hero-content { display: flex; align-items: flex-start; gap: 2rem; }
+    .hero-content {
+      display: flex;
+      align-items: flex-start;
+      gap: clamp(1.2rem, 2.5vw, 2rem);
+    }
     .cert-icon-large {
       background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.25); border-radius: 20px;
@@ -330,36 +346,67 @@ interface CertView {
       padding: 0.3rem 0.9rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
       background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);
     }
-    .hero-text h1 { font-size: 2.4rem; font-weight: 800; color: white; margin: 0 0 0.5rem; line-height: 1.2; }
+    .hero-text h1 {
+      font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+      font-weight: 800;
+      color: white;
+      margin: 0 0 0.5rem;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
     .hero-provider { color: rgba(255,255,255,0.8); font-size: 1rem; margin-bottom: 1rem; }
     .hero-provider strong { color: white; }
-    .hero-desc { color: rgba(255,255,255,0.85); font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.75rem; max-width: 680px; }
+    .hero-desc {
+      color: rgba(255,255,255,0.92);
+      font-size: 1.05rem;
+      line-height: 1.65;
+      margin-bottom: 1.75rem;
+      max-width: 900px;
+    }
     .hero-stats { display: flex; flex-wrap: wrap; gap: 1.5rem; }
     .stat { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.9); font-size: 0.9rem; font-weight: 500; }
 
     /* ======= LAYOUT ======= */
     .detail-layout {
-      max-width: 1200px; margin: 0 auto; padding: 3rem 2rem;
-      display: grid; grid-template-columns: 1fr 360px; gap: 2.5rem; align-items: start;
+      width: min(100%, 1500px);
+      margin: 0 auto;
+      padding: clamp(1.25rem, 3vw, 3rem) clamp(1rem, 3vw, 2.5rem) 3rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, 420px);
+      gap: clamp(1rem, 2.2vw, 2.5rem);
+      align-items: start;
     }
 
     /* ======= SECTIONS ======= */
     .detail-section {
-      background: white; border-radius: 16px; padding: 2rem;
-      margin-bottom: 1.5rem; border: 1px solid #f1f5f9;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      background: white;
+      border-radius: 18px;
+      padding: clamp(1rem, 2vw, 1.9rem);
+      margin-bottom: 1rem;
+      border: 1px solid #e8eef7;
+      box-shadow: 0 8px 28px rgba(15,23,42,0.05);
     }
     .detail-section h2 {
       font-size: 1.2rem; font-weight: 700; color: #1e293b;
       margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.6rem;
     }
     .detail-section h2 i { color: #3b82f6; font-size: 1.1rem; }
-    .long-desc { color: #475569; line-height: 1.85; font-size: 1rem; }
+    .long-desc {
+      color: #334155;
+      line-height: 1.8;
+      font-size: 1rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
 
     /* Topics */
     .topics-list {
-      list-style: none; padding: 0; margin: 0;
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
     }
     .topics-list li {
       display: flex; align-items: center; gap: 0.75rem;
@@ -387,7 +434,11 @@ interface CertView {
     .prereq-list li i { color: #6366f1; font-size: 1.5rem; }
 
     /* Exam Grid */
-    .exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; }
+    .exam-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.8rem;
+    }
     .exam-stat-card {
       background: linear-gradient(135deg, #f8fafc, #f1f5f9);
       border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;
@@ -401,12 +452,24 @@ interface CertView {
     /* ======= SIDEBAR ======= */
     .detail-sidebar { position: relative; }
     .sticky-card {
-      position: sticky; top: 80px; background: white; border-radius: 20px;
-      border: 1px solid #e2e8f0; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 84px;
+      background: white;
+      border-radius: 20px;
+      border: 1px solid #dbe6f5;
+      padding: clamp(1rem, 2vw, 1.8rem);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.08);
     }
     .price-block { text-align: center; margin-bottom: 1.5rem; }
     .sidebar-label { font-size: 0.78rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem; }
-    .sidebar-price { font-size: 2.5rem; font-weight: 900; color: #0f172a; line-height: 1; margin-bottom: 0.5rem; }
+    .sidebar-price {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      word-break: break-word;
+    }
 
     .btn-register {
       width: 100%; background: linear-gradient(135deg, #1e3a8a, #3b82f6);
@@ -421,11 +484,22 @@ interface CertView {
     .sidebar-divider { height: 1px; background: #e2e8f0; margin: 1.5rem 0; }
 
     .sidebar-info-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
-    .sidebar-info-list li { display: flex; align-items: flex-start; gap: 0.85rem; }
+    .sidebar-info-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      min-width: 0;
+    }
     .sidebar-info-list li > i { font-size: 1.1rem; color: #3b82f6; margin-top: 0.1rem; flex-shrink: 0; }
     .sidebar-info-list li > div { display: flex; flex-direction: column; }
     .info-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
-    .info-value { font-size: 0.9rem; color: #1e293b; font-weight: 600; }
+    .info-value {
+      font-size: 0.9rem;
+      color: #1e293b;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
 
     .registered-badge {
       margin-top: 1.5rem; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
@@ -442,10 +516,11 @@ interface CertView {
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    @media (max-width: 900px) {
-      .detail-layout { grid-template-columns: 1fr; }
+    @media (max-width: 1180px) {
+      .detail-layout {
+        grid-template-columns: 1fr;
+      }
       .sticky-card { position: static; }
-      .hero-text h1 { font-size: 1.8rem; }
       .hero-content { flex-direction: column; }
       .cert-icon-large { width: 70px; height: 70px; }
       .cert-icon-large i { font-size: 2rem; }
@@ -461,6 +536,7 @@ export class CertificationDetailComponent implements OnInit {
   isLoading = true;
   errorMessage = '';
   registered = false;
+  isTrainer = false;
 
   private readonly cardColors = [
     'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)',
@@ -481,10 +557,13 @@ export class CertificationDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService
   ) { }
 
   ngOnInit() {
+    const currentUser = this.auth.getCurrentUser();
+    this.isTrainer = currentUser?.role?.name === 'TRAINER';
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
       this.errorMessage = 'Invalid certification ID.';
