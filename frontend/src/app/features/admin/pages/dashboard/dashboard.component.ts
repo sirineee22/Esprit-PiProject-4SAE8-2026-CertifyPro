@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+<<<<<<< HEAD
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UserService } from '../../../users/services/users.api';
@@ -9,21 +10,34 @@ import { User } from '../../../../shared/models/user.model';
 import { AuditLog } from '../../../../shared/models/audit.model';
 import { HttpClient } from '@angular/common/http';
 import { API_ENDPOINTS } from '../../../../core/api/api.config';
+=======
+import { forkJoin } from 'rxjs';
+import { UserService } from '../../../users/services/users.api';
+import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
+import { User } from '../../../../shared/models/user.model';
+>>>>>>> origin/Trainings-Evaluation
 
 interface DashboardStats {
     totalUsers: number;
     totalLearners: number;
     totalTrainers: number;
     pendingRequests: number;
+<<<<<<< HEAD
     totalEvents: number;
     upcomingEvents: number;
     totalRegistrations: number;
+=======
+>>>>>>> origin/Trainings-Evaluation
 }
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
+<<<<<<< HEAD
     imports: [CommonModule, RouterLink],
+=======
+    imports: [CommonModule],
+>>>>>>> origin/Trainings-Evaluation
     template: `
     <div class="dashboard-container">
       <header class="dashboard-header">
@@ -31,6 +45,7 @@ interface DashboardStats {
           <h1>Admin Dashboard</h1>
           <p>Welcome back! Here's what's happening on CertifyPro today.</p>
         </div>
+<<<<<<< HEAD
        
       </header>
 
@@ -38,6 +53,24 @@ interface DashboardStats {
 
       <!-- Dashboard Content -->
       <div  >
+=======
+        <div class="header-actions">
+          <button class="btn-refresh" (click)="loadDashboardData()" [disabled]="isLoading">
+            <i class="bi bi-arrow-clockwise" [class.spinning]="isLoading"></i>
+            Refresh Data
+          </button>
+        </div>
+      </header>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading dashboard data...</p>
+      </div>
+
+      <!-- Dashboard Content -->
+      <div *ngIf="!isLoading">
+>>>>>>> origin/Trainings-Evaluation
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon users">
@@ -89,6 +122,7 @@ interface DashboardStats {
                 <span class="trend warning">Review</span>
               </div>
             </div>
+<<<<<<< HEAD
             <div class="stat-card">
             <div class="stat-icon sessions">
               <i class="bi bi-calendar-check-fill"></i>
@@ -103,6 +137,10 @@ interface DashboardStats {
           </div>
         </div>
         </div>
+=======
+          </div>
+        </div>
+>>>>>>> origin/Trainings-Evaluation
 
         <div class="dashboard-content">
           <!-- Recent Users -->
@@ -133,6 +171,7 @@ interface DashboardStats {
             </div>
           </div>
 
+<<<<<<< HEAD
           <!-- Recent Activity (Audit) -->
           <div class="card recent-audit">
             <div class="card-header">
@@ -162,6 +201,8 @@ interface DashboardStats {
             </div>
           </div>
 
+=======
+>>>>>>> origin/Trainings-Evaluation
           <!-- User Distribution -->
           <div class="platform-health card">
             <div class="card-header">
@@ -197,6 +238,7 @@ interface DashboardStats {
                   <div class="bar-fill pending" [style.width.%]="getPendingPercentage()"></div>
                 </div>
               </div>
+<<<<<<< HEAD
 
               <div class="metric">
                 <div class="metric-header">
@@ -207,6 +249,8 @@ interface DashboardStats {
                   <div class="bar-fill sessions" [style.width.%]="70"></div>
                 </div>
               </div>
+=======
+>>>>>>> origin/Trainings-Evaluation
             </div>
           </div>
         </div>
@@ -346,7 +390,10 @@ interface DashboardStats {
     .stat-icon.learners { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
     .stat-icon.trainers { background: linear-gradient(135deg, #10b981, #059669); color: white; }
     .stat-icon.pending { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+<<<<<<< HEAD
     .stat-icon.sessions { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
+=======
+>>>>>>> origin/Trainings-Evaluation
 
     .stat-details {
       flex: 1;
@@ -552,7 +599,10 @@ interface DashboardStats {
     .bar-fill.learner { background: linear-gradient(90deg, #3b82f6, #2563eb); }
     .bar-fill.trainer { background: linear-gradient(90deg, #10b981, #059669); }
     .bar-fill.pending { background: linear-gradient(90deg, #f59e0b, #d97706); }
+<<<<<<< HEAD
     .bar-fill.sessions { background: linear-gradient(90deg, #ec4899, #db2777); }
+=======
+>>>>>>> origin/Trainings-Evaluation
 
     @media (max-width: 1024px) {
       .dashboard-content { grid-template-columns: 1fr; }
@@ -571,6 +621,7 @@ export class DashboardComponent implements OnInit {
         totalUsers: 0,
         totalLearners: 0,
         totalTrainers: 0,
+<<<<<<< HEAD
         pendingRequests: 0,
         totalEvents: 0,
         upcomingEvents: 0,
@@ -578,13 +629,21 @@ export class DashboardComponent implements OnInit {
     };
     recentUsers: User[] = [];
     recentLogs: AuditLog[] = [];
+=======
+        pendingRequests: 0
+    };
+    recentUsers: User[] = [];
+>>>>>>> origin/Trainings-Evaluation
     isLoading = true;
 
     constructor(
         private userService: UserService,
         private trainerRequestService: TrainerRequestService,
+<<<<<<< HEAD
         private eventService: EventsApiService,
         private http: HttpClient,
+=======
+>>>>>>> origin/Trainings-Evaluation
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -597,16 +656,23 @@ export class DashboardComponent implements OnInit {
 
         forkJoin({
             users: this.userService.getAll(),
+<<<<<<< HEAD
             requests: this.trainerRequestService.getPendingRequests(),
             eventStats: this.eventService.adminStats()
         }).subscribe({
             next: ({ users, requests, eventStats }) => {
+=======
+            requests: this.trainerRequestService.getPendingRequests()
+        }).subscribe({
+            next: ({ users, requests }) => {
+>>>>>>> origin/Trainings-Evaluation
                 // Calculate stats
                 this.stats.totalUsers = users.length;
                 this.stats.totalLearners = users.filter(u => u.role?.name === 'LEARNER').length;
                 this.stats.totalTrainers = users.filter(u => u.role?.name === 'TRAINER').length;
                 this.stats.pendingRequests = requests.length;
 
+<<<<<<< HEAD
                 // Event stats
                 this.stats.totalEvents = eventStats.totalEvents;
                 this.stats.upcomingEvents = eventStats.upcoming;
@@ -626,6 +692,14 @@ export class DashboardComponent implements OnInit {
                     }
                 });
 
+=======
+                // Get recent users (last 5, excluding admins)
+                this.recentUsers = users
+                    .filter(u => u.role?.name !== 'ADMIN')
+                    .slice(-5)
+                    .reverse();
+
+>>>>>>> origin/Trainings-Evaluation
                 this.isLoading = false;
                 this.cdr.detectChanges();
             },
@@ -664,6 +738,7 @@ export class DashboardComponent implements OnInit {
         if (total === 0) return 0;
         return (this.stats.pendingRequests / total) * 100;
     }
+<<<<<<< HEAD
 
     getActionClass(action: string) {
         if (action.includes('DELETE')) return 'admin'; // Red/Orange
@@ -688,4 +763,6 @@ export class DashboardComponent implements OnInit {
         if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
         return date.toLocaleDateString();
     }
+=======
+>>>>>>> origin/Trainings-Evaluation
 }

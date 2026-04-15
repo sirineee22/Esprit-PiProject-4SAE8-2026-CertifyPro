@@ -35,8 +35,13 @@ import { AuthService } from '../../../../core/auth/auth.service';
             </p>
             
             <div class="hero-actions">
+<<<<<<< HEAD
               <a [routerLink]="isLoggedIn ? '/courses' : '/login'" class="btn-hero-primary">
                 Explore Courses
+=======
+              <a [routerLink]="isLoggedIn ? '/trainings' : '/login'" class="btn-hero-primary">
+                Explore Trainings
+>>>>>>> origin/Trainings-Evaluation
                 <i class="bi bi-arrow-right"></i>
               </a>
               <a routerLink="/certifications" class="btn-hero-secondary">
@@ -51,7 +56,11 @@ import { AuthService } from '../../../../core/auth/auth.service';
                     <div class="stat-icon-box blue-stat"><i class="bi bi-journal-bookmark-fill"></i></div>
                     <div class="stat-info">
                       <span class="stat-value">500+</span>
+<<<<<<< HEAD
                       <p class="stat-label">Online Courses</p>
+=======
+                      <p class="stat-label">Online Trainings</p>
+>>>>>>> origin/Trainings-Evaluation
                     </div>
                   </div>
                 </div>
@@ -168,7 +177,11 @@ import { AuthService } from '../../../../core/auth/auth.service';
     <!-- Featured Courses -->
     <section class="featured-courses-section">
       <div class="container">
+<<<<<<< HEAD
         <h3 class="section-title">Featured Courses</h3>
+=======
+        <h3 class="section-title">Featured Trainings</h3>
+>>>>>>> origin/Trainings-Evaluation
         <p class="section-description">Expand your expertise with our curated selection.</p>
         <div class="row g-4 mt-4">
           <div class="col-md-4" *ngFor="let course of featuredCourses">
@@ -190,7 +203,11 @@ import { AuthService } from '../../../../core/auth/auth.service';
           </div>
         </div>
         <div class="text-center mt-5">
+<<<<<<< HEAD
           <a [routerLink]="isLoggedIn ? '/courses' : '/login'" class="btn btn-primary">Browse All Courses</a>
+=======
+          <a [routerLink]="isLoggedIn ? '/trainings' : '/login'" class="btn btn-primary">Browse All Trainings</a>
+>>>>>>> origin/Trainings-Evaluation
         </div>
       </div>
     </section>

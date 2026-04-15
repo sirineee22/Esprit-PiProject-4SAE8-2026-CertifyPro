@@ -6,7 +6,6 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -16,6 +15,7 @@ spring:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
             allowedHeaders:
@@ -51,6 +51,30 @@ spring:
           uri: lb://EVENT-SERVICE
           predicates:
             - Path=/api/events/**,/api/admin/events/**
+        - id: evaluations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/evaluations/**,/api/evaluations
+        - id: formations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/formations/**,/api/formations
+        - id: quizzes-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/quizzes/**,/api/quizzes
+        - id: progression-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/progression/**,/api/progression
+        - id: favorites-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/favorites/**,/api/favorites
+        - id: stats-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/stats/**,/api/stats
 
 eureka:
   client:

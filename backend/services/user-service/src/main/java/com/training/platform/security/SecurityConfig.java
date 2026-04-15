@@ -28,8 +28,7 @@ public class SecurityConfig {
     }
 
     /**
-     * High-priority chain: internal microservice paths bypass all Spring Security
-     * so that event-service can call user-service without a JWT token.
+     * High-priority chain: internal microservice paths bypass all Spring Security.
      */
     @Bean
     @Order(1)
@@ -50,8 +49,11 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.disable())
+            .cors(cors -> cors.disable()) // Gateway handles CORS
             .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.disable()) // Allow iframe embedding (H2 console)
+            )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -59,16 +61,23 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/verify-2fa").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/profile-image/**").permitAll()
+                
                 // Sensitive user / role APIs
                 .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/roles/**").hasRole("ADMIN")
-                // Trainer requests: list / approve / reject = admin only
+                
+                // Trainer requests
                 .requestMatchers(HttpMethod.GET, "/api/trainer-requests").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/approve").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/reject").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/trainer-requests/my-requests").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/trainer-requests").authenticated()
+                
+                // Formations (Training Service)
+                .requestMatchers(HttpMethod.GET, "/api/formations/**").permitAll()
+                
+                // Catch-all
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

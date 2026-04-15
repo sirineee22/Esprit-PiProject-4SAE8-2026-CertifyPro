@@ -6,18 +6,17 @@ import com.training.platform.entity.User;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.TrainerRequestRepository;
 import com.training.platform.repository.UserRepository;
+import com.training.platform.security.JwtAuthenticationFilter;
 import com.training.platform.service.EmailService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
-import com.training.platform.security.JwtAuthenticationFilter;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -139,9 +138,7 @@ public class TrainerRequestController {
         trainerRequestRepository.save(request);
 
         // Update user role to TRAINER and activate account
-        Long userId = request.getUser().getId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = request.getUser();
         Role trainerRole = roleRepository.findByName("TRAINER")
                 .orElseThrow(() -> new RuntimeException("TRAINER role not found"));
         user.setRole(trainerRole);

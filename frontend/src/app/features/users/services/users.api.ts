@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+<<<<<<< HEAD
 import { Observable, of } from 'rxjs';
 import { API_BASE_URL, API_ENDPOINTS } from '../../../core/api/api.config';
 import { User, UserProgress } from '../../../shared/models/user.model';
@@ -14,6 +15,11 @@ export interface AppNotification {
     read: boolean;
     createdAt: string;
 }
+=======
+import { Observable } from 'rxjs';
+import { API_ENDPOINTS } from '../../../core/api/api.config';
+import { User } from '../../../shared/models/user.model';
+>>>>>>> origin/Trainings-Evaluation
 
 @Injectable({
     providedIn: 'root'
@@ -23,6 +29,7 @@ export class UserService {
 
     constructor(private http: HttpClient) { }
 
+<<<<<<< HEAD
     /** Upload profile image (file from PC). Returns updated user. */
     uploadProfileImage(userId: number, file: File): Observable<User> {
         const formData = new FormData();
@@ -30,6 +37,8 @@ export class UserService {
         return this.http.post<User>(`${this.apiUrl}/${userId}/profile-image`, formData);
     }
 
+=======
+>>>>>>> origin/Trainings-Evaluation
     getAll(): Observable<User[]> {
         return this.http.get<User[]>(this.apiUrl);
     }
@@ -38,6 +47,7 @@ export class UserService {
         return this.http.get<User>(`${this.apiUrl}/${id}`);
     }
 
+<<<<<<< HEAD
     getByIds(ids: number[]): Observable<User[]> {
         if (!ids?.length) return of([]);
         return this.http.get<User[]>(`${this.apiUrl}/batch`, {
@@ -57,6 +67,8 @@ export class UserService {
         return this.http.post<{ message: string }>(`${this.apiUrl}/${userId}/2fa/disable`, {});
     }
 
+=======
+>>>>>>> origin/Trainings-Evaluation
     create(user: User): Observable<User> {
         return this.http.post<User>(this.apiUrl, user);
     }
@@ -70,6 +82,7 @@ export class UserService {
         const url = `${this.apiUrl}/${id}`;
         return this.http.delete<void>(url);
     }
+<<<<<<< HEAD
 
     getMyNotifications(): Observable<AppNotification[]> {
         return this.http.get<AppNotification[]>(`${this.apiUrl}/notifications/my`);
@@ -82,4 +95,6 @@ export class UserService {
     getMyProgress(): Observable<UserProgress> {
         return this.http.get<UserProgress>(`${this.apiUrl}/progress/my`);
     }
+=======
+>>>>>>> origin/Trainings-Evaluation
 }

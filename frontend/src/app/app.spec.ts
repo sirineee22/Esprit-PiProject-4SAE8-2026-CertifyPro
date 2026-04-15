@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
 
 describe('App', () => {
+=======
+import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe.skip('App', () => {
+>>>>>>> origin/Trainings-Evaluation
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],

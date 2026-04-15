@@ -1,0 +1,19 @@
+/* Re-use or import training-list.css if possible, but here we just copy the essential or link it in the component if needed. 
+Actually Angular components are scoped, so I'll just include the custom ones here and maybe import the main one.
+Wait, TrainingListComponent has its own CSS. I'll copy the core parts.
+*/
+
+/* Copying core styles from training-list.css to ensure layout consistency */
+@import '../training-list/training-list.css';
+
+.empty-state {
+    background: white;
+    padding: 4rem 2rem;
+    border-radius: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1px dashed #e2e8f0;
+}
+
+.empty-icon i {
+    color: #cbd5e1;
+}

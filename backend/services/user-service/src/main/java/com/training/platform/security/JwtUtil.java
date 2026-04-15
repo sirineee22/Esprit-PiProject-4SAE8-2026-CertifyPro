@@ -19,7 +19,6 @@ public class JwtUtil {
     @Value("${jwt.secret:dev-secret-min-32-chars-for-local-only}")
     private String secret;
 
-
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private Long expiration;
 

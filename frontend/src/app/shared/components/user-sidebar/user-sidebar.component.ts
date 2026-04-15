@@ -46,6 +46,10 @@ import { AppNotification, UserService } from '../../../features/users/services/u
             <i class="bi bi-house-door"></i>
             <span>Home</span>
           </a>
+          <a routerLink="/trainings" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Browse Trainings' : ''">
+            <i class="bi bi-grid-view"></i>
+            <span>Browse Trainings</span>
+          </a>
           <a routerLink="/about" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'About Us' : ''">
             <i class="bi bi-info-circle"></i>
             <span>About Us</span>
@@ -54,8 +58,8 @@ import { AppNotification, UserService } from '../../../features/users/services/u
             <i class="bi bi-chat-left-text"></i>
             <span>Posts</span>
           </a>
-             <a routerLink="/shop/productss" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Forum' : ''">
-            <i class="bi bi-chat-left-text"></i>
+          <a routerLink="/shop/productss" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Our products' : ''">
+            <i class="bi bi-bag"></i>
             <span>Our products</span>
           </a>
         </div>
@@ -63,18 +67,18 @@ import { AppNotification, UserService } from '../../../features/users/services/u
         <!-- My Learning Section -->
         <div class="nav-section">
           <span class="section-label" *ngIf="!isCollapsed">MY LEARNING</span>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'My Courses' : ''">
+          <a routerLink="/trainings/my-learning" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Courses' : ''">
             <i class="bi bi-book"></i>
             <span>My Courses</span>
-          </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Certifications' : ''">
-            <i class="bi bi-award"></i>
-            <span>Certifications</span>
-          </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Progress' : ''">
+          </a>
+          <a routerLink="/evaluations/my-evals" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Results' : ''">
             <i class="bi bi-graph-up"></i>
-            <span>Progress</span>
-          </div>
+            <span>My Results</span>
+          </a>
+          <a routerLink="/trainings/wishlist" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Wishlist' : ''">
+            <i class="bi bi-heart"></i>
+            <span>My Wishlist</span>
+          </a>
           <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Événements' : ''">
             <i class="bi bi-calendar-event"></i>
             <span>Événements</span>
@@ -89,22 +93,29 @@ import { AppNotification, UserService } from '../../../features/users/services/u
           </div>
         </div>
         
-        <!-- Trainer Section (only for trainers) -->
-        <div class="nav-section" *ngIf="isTrainer">
-          <span class="section-label" *ngIf="!isCollapsed">TRAINER</span>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'My Trainings' : ''">
-            <i class="bi bi-easel"></i>
-            <span>My Trainings</span>
-          </div>
+        <!-- Trainer/Admin Section -->
+        <div class="nav-section" *ngIf="isTrainer || isAdmin">
+          <span class="section-label" *ngIf="!isCollapsed">{{ isAdmin ? 'ADMIN' : 'TRAINER' }}</span>
+          <a routerLink="/evaluations/dashboard" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Dashboard' : ''">
+            <i class="bi bi-speedometer2"></i>
+            <span>Analytics Dashboard</span>
+          </a>
+          <a routerLink="/trainings/add" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Add Training' : ''">
+            <i class="bi bi-journal-plus"></i>
+            <span>Add New Training</span>
+          </a>
+          <a routerLink="/evaluations" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Evaluations' : ''">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Student Evaluations</span>
+          </a>
           <div class="nav-link disabled" [title]="isCollapsed ? 'My Students' : ''">
             <i class="bi bi-people"></i>
             <span>My Students</span>
           </div>
         </div>
+      </nav>
 
-        </nav>
-
-      <!-- Single user panel (click = profile, Settings + Logout on the right) -->
+      <!-- Single user panel -->
       <div class="user-profile-section">
         <div class="profile-card" [class.collapsed-card]="isCollapsed">
           <a routerLink="/profile" routerLinkActive="active" class="profile-card-link" title="My Profile">
@@ -197,7 +208,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       width: 80px;
     }
 
-    /* Top Section */
     .sidebar-top {
       padding: 1.5rem;
       display: flex;
@@ -215,16 +225,11 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       min-height: auto;
     }
 
-    .collapsed .sidebar-logo-section {
-      flex: none;
-    }
-
     .sidebar-logo-section {
       display: flex;
       align-items: center;
       gap: 12px;
       text-decoration: none;
-      animation: fadeIn 0.5s ease-out;
     }
 
     .sidebar-logo-icon {
@@ -232,19 +237,10 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       height: 40px;
       background: #0b1120;
       border-radius: 10px;
-      border: 1px solid rgba(245, 158, 11, 0.3);
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    .sidebar-logo-glow {
-      position: absolute;
-      inset: -1px;
-      background: linear-gradient(135deg, #f59e0b, transparent);
-      border-radius: 11px;
-      opacity: 0.6;
     }
 
     .sidebar-logo-icon-inner {
@@ -262,8 +258,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       font-size: 1.25rem;
       font-weight: 800;
       color: #0b1f3b;
-      letter-spacing: 0.02em;
-      line-height: 1;
     }
 
     .sidebar-brand-name span {
@@ -275,7 +269,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       letter-spacing: 0.25em;
       font-weight: 800;
       color: #94a3b8;
-      margin: 3px 0 0 0;
       text-transform: uppercase;
     }
 
@@ -290,16 +283,8 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       justify-content: center;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.2s;
     }
 
-    .sidebar-toggle-btn:hover {
-      background: #f8fafc;
-      color: var(--primary);
-      border-color: #e2e8f0;
-    }
-
-    /* Search Bar */
     .sidebar-search {
       padding: 0 1.5rem 1.5rem;
     }
@@ -308,14 +293,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       position: relative;
       background: #f8fafc;
       border-radius: 10px;
-      border: 1px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .search-input-wrapper:focus-within {
-      background: white;
-      border-color: #cbd5e1;
-      box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
     }
 
     .search-input-wrapper i {
@@ -324,7 +301,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       top: 50%;
       transform: translateY(-50%);
       color: var(--text-muted);
-      font-size: 0.9rem;
     }
 
     .search-input-wrapper input {
@@ -333,11 +309,9 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       background: transparent;
       border: none;
       font-size: 0.85rem;
-      color: var(--text-main);
       outline: none;
     }
 
-    /* Nav Section */
     .sidebar-nav {
       flex: 1;
       padding: 0 0.75rem;
@@ -345,16 +319,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       flex-direction: column;
       gap: 1.5rem;
       overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    .sidebar-nav::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .sidebar-nav::-webkit-scrollbar-thumb {
-      background: #e2e8f0;
-      border-radius: 10px;
     }
 
     .nav-section {
@@ -380,17 +344,14 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       text-decoration: none;
       color: var(--text-muted);
       border-radius: 10px;
-      transition: all 0.2s;
       font-weight: 500;
       font-size: 0.9rem;
-      position: relative;
     }
 
     .nav-link i {
       width: 24px;
       font-size: 1.2rem;
       text-align: center;
-      transition: transform 0.2s;
     }
 
     .nav-link:hover:not(.disabled) {
@@ -398,15 +359,10 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       color: #27324B;
     }
 
-    .nav-link:hover i {
-      transform: scale(1.1);
-    }
-
     .nav-link.active {
       background: #F0F4F8;
       color: #27324B;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(39, 50, 75, 0.08);
     }
 
     .nav-link.disabled {
@@ -414,16 +370,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       cursor: not-allowed;
     }
 
-    .collapsed .nav-link {
-      justify-content: center;
-      padding: 0.75rem;
-    }
-
-    .collapsed .nav-link span {
-      display: none;
-    }
-
-    /* Single user panel */
     .user-profile-section {
       padding: 1rem 0.75rem 1.5rem;
       border-top: 1px solid var(--sidebar-border);
@@ -436,44 +382,6 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      transition: all 0.2s;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      min-height: 52px;
-    }
-
-    .profile-card:hover {
-      background: #EBEFF5;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-    }
-
-    .profile-card:has(.profile-card-link.active) {
-      background: #EBEFF5;
-      border-color: rgba(39, 50, 75, 0.08);
-    }
-
-    .profile-card-link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex: 1;
-      min-width: 0;
-      text-decoration: none;
-      color: inherit;
-      border-radius: 10px;
-      padding: 2px 0;
-    }
-
-    .profile-card-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .profile-card-actions.collapsed-actions {
-      flex-direction: column;
-      gap: 0.5rem;
     }
 
     .action-btn {
@@ -487,29 +395,11 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-      text-decoration: none;
-      font-size: 1.1rem;
     }
 
-    .action-btn:hover {
-      background: #e2e8f0;
-      color: var(--primary);
-    }
+    .action-btn.logout-btn { color: #ef4444; }
 
-    .action-btn.logout-btn {
-      color: #ef4444;
-    }
-
-    .action-btn.logout-btn:hover {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    .bell-btn {
-      position: relative;
-    }
+    .bell-btn { position: relative; }
 
     .notif-badge {
       position: absolute;
@@ -517,12 +407,10 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       right: -4px;
       min-width: 16px;
       height: 16px;
-      border-radius: 999px;
       background: #ef4444;
       color: white;
       font-size: 0.62rem;
-      font-weight: 700;
-      padding: 0 4px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -535,27 +423,11 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       border-radius: 10px;
       padding: 0.5rem;
       max-height: 280px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .notifications-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.3rem 0.4rem;
-    }
-
-    .notifications-list {
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
     }
 
     .notif-item {
+      width: 100%;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
       background: #f8fafc;
@@ -563,57 +435,13 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       display: flex;
       gap: 0.5rem;
       text-align: left;
+      margin-bottom: 0.35rem;
     }
 
-    .notif-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-top: 0.35rem;
-      background: #cbd5e1;
-      flex-shrink: 0;
-    }
+    .notif-dot.unread { background: #f59e0b; width: 8px; height: 8px; border-radius: 50%; }
 
-    .notif-dot.unread {
-      background: #f59e0b;
-    }
-
-    .notif-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #27324B;
-    }
-
-    .notif-message {
-      font-size: 0.75rem;
-      color: #475569;
-      line-height: 1.3;
-    }
-
-    .notif-time {
-      font-size: 0.68rem;
-      color: #94a3b8;
-      margin-top: 0.2rem;
-    }
-
-    .collapsed-card {
-      padding: 0.75rem 0;
-      background: transparent;
-      flex-direction: column;
-      gap: 0.75rem;
-      border: none;
-      box-shadow: none;
-      min-height: auto;
-    }
-
-    .collapsed-card .profile-card-link {
-      flex: none;
-    }
-
-    .user-avatar-wrapper {
-      position: relative;
-      flex-shrink: 0;
-    }
+    .notif-title { font-size: 0.8rem; font-weight: 700; }
+    .notif-message { font-size: 0.75rem; color: #475569; }
 
     .user-avatar {
       width: 40px;
@@ -621,81 +449,17 @@ import { AppNotification, UserService } from '../../../features/users/services/u
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 50%;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #1e3a5f;
-      font-size: 1.15rem;
-      overflow: hidden;
-    }
-    .user-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .user-avatar .avatar-initials {
-      font-size: 0.85rem;
-      font-weight: 700;
     }
 
-    .status-indicator {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 2px solid #F2F5F9;
-      background: #22c55e;
-    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .status-indicator.online {
-      background: #22c55e;
-    }
-
-    .user-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .user-name {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #27324B;
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.3;
-    }
-
-    .user-role {
-      font-size: 0.7rem;
-      color: #64748b;
-      margin: 0.25rem 0 0;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      .user-sidebar-content {
-        position: fixed;
-        left: -100%;
-        transition: left 0.3s ease;
-      }
-      .user-sidebar-content.active {
-        left: 0;
-      }
-    }
+    .user-name { font-size: 0.9rem; font-weight: 700; margin: 0; }
+    .user-role { font-size: 0.7rem; color: #64748b; margin: 0; }
   `]
-
 })
 export class UserSidebarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
@@ -752,8 +516,8 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role?.name === 'TRAINER';
   }
 
-  get isLearner(): boolean {
-    return this.currentUser?.role?.name === 'LEARNER';
+  get isAdmin(): boolean {
+    return this.currentUser?.role?.name === 'ADMIN';
   }
 
   toggleSidebar() {
@@ -785,9 +549,7 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
       this.userService.markNotificationAsRead(n.id).subscribe({
         next: () => {
           n.read = true;
-          if (targetRoute) {
-            this.router.navigate(targetRoute);
-          }
+          if (targetRoute) this.router.navigate(targetRoute);
         },
         error: () => {
           if (targetRoute) this.router.navigate(targetRoute);
@@ -800,7 +562,6 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
 
   private resolveNotificationRoute(n: AppNotification): any[] | null {
     if (!n.eventId) return null;
-    // For learner registration-related notifications, open participants page directly.
     if (['REGISTRATION_APPROVED', 'WAITLIST_PROMOTED'].includes(n.type)) {
       return ['/events', n.eventId, 'participants'];
     }

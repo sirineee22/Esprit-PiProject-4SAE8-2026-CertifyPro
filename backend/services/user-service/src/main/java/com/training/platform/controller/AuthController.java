@@ -8,6 +8,9 @@ import com.training.platform.service.TwoFactorService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -126,11 +129,17 @@ public class AuthController {
         public String code;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     static class LoginResponse {
         public String token;
         public UserData user;
         public boolean mfaRequired = false;
 
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
         static class UserData {
             public Long id;
             public String firstName;

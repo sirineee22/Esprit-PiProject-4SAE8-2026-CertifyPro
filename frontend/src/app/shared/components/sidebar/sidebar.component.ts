@@ -40,6 +40,7 @@ import { User } from '../../models/user.model';
             <i class="bi bi-people-fill"></i>
             <span>User Management</span>
           </a>
+<<<<<<< HEAD
           <a routerLink="/admin/posts" routerLinkActive="active" class="nav-link">
             <i class="bi bi-chat-left-text-fill"></i>
             <span>Forum Management</span>
@@ -61,13 +62,25 @@ import { User } from '../../models/user.model';
             <i class="bi bi-clock-history"></i>
             <span>Audit & History</span>
           </a>
+=======
+>>>>>>> origin/Trainings-Evaluation
         </div>
         
         <div class="nav-section">
           <span class="section-label">PLATFORM</span>
+<<<<<<< HEAD
           <a class="nav-link disabled">
             <i class="bi bi-journal-check"></i>
             <span>Trainings</span>
+=======
+          <a routerLink="/trainings" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <i class="bi bi-grid-view"></i>
+            <span>Trainings Catalog</span>
+          </a>
+          <a routerLink="/trainings/add" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-journal-plus"></i>
+            <span>Add Training</span>
+>>>>>>> origin/Trainings-Evaluation
           </a>
           <a class="nav-link disabled">
             <i class="bi bi-shield-lock-fill"></i>

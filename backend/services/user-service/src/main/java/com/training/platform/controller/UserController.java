@@ -2,13 +2,14 @@ package com.training.platform.controller;
 
 import com.training.platform.dto.UpdateUserRequest;
 import com.training.platform.entity.User;
+import com.training.platform.entity.AuditLog;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.UserRepository;
 import com.training.platform.repository.AuditLogRepository;
-import com.training.platform.service.EmailService;
-import com.training.platform.entity.AuditLog;
 import com.training.platform.security.JwtAuthenticationFilter;
+import com.training.platform.service.EmailService;
 import com.training.platform.service.TwoFactorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -23,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -167,8 +167,6 @@ public class UserController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // --- Original endpoints below ---
-
     @GetMapping("/batch")
     public List<User> getUsersByIds(@RequestParam("ids") List<Long> ids) {
         if (ids == null || ids.isEmpty()) return List.of();
@@ -246,25 +244,18 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
         try {
-            // Hash password before saving
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-            // Assign default LEARNER role if no role provided
             if (user.getRole() == null) {
                 user.setRole(roleRepository.findByName("LEARNER")
                     .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             }
-
             User created = userRepository.save(user);
-
-            // SAVE AUDIT LOG
+            
             getCurrentUserDetails().ifPresent(actor -> {
-                System.out.println("AUDIT: Attempting to save USER_CREATE: " + created.getEmail() + " by " + actor.email);
                 auditLogRepository.save(new AuditLog("USER_CREATE", actor.userId, actor.email, "USER", String.valueOf(created.getId()), "Created new user: " + created.getEmail()));
             });
 
             emailService.sendWelcomeEmail(created.getEmail(), created.getFirstName());
-
             return ResponseEntity.ok(created);
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
@@ -310,13 +301,9 @@ public class UserController {
                         user.setPassword(passwordEncoder.encode(request.getPassword()));
                     }
                     User updated = userRepository.save(user);
-                    
-                    // SAVE AUDIT LOG
                     getCurrentUserDetails().ifPresent(actor -> {
-                        String details = "Updated user: " + user.getEmail();
-                        auditLogRepository.save(new AuditLog("USER_UPDATE", actor.userId, actor.email, "USER", String.valueOf(id), details));
+                        auditLogRepository.save(new AuditLog("USER_UPDATE", actor.userId, actor.email, "USER", String.valueOf(id), "Updated user: " + user.getEmail()));
                     });
-
                     return ResponseEntity.ok(updated);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -326,13 +313,9 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         return userRepository.findById(id).map(user -> {
             userRepository.deleteById(id);
-            
-            // SAVE AUDIT LOG
             getCurrentUserDetails().ifPresent(actor -> {
-                System.out.println("AUDIT: Attempting to save USER_DELETE: " + user.getEmail() + " by " + actor.email);
                 auditLogRepository.save(new AuditLog("USER_DELETE", actor.userId, actor.email, "USER", String.valueOf(id), "Deleted user: " + user.getEmail()));
             });
-            
             return ResponseEntity.ok().<Void>build();
         }).orElse(ResponseEntity.notFound().build());
     }

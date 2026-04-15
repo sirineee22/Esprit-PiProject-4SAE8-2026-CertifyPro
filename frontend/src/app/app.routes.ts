@@ -17,13 +17,13 @@ import { ProductListComponent } from './product-list/product-list.component';
 import { ProductDetailsComponent } from './product-list/product-details.component';
 import { CartComponent } from './product-list/cart.component';
 import { ProductsListComponent } from './product-list/products-list.component';
-import { Forumadmin } from './forumadmin/forumadmin';
 import { Forumclient } from './forumclient/forumclient';
 
 export const routes: Routes = [
     // Auth routes (no layout - no navbar/footer)
     ...authRoutes,
 
+    // Forum (standalone or integrated)
     { path: 'forum',  component: Forumclient },
 
     // User routes (with navbar/footer)
@@ -32,25 +32,34 @@ export const routes: Routes = [
         component: UserLayoutComponent,
         children: [
             { path: '', component: HomeComponent },
-
             { path: 'profile', component: ProfileComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'courses', component: CoursesListComponent },
             { path: 'certifications', component: CertificationsListComponent },
             { path: 'my-courses', component: MyCoursesComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'my-certifications', component: CertificationsListComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'my-progress', redirectTo: '', pathMatch: 'full' },
-            { path: 'trainings', component: CoursesListComponent },
+            
+            // New Training & Evaluation Features
+            {
+                path: 'trainings',
+                loadChildren: () => import('./features/formation/formation.routes').then(m => m.formationRoutes)
+            },
+            {
+                path: 'evaluations',
+                loadChildren: () => import('./features/evaluation/evaluation.routes').then(m => m.EVALUATION_ROUTES)
+            },
+            
+            // Core Pages
             { path: 'help', redirectTo: '', pathMatch: 'full' },
             { path: 'about', component: AboutComponent },
-            { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
+            
+            // Events
+            { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
 
-
-          
+            // Forum & E-commerce
             { path: 'posts', component: Forumclient },
-
-
             { path: 'shop/products', component: ProductListComponent },
             { path: 'shop/productss', component: ProductsListComponent },
             { path: 'shop/products/:id', component: ProductDetailsComponent },
@@ -65,7 +74,6 @@ export const routes: Routes = [
         canActivate: [authGuard, adminGuard],
         children: [
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-            
             ...adminRoutes
         ]
     }

@@ -1,0 +1,78 @@
+<!-- Reuse existing styles from training-list.css -->
+<div class="trainings-page">
+    <div class="bg-gradient"></div>
+
+    <div class="container py-5">
+        <header class="header mb-5">
+            <h6 class="text-primary fw-bold text-uppercase ls-1">My Collection</h6>
+            <h1 class="display-4 fw-bold text-slate-900 mb-3">My <span class="text-gradient">Wishlist</span></h1>
+            <p class="lead text-muted">A curated list of trainings you've saved for later. Keep learning at your own
+                pace.</p>
+        </header>
+
+        <!-- Loading -->
+        <div *ngIf="isLoading()" class="loading-state h-400 d-flex flex-row align-items-center justify-content-center">
+            <div class="spinner-modern"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading() && favorites().length === 0" class="empty-state text-center py-5 animate-fade-in">
+            <div class="empty-icon mb-4">
+                <i class="bi bi-heart-break text-muted opacity-50" style="font-size: 5rem;"></i>
+            </div>
+            <h3>Your wishlist is empty</h3>
+            <p class="text-muted mb-4">You haven't saved any trainings yet. Browse our catalog to find something
+                interesting!</p>
+            <a routerLink="/trainings" class="btn-add-premium">
+                <i class="bi bi-grid-view me-2"></i>
+                Browse Trainings
+            </a>
+        </div>
+
+        <!-- Grid -->
+        <div *ngIf="!isLoading() && favorites().length > 0" class="row g-4">
+            <div class="col-md-6 col-lg-4 animate-slide-up" *ngFor="let training of favorites(); let i = index"
+                [style.animation-delay]="(i * 0.1) + 's'">
+
+                <div class="training-card">
+                    <div class="card-actions student-actions">
+                        <button class="btn-action btn-favorite active" (click)="onToggleFavorite($event, training)"
+                            title="Remove from Wishlist">
+                            <i class="bi bi-heart-fill"></i>
+                        </button>
+                    </div>
+
+                    <div class="card-image-wrapper">
+                        <div class="badge-type" [class.video]="training.trainingType === 'VIDEO'">
+                            <i class="bi"
+                                [ngClass]="training.trainingType === 'VIDEO' ? 'bi-play-fill' : 'bi-file-earmark-text-fill'"></i>
+                            {{ training.trainingType }}
+                        </div>
+                        <div class="card-image-placeholder">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body-premium">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="level-badge" [ngClass]="training.level.toLowerCase()">{{ training.level
+                                }}</span>
+                            <span class="duration-tag"><i class="bi bi-clock me-1"></i>{{ training.duration }}</span>
+                        </div>
+
+                        <h3 class="card-title-modern">{{ training.title }}</h3>
+                        <p class="card-description-modern text-muted">{{ training.description }}</p>
+
+                        <div class="card-footer-modern mt-auto">
+                            <button class="btn-join-modern w-100" (click)="joinTraining(training)">
+                                <span>Open Training</span>
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -237,6 +237,7 @@ export class UsersListComponent implements OnInit {
             this.deleteUser(user.id, `${user.firstName} ${user.lastName}`);
         }
     }
+<<<<<<< HEAD
 
     formatDate(d: string) {
         if (!d) return 'Never';
@@ -244,4 +245,6 @@ export class UsersListComponent implements OnInit {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
         });
     }
+=======
+>>>>>>> origin/Trainings-Evaluation
 }

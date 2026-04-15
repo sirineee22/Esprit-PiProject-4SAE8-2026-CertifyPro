@@ -26,10 +26,21 @@ import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests
         </div>
       </header>
 
+<<<<<<< HEAD
        
 
       <!-- Requests Grid -->
       <div class="requests-grid" >
+=======
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading applications...</p>
+      </div>
+
+      <!-- Requests Grid -->
+      <div class="requests-grid" *ngIf="!isLoading && pendingRequests.length > 0">
+>>>>>>> origin/Trainings-Evaluation
         <div class="request-card" *ngFor="let request of pendingRequests">
           <!-- Card Header -->
           <div class="card-header">
@@ -122,7 +133,11 @@ import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests
       </div>
 
       <!-- Empty State -->
+<<<<<<< HEAD
       <div class="empty-state" >
+=======
+      <div class="empty-state" *ngIf="!isLoading && pendingRequests.length === 0">
+>>>>>>> origin/Trainings-Evaluation
         <div class="empty-icon">
           <i class="bi bi-inbox"></i>
         </div>

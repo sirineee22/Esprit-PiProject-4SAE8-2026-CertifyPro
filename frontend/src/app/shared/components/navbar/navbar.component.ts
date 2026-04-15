@@ -26,10 +26,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
         </div>
       </a>
 
-      <!-- Desktop Navigation - Minimal for logged in users -->
-      <div class="nav-links-desktop d-none d-md-flex" *ngIf="!isLoggedIn">
-        <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" routerLinkActive="active">Courses</a>
-        <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">À propos</a>
+      <!-- Desktop Navigation -->
+      <div class="nav-links-desktop d-none d-md-flex">
+        <a class="nav-link-modern" routerLink="/trainings" routerLinkActive="active">Trainings</a>
+        <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">About</a>
       </div>
       
       <!-- Right Side Actions -->
@@ -40,7 +40,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
         </ng-container>
         
         <ng-template #userLoggedIn>
-          <div class="welcome-text">Bienvenue, {{currentUser?.firstName}}!</div>
+          <div class="welcome-text">Welcome, {{currentUser?.firstName}}!</div>
           <div class="user-profile-nav-wrapper">
             <div class="user-profile-nav-modern" (click)="toggleDropdown($event)">
                <div class="nav-avatar">
@@ -74,12 +74,24 @@ import { API_BASE_URL } from '../../../core/api/api.config';
                   <a routerLink="/admin/users" class="dropdown-item" (click)="isDropdownOpen = false">
                     <i class="bi bi-people"></i> Users
                   </a>
+                  <a routerLink="/trainings" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-grid-view"></i> Browse Trainings
+                  </a>
+                  <a routerLink="/trainings/add" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-journal-plus"></i> Add New Training
+                  </a>
                 </ng-container>
                 
                 <!-- Regular User Links -->
                 <ng-container *ngIf="!isAdmin">
                   <a routerLink="/profile" class="dropdown-item" (click)="isDropdownOpen = false">
                     <i class="bi bi-person"></i> My Profile
+                  </a>
+                  <a routerLink="/trainings" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-grid-view"></i> Browse Trainings
+                  </a>
+                  <a *ngIf="isTrainer || isAdmin" routerLink="/trainings/add" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-journal-plus"></i> Add New Training
                   </a>
                 </ng-container>
                 
@@ -100,7 +112,6 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     <div class="mobile-menu-overlay" [class.show]="isMenuOpen">
       <div class="mobile-nav-links">
         <ng-container *ngIf="!isLoggedIn">
-          <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" (click)="isMenuOpen = false">Courses</a>
           <a class="nav-link-modern" routerLink="/about" (click)="isMenuOpen = false">À propos</a>
         </ng-container>
         <ng-container *ngIf="isLoggedIn">
@@ -108,7 +119,6 @@ import { API_BASE_URL } from '../../../core/api/api.config';
           <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">Mon Profil</a>
           <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">Mes Cours</a>
           <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">Mes Certifications</a>
-          <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Parcourir les Cours</a>
         </ng-container>
         <hr class="mobile-divider">
         <ng-container *ngIf="!isLoggedIn; else mobileUserLoggedIn">
