@@ -1,0 +1,62 @@
+<div class="events-container">
+  <div class="page-header">
+    <h1>Events</h1>
+    <p>Discover upcoming webinars, workshops, and meetups</p>
+  </div>
+
+  <div class="filters card">
+    <label>
+      <input type="checkbox" [(ngModel)]="upcomingOnly" (change)="onFilterChange()" />
+      Upcoming only
+    </label>
+    <select [(ngModel)]="typeFilter" (change)="onFilterChange()">
+      <option value="">All types</option>
+      <option value="WEBINAR">Webinar</option>
+      <option value="WORKSHOP">Workshop</option>
+      <option value="QNA">Q&amp;A</option>
+      <option value="MEETUP">Meetup</option>
+      <option value="BOOTCAMP">Bootcamp</option>
+    </select>
+    <select [(ngModel)]="modeFilter" (change)="onFilterChange()">
+      <option value="">All modes</option>
+      <option value="ONLINE">Online</option>
+      <option value="ONSITE">On-site</option>
+      <option value="HYBRID">Hybrid</option>
+    </select>
+  </div>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (loading) {
+    <p>Loading...</p>
+  }
+  @if (!loading && page) {
+    @if (page.content.length === 0) {
+      <div class="empty-state">
+        <p>No events found.</p>
+      </div>
+    } @else {
+      <div class="events-grid">
+        @for (e of page.content; track e.id) {
+          <div class="event-card card">
+            <h3><a [routerLink]="['/events', e.id]">{{ e.title }}</a></h3>
+            <p class="meta">{{ e.type }} · {{ e.mode }}</p>
+            <p class="date">{{ formatDate(e.dateStart) }}</p>
+            @if (e.trainerFirstName || e.trainerLastName) {
+              <p class="trainer">{{ e.trainerFirstName }} {{ e.trainerLastName }}</p>
+            }
+            <a [routerLink]="['/events', e.id]" class="btn-link">See details</a>
+          </div>
+        }
+      </div>
+      @if (page.totalPages > 1) {
+        <div class="pagination">
+          <button [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">Previous</button>
+          <span>Page {{ currentPage + 1 }} / {{ page.totalPages }}</span>
+          <button [disabled]="currentPage >= page.totalPages - 1" (click)="goToPage(currentPage + 1)">Next</button>
+        </div>
+      }
+    }
+  }
+</div>

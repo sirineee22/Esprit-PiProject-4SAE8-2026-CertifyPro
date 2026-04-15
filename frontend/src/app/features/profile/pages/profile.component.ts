@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, WritableSignal, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, signal, WritableSignal, ChangeDetectorRef, NgZone, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UserService } from '../../users/services/users.api';
 import { ThemeService } from '../../../core/services/theme.service';
 import { User } from '../../../shared/models/user.model';
+import { API_BASE_URL } from '../../../core/api/api.config';
 
 @Component({
   selector: 'app-profile',
@@ -22,8 +23,13 @@ import { User } from '../../../shared/models/user.model';
         <div class="profile-container">
           <div class="profile-header-card">
             <div class="profile-header-avatar">
-              <div class="avatar-circle">
-                <i class="bi bi-person-fill"></i>
+              <div class="avatar-circle clickable" [class.has-image]="avatarImageUrl() && !imgError" (click)="triggerFileInput()" title="Changer la photo">
+                <input #fileInput type="file" accept="image/jpeg,image/png,image/gif,image/webp" (change)="onFileSelected($event)" class="avatar-file-input">
+                <img *ngIf="avatarImageUrl() && !imgError" [src]="avatarImageUrl()" alt="Profile" (error)="imgError = true">
+                <span *ngIf="(!avatarImageUrl() || imgError) && initials()" class="avatar-initials">{{ initials() }}</span>
+                <i *ngIf="(!avatarImageUrl() || imgError) && !initials()" class="bi bi-person-fill"></i>
+                <span class="avatar-overlay" *ngIf="!uploadingImage()"><i class="bi bi-camera"></i> Photo</span>
+                <span class="avatar-overlay uploading" *ngIf="uploadingImage()">...</span>
               </div>
             </div>
             <div class="profile-header-info">
@@ -105,6 +111,10 @@ import { User } from '../../../shared/models/user.model';
                       <label>Phone Number</label>
                       <div class="detail-value">{{currentUser()?.phoneNumber || 'No verified number'}}</div>
                     </div>
+                    <div class="detail-block wide">
+                      <label>Profile Picture</label>
+                      <div class="detail-value">{{currentUser()?.profileImageUrl ? 'Set' : 'Not set'}}</div>
+                    </div>
                   </div>
 
                   <!-- Edit Mode -->
@@ -126,6 +136,11 @@ import { User } from '../../../shared/models/user.model';
                       <div class="control-wrap wide">
                         <label>Phone Number</label>
                         <input type="tel" formControlName="phoneNumber" class="premium-field">
+                      </div>
+                      <div class="control-wrap wide">
+                        <label>Profile picture URL</label>
+                        <input type="url" formControlName="profileImageUrl" class="premium-field" placeholder="https://example.com/your-photo.jpg">
+                        <p class="field-hint">Paste a link to your profile image. Leave empty to use initials.</p>
                       </div>
                     </div>
 
@@ -332,6 +347,40 @@ import { User } from '../../../shared/models/user.model';
       justify-content: center;
       color: var(--primary);
       font-size: 2.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .profile-header-avatar .avatar-circle.clickable {
+      cursor: pointer;
+    }
+    .profile-header-avatar .avatar-file-input {
+      display: none;
+    }
+    .profile-header-avatar .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .profile-header-avatar .avatar-initials {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .profile-header-avatar .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .profile-header-avatar .avatar-circle:hover .avatar-overlay:not(.uploading),
+    .profile-header-avatar .avatar-overlay.uploading {
+      opacity: 1;
     }
     .profile-header-info { flex: 1; min-width: 0; }
     .profile-header-name {
@@ -677,6 +726,9 @@ export class ProfileComponent implements OnInit {
   isSavingSecurity = signal<boolean>(false);
   profileForm: FormGroup;
   securityForm: FormGroup;
+  imgError = false;
+  uploadingImage = signal(false);
+  @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
 
   // Feedback
   showToast = false;
@@ -694,7 +746,8 @@ export class ProfileComponent implements OnInit {
     this.profileForm = this.fb.group({
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      phoneNumber: ['']
+      phoneNumber: [''],
+      profileImageUrl: ['']
     });
 
     this.securityForm = this.fb.group({
@@ -708,7 +761,54 @@ export class ProfileComponent implements OnInit {
     this.loadUser();
   }
 
+  initials(): string {
+    const u = this.currentUser();
+    if (!u?.firstName && !u?.lastName) return '';
+    const f = (u.firstName || '').trim().charAt(0).toUpperCase();
+    const l = (u.lastName || '').trim().charAt(0).toUpperCase();
+    return (f + l) || '';
+  }
+
+  /** Full URL for profile image (backend returns relative path). */
+  avatarImageUrl(): string | null {
+    const url = this.currentUser()?.profileImageUrl;
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return API_BASE_URL + url;
+  }
+
+  triggerFileInput(): void {
+    if (this.uploadingImage()) return;
+    this.fileInputRef?.nativeElement?.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file || !this.currentUser()?.id) return;
+    this.uploadingImage.set(true);
+    this.imgError = false;
+    this.userService.uploadProfileImage(this.currentUser()!.id!, file).subscribe({
+      next: (user) => {
+        this.currentUser.set(user);
+        this.authService.setSession(user);
+        this.profileForm.patchValue({ profileImageUrl: user.profileImageUrl || '' });
+        this.uploadingImage.set(false);
+        this.notify('Photo mise à jour !');
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        this.uploadingImage.set(false);
+        const msg = err?.error ?? err?.message ?? 'Erreur lors de l\'upload';
+        this.notify(typeof msg === 'string' ? msg : 'Upload impossible', true);
+        this.cd.detectChanges();
+      }
+    });
+    input.value = '';
+  }
+
   loadUser() {
+    this.imgError = false;
     const user = this.authService.getCurrentUser();
     if (!user?.id) {
       this.currentUser.set(user);
@@ -721,7 +821,8 @@ export class ProfileComponent implements OnInit {
         this.profileForm.patchValue({
           firstName: freshUser.firstName,
           lastName: freshUser.lastName,
-          phoneNumber: freshUser.phoneNumber || ''
+          phoneNumber: freshUser.phoneNumber || '',
+          profileImageUrl: freshUser.profileImageUrl || ''
         });
         this.cd.detectChanges();
       },
@@ -730,7 +831,8 @@ export class ProfileComponent implements OnInit {
         this.profileForm.patchValue({
           firstName: user.firstName,
           lastName: user.lastName,
-          phoneNumber: user.phoneNumber || ''
+          phoneNumber: user.phoneNumber || '',
+          profileImageUrl: user.profileImageUrl || ''
         });
       }
     });
@@ -760,6 +862,7 @@ export class ProfileComponent implements OnInit {
         this.cd.detectChanges();
 
         // Background session sync
+        this.imgError = false;
         setTimeout(() => {
           try {
             this.authService.setSession(user);

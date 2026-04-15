@@ -1,9 +1,10 @@
 @import 'intl-tel-input/build/css/intlTelInput.css';
+@import 'leaflet/dist/leaflet.css';
 
 /* Country dropdown: show ~3 items, scroll for more */
 .iti__country-list {
-  max-height: 140px !important;
-  overflow-y: auto !important;
+    max-height: 140px !important;
+    overflow-y: auto !important;
 }
 
 :root {

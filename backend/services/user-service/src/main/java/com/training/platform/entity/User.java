@@ -43,6 +43,10 @@ public class User {
 
     private String phoneNumber;
 
+    @Size(max = 500)
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
     private boolean active = true;
 
     @ManyToOne(fetch = FetchType.EAGER)

@@ -1,8 +1,10 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
+import { API_BASE_URL } from '../../../core/api/api.config';
 
 @Component({
   selector: 'app-user-sidebar',
@@ -72,10 +74,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-graph-up"></i>
             <span>Progress</span>
           </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Event' : ''">
+          <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Événements' : ''">
             <i class="bi bi-calendar-event"></i>
-            <span>Event</span>
-          </div>
+            <span>Événements</span>
+          </a>
           <div class="nav-link disabled" [title]="isCollapsed ? 'Messagerie' : ''">
             <i class="bi bi-chat-dots"></i>
             <span>Messagerie</span>
@@ -107,7 +109,9 @@ import { User } from '../../models/user.model';
           <a routerLink="/profile" routerLinkActive="active" class="profile-card-link" title="My Profile">
             <div class="user-avatar-wrapper">
               <div class="user-avatar">
-                <i class="bi bi-person-fill"></i>
+                <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="avatarImgError = true">
+                <span *ngIf="(!avatarUrl() || avatarImgError) && initials()" class="avatar-initials">{{ initials() }}</span>
+                <i *ngIf="(!avatarUrl() || avatarImgError) && !initials()" class="bi bi-person-fill"></i>
               </div>
               <div class="status-indicator online"></div>
             </div>
@@ -505,6 +509,16 @@ import { User } from '../../models/user.model';
       justify-content: center;
       color: #1e3a5f;
       font-size: 1.15rem;
+      overflow: hidden;
+    }
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .user-avatar .avatar-initials {
+      font-size: 0.85rem;
+      font-weight: 700;
     }
 
     .status-indicator {
@@ -566,10 +580,12 @@ import { User } from '../../models/user.model';
   `]
 
 })
-export class UserSidebarComponent implements OnInit {
+export class UserSidebarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isCollapsed = false;
+  avatarImgError = false;
   @Output() sidebarToggled = new EventEmitter<boolean>();
+  private sub?: Subscription;
 
   constructor(
     private authService: AuthService,
@@ -578,10 +594,36 @@ export class UserSidebarComponent implements OnInit {
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
+    this.sub = this.authService.currentUser$.subscribe((u) => {
+      this.currentUser = u;
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
+
+  avatarUrl(): string | null {
+    const url = this.currentUser?.profileImageUrl;
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return API_BASE_URL + url;
+  }
+
+  initials(): string {
+    const u = this.currentUser;
+    if (!u?.firstName && !u?.lastName) return '';
+    const f = (u.firstName || '').trim().charAt(0).toUpperCase();
+    const l = (u.lastName || '').trim().charAt(0).toUpperCase();
+    return (f + l) || '';
   }
 
   get isTrainer(): boolean {
     return this.currentUser?.role?.name === 'TRAINER';
+  }
+
+  get isLearner(): boolean {
+    return this.currentUser?.role?.name === 'LEARNER';
   }
 
   toggleSidebar() {

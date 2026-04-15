@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8080
 
 spring:
   application:
@@ -27,6 +27,8 @@ spring:
       discovery:
         locator:
           enabled: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_LAST
       routes:
         - id: user-service
           uri: lb://USER-SERVICE
@@ -48,6 +50,10 @@ spring:
           uri: lb://ECOMMERCE-SERVICE
           predicates:
             - Path=/api/products/**,/api/orders/**
+        - id: event-service
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/api/events/**, /api/admin/events/**
 
 eureka:
   client:

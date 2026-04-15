@@ -1,0 +1,29 @@
+<div class="container">
+  <h1>Mes événements</h1>
+  <a [routerLink]="['/events/trainer/new']" class="btn primary">Créer un événement</a>
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (loading) {
+    <p>Chargement…</p>
+  }
+  @if (!loading && events.length === 0) {
+    <p class="empty">Vous n'avez pas encore créé d'événement.</p>
+  }
+  @if (!loading && events.length > 0) {
+    <div class="grid">
+      @for (e of events; track e.id) {
+        <div class="card">
+          <h3>{{ e.title }}</h3>
+          <p class="meta">{{ e.type }} · {{ e.mode }} · {{ e.status }}</p>
+          <p class="date">{{ formatDate(e.dateStart) }}</p>
+          <div class="actions">
+            <a [routerLink]="['/events', e.id]">Voir</a>
+            <a [routerLink]="['/events/trainer', e.id, 'edit']">Modifier</a>
+            <a [routerLink]="['/events/trainer', e.id, 'participants']">Participants</a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,221 @@
+<div class="explorer-tab">
+  <div class="filters-container">
+    <div class="search-section">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()"
+          placeholder="Search for a title, description or trainer..." />
+      </div>
+      <div class="sort-wrap">
+        <select class="filter-select" [(ngModel)]="sortBy" (change)="onFilterChange()">
+          <option value="date">Most recent</option>
+          <option value="popularity">Most popular</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Type & Mode</label>
+        <div class="d-flex gap-2">
+          <select class="filter-select" [(ngModel)]="typeFilter" (change)="onFilterChange()">
+            <option value="">All types</option>
+            <option value="WEBINAR">Webinar</option>
+            <option value="WORKSHOP">Workshop</option>
+            <option value="QNA">Q&amp;A</option>
+            <option value="MEETUP">Meetup</option>
+            <option value="BOOTCAMP">Bootcamp</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="modeFilter" (change)="onFilterChange()">
+            <option value="">All modes</option>
+            <option value="ONLINE">Online</option>
+            <option value="ONSITE">On-site</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Trainer</label>
+        <input type="text" class="filter-input" [(ngModel)]="trainerFilter" (input)="onFilterChange()"
+          placeholder="Trainer name..." />
+      </div>
+
+      <div class="filter-group">
+        <label>Duration</label>
+        <select class="filter-select" [(ngModel)]="durationFilter" (change)="onFilterChange()">
+          <option value="">All durations</option>
+          <option value="short">&lt; 1h</option>
+          <option value="medium">1h - 3h</option>
+          <option value="long">&gt; 3h</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Date</label>
+        <div class="d-flex gap-2 align-items-center">
+          <input type="date" class="filter-input" [(ngModel)]="dateStartFilter" (change)="onFilterChange()" />
+          <span class="text-muted">to</span>
+          <input type="date" class="filter-input" [(ngModel)]="dateEndFilter" (change)="onFilterChange()" />
+        </div>
+      </div>
+
+      <div class="filter-group d-flex align-items-end">
+        <label class="filter-check mb-2">
+          <input type="checkbox" [(ngModel)]="upcomingOnly" (change)="onUpcomingChange()" />
+          <span>Upcoming events</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  @if (error) {
+  <div class="error-banner">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ error }}
+  </div>
+  }
+
+  @if (loading) {
+  <div class="events-grid">
+    @for (i of [1,2,3,4,5,6]; track i) {
+    <div class="event-skeleton">
+      <div class="sk-bar"></div>
+      <div class="sk-tag"></div>
+      <div class="sk-title"></div>
+      <div class="sk-desc"></div>
+      <div class="sk-meta"></div>
+      <div class="sk-footer"></div>
+    </div>
+    }
+  </div>
+  }
+
+  @if (!loading && filteredEvents.length === 0) {
+  <div class="empty-card">
+    <div class="empty-icon-wrap">
+      <i class="bi bi-calendar3-event"></i>
+    </div>
+    <h3>No events found</h3>
+    <p>Try changing your filters or resetting the search.</p>
+    <button class="btn btn-outline-primary btn-sm mt-3"
+      (click)="typeFilter=''; modeFilter=''; searchQuery=''; trainerFilter=''; durationFilter=''; dateStartFilter=''; dateEndFilter=''; onFilterChange()">
+      Reset
+    </button>
+  </div>
+  }
+
+  @if (!loading && filteredEvents.length > 0) {
+  <div class="events-grid">
+    @for (e of paginatedEvents; track e.id) {
+    <article class="event-card-v2" (mouseenter)="prefetchEvent(e)">
+      <div class="card-header">
+        <div class="type-status">
+          <span class="type-badge">{{ typeLabel(e.type) }}</span>
+          <span class="status-badge" [class]="getEventStatus(e).class">
+            {{ getEventStatus(e).label }}
+          </span>
+        </div>
+        <div class="registration-info">
+          <i class="bi bi-people"></i>
+          <span>{{ getParticipantCount(e) }}/{{ e.maxParticipants }} participants</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <h2 class="event-title">
+          <a (click)="goToEvent(e)">{{ e.title }}</a>
+        </h2>
+
+        <div class="event-meta-grid">
+          <div class="meta-item">
+            <i class="bi bi-calendar-event"></i>
+            <span>{{ formatDateShort(e.dateStart) }}</span>
+          </div>
+          <div class="meta-item">
+            <i class="bi bi-hourglass-split"></i>
+            <span>{{ formatDuration(e) }}</span>
+          </div>
+          <div class="meta-item" [title]="e.location || 'Zoom/Teams'">
+            <i class="bi bi-{{ e.mode === 'ONLINE' ? 'broadcast' : 'geo-alt' }}"></i>
+            <span>
+              {{ e.mode === 'ONLINE' ? 'Online — Zoom' : ('Onsite — ' + (e.location || 'Tunis, Lac 2')) }}
+            </span>
+          </div>
+        </div>
+
+        <p class="event-desc-preview">{{ e.description || 'No description available for this event.' }}</p>
+
+        <div class="trainer-info">
+          <div class="trainer-avatar">{{ trainerInitials(e) }}</div>
+          <div class="trainer-details">
+            <span class="trainer-label">Trainer</span>
+            <span class="trainer-name">{{ e.trainerFirstName }} {{ e.trainerLastName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <div class="quick-btns">
+          <button class="icon-btn" title="Share" (click)="shareEvent(e)">
+            <i class="bi bi-share"></i>
+          </button>
+          <button class="icon-btn" title="Add to calendar" (click)="addToCalendar(e)">
+            <i class="bi bi-calendar-plus"></i>
+          </button>
+        </div>
+        <div class="main-btns">
+          <a (click)="goToEvent(e)" class="btn-link">Details</a>
+          @if (isLearner) {
+          @if (isPast(e)) {
+          <span class="badge bg-secondary py-2 px-3">
+            <i class="bi bi-calendar-x me-1"></i>
+            Finished
+          </span>
+          } @else if (e.status === 'UPCOMING') {
+          @if (isRegistered(e.id)) {
+          <span class="badge py-2 px-3" [class.bg-success]="getRegistrationStatus(e.id) === 'REGISTERED'"
+            [class.bg-warning]="getRegistrationStatus(e.id) === 'WAITLISTED'"
+            [class.bg-info]="getRegistrationStatus(e.id) === 'ATTENDED'">
+            <i class="bi" [class.bi-check2-circle]="getRegistrationStatus(e.id) === 'REGISTERED'"
+              [class.bi-hourglass-split]="getRegistrationStatus(e.id) === 'WAITLISTED'"
+              [class.bi-patch-check]="getRegistrationStatus(e.id) === 'ATTENDED'"></i>
+            {{ getRegistrationStatus(e.id) === 'REGISTERED' ? 'Already registered' : (getRegistrationStatus(e.id) ===
+            'WAITLISTED' ? 'Pending' : 'Attended') }}
+          </span>
+          } @else {
+          @if (getParticipantCount(e) >= e.maxParticipants) {
+          <button type="button" class="btn btn-warning btn-sm" (click)="register(e)"
+            [disabled]="registeringId === e.id">
+            {{ registeringId === e.id ? '...' : "Waitlist" }}
+          </button>
+          } @else {
+          <button type="button" class="btn btn-primary btn-sm" (click)="register(e)"
+            [disabled]="registeringId === e.id">
+            {{ registeringId === e.id ? '...' : "Register" }}
+          </button>
+          }
+          }
+          }
+          }
+        </div>
+      </div>
+    </article>
+    }
+  </div>
+
+  @if (totalPages > 1) {
+  <div class="pagination-modern">
+    <button type="button" class="page-nav" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+    <div class="page-numbers">
+      Page <strong>{{ currentPage + 1 }}</strong> of {{ totalPages }}
+    </div>
+    <button type="button" class="page-nav" [disabled]="currentPage >= totalPages - 1"
+      (click)="goToPage(currentPage + 1)">
+      <i class="bi bi-arrow-right"></i>
+    </button>
+  </div>
+  }
+  }
+</div>
