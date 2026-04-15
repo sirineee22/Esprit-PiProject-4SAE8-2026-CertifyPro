@@ -26,6 +26,10 @@ public class AiController {
         if (shortDescription == null || shortDescription.isEmpty()) {
             return ResponseEntity.badRequest().body("Short description is required");
         }
+        if (apiKey == null || apiKey.isBlank()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("OpenAI API key is not configured. Please set OPENAI_API_KEY.");
+        }
 
         String apiUrl = "https://api.openai.com/v1/chat/completions";
 
@@ -86,7 +90,7 @@ public class AiController {
             return ResponseEntity.ok(content);
 
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(e.getStatusCode())
                     .body("OpenAI API error: " + e.getStatusCode().value() + " " + e.getResponseBodyAsString());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -99,6 +103,10 @@ public class AiController {
         String description = request.get("description");
         if (description == null || description.isEmpty()) {
             return ResponseEntity.badRequest().body("Description is required to generate quiz");
+        }
+        if (apiKey == null || apiKey.isBlank()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("OpenAI API key is not configured. Please set OPENAI_API_KEY.");
         }
 
         String apiUrl = "https://api.openai.com/v1/chat/completions";
@@ -158,6 +166,9 @@ public class AiController {
 
             return ResponseEntity.ok(content.trim());
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body("OpenAI API error: " + e.getStatusCode().value() + " " + e.getResponseBodyAsString());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
