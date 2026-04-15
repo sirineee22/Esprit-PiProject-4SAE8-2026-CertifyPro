@@ -3,7 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, shareReplay, tap } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
-import { Event, CreateEventRequest, MyRegistration, Review, EventStats } from '../../../shared/models/event.model';
+import { AuthService } from '../../../core/auth/auth.service';
+import {
+  Event,
+  CreateEventRequest,
+  MyRegistration,
+  EventStats,
+  EventRegistration,
+  EventInteractionType,
+  EventFeedbackRequest,
+  FeedbackSuggestionResponse
+} from '../../../shared/models/event.model';
 import { EventRefreshService } from './event-refresh.service';
 
 export interface EventsPage {
@@ -25,8 +35,10 @@ export class EventsApiService {
   constructor(
     private http: HttpClient,
     private refresh: EventRefreshService,
+    private auth: AuthService,
   ) {
     this.refresh.refreshed.subscribe(() => this.clearCache());
+    this.auth.currentUser$.subscribe(() => this.clearCache());
   }
 
   private clearCache(): void {
@@ -54,7 +66,13 @@ export class EventsApiService {
     if (!this.getByIdCache.has(id)) {
       this.getByIdCache.set(
         id,
-        this.http.get<Event>(`${this.base}/${id}`).pipe(shareReplay(1))
+        this.http.get<Event>(`${this.base}/${id}`).pipe(
+          shareReplay(1),
+          catchError((err) => {
+            this.getByIdCache.delete(id);
+            return throwError(() => err);
+          })
+        )
       );
     }
     return this.getByIdCache.get(id)!;
@@ -70,6 +88,10 @@ export class EventsApiService {
 
   cancel(id: number): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}/cancel`, {}).pipe(tap(() => this.refresh.triggerRefresh()));
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`).pipe(tap(() => this.refresh.triggerRefresh()));
   }
 
   myEvents(): Observable<Event[]> {
@@ -96,7 +118,10 @@ export class EventsApiService {
     return this.http.delete<void>(`${this.base}/${eventId}/register`).pipe(tap(() => this.refresh.triggerRefresh()));
   }
 
-  myRegistrations(): Observable<MyRegistration[]> {
+  myRegistrations(forceRefresh = false): Observable<MyRegistration[]> {
+    if (forceRefresh) {
+      this.myRegistrationsCache = null;
+    }
     if (!this.myRegistrationsCache) {
       this.myRegistrationsCache = this.http.get<MyRegistration[]>(`${this.base}/my-registrations`).pipe(
         shareReplay(1),
@@ -109,17 +134,22 @@ export class EventsApiService {
     return this.myRegistrationsCache;
   }
 
-  getReviews(eventId: number): Observable<Review[]> {
-    return this.http.get<Review[]>(`${this.base}/${eventId}/reviews`);
+  recommendations(userId: number, limit = 6): Observable<Event[]> {
+    const params = new HttpParams().set('userId', userId).set('limit', limit);
+    return this.http.get<Event[]>(`${this.base}/recommendations`, { params });
   }
 
-  postReview(eventId: number, review: Partial<Review>): Observable<Review> {
-    return this.http.post<Review>(`${this.base}/${eventId}/reviews`, review).pipe(
-      tap(() => this.refresh.triggerRefresh())
-    );
+  trackInteraction(eventId: number, type: EventInteractionType): Observable<unknown> {
+    return this.http.post(`${this.base}/interactions`, { eventId, type });
   }
 
+  submitFeedback(eventId: number, body: EventFeedbackRequest): Observable<FeedbackSuggestionResponse> {
+    return this.http.post<FeedbackSuggestionResponse>(`${this.base}/${eventId}/feedback`, body);
+  }
 
+  getFeedbackSuggestion(eventId: number): Observable<FeedbackSuggestionResponse> {
+    return this.http.get<FeedbackSuggestionResponse>(`${this.base}/${eventId}/feedback/suggestion`);
+  }
 
   adminList(): Observable<Event[]> {
     return this.http.get<Event[]>(API_ENDPOINTS.adminEvents);
@@ -131,5 +161,22 @@ export class EventsApiService {
 
   adminDelete(id: number): Observable<void> {
     return this.http.delete<void>(`${API_ENDPOINTS.adminEvents}/${id}`);
+  }
+
+  // Registration Management (Admin/Trainer)
+  getRegistrations(eventId: number): Observable<EventRegistration[]> {
+    return this.http.get<EventRegistration[]>(`http://localhost:8080/api/events/management/${eventId}/registrations`);
+  }
+
+  approveRegistration(regId: number): Observable<void> {
+    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/approve`, {});
+  }
+
+  rejectRegistration(regId: number): Observable<void> {
+    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/reject`, {});
+  }
+
+  markAsAttended(regId: number): Observable<void> {
+    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/attend`, {});
   }
 }

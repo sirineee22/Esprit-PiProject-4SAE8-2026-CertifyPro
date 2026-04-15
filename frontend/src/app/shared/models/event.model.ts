@@ -1,6 +1,7 @@
 export type EventType = 'WEBINAR' | 'WORKSHOP' | 'QNA' | 'MEETUP' | 'BOOTCAMP';
 export type EventMode = 'ONLINE' | 'ONSITE' | 'HYBRID';
 export type EventStatus = 'UPCOMING' | 'CANCELLED' | 'DONE';
+export type LearningLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
 export interface Event {
   id: number;
@@ -11,6 +12,8 @@ export interface Event {
   trainerLastName?: string;
   type: EventType;
   mode: EventMode;
+  learningLevel: LearningLevel;
+  category?: string;
   dateStart: string;
   dateEnd: string;
   meetingLink?: string;
@@ -18,32 +21,39 @@ export interface Event {
   maxParticipants: number;
   participantCount?: number;
   waitlistCount?: number;
+  recommendationScore?: number;
+  recommendationReasons?: string[];
+  requiredSkills?: string[];
   program?: { time: string; activity: string }[];
   status: EventStatus;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface MyRegistration {
-  event: Event;
-  status: 'REGISTERED' | 'WAITLISTED' | 'CANCELLED' | 'ATTENDED';
+export interface EventRegistration {
+  id: number;
+  eventId?: number;
+  learnerId: number;
+  learnerFirstName?: string;
+  learnerLastName?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'WAITLISTED' | 'ATTENDED';
+  registeredAt: string;
 }
 
-export interface Review {
-  id?: number;
-  learnerId?: number;
-  learnerFirstName: string;
-  learnerLastName: string;
-  rating: number;
-  comment: string;
-  createdAt?: string;
+export interface MyRegistration {
+  event: Event;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'WAITLISTED' | 'ATTENDED';
 }
+
 
 export interface CreateEventRequest {
   title: string;
   description?: string;
   type: EventType;
   mode: EventMode;
+  learningLevel: LearningLevel;
+  category?: string;
+  requiredSkills?: string[];
   dateStart: string;
   dateEnd: string;
   meetingLink?: string;
@@ -62,4 +72,21 @@ export interface EventStats {
   byType: Record<string, number>;
   byMode: Record<string, number>;
   totalRegistrations: number;
+}
+
+export type EventInteractionType = 'CLICK' | 'REGISTER' | 'CANCEL';
+
+export type FeedbackDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
+export interface EventFeedbackRequest {
+  difficulty: FeedbackDifficulty;
+  understood: boolean;
+  rating: number;
+  whatNext?: string;
+}
+
+export interface FeedbackSuggestionResponse {
+  targetLevel: LearningLevel;
+  message: string;
+  suggestedEvent: Event | null;
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -87,16 +87,18 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
               <!-- Basic Info Section -->
               <div *ngIf="selectedRole === 'LEARNER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
                 <div class="row gx-3">
-                   <div class="col-6">
+                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">FIRST NAME</label>
-                        <input type="text" formControlName="firstName" placeholder="sirine" class="auth-input no-icon">
+                        <input type="text" formControlName="firstName" placeholder="sirine" class="auth-input no-icon" [class.is-invalid]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+                        <div class="error-msg" *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">Prénom requis</div>
                       </div>
                    </div>
                    <div class="col-6">
                       <div class="form-group">
                         <label class="input-label">LAST NAME</label>
-                        <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon">
+                        <input type="text" formControlName="lastName" placeholder="Dah" class="auth-input no-icon" [class.is-invalid]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+                        <div class="error-msg" *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">Nom requis</div>
                       </div>
                    </div>
                 </div>
@@ -105,24 +107,27 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                   <label class="input-label">EMAIL ADDRESS</label>
                   <div class="input-container">
                     <i class="bi bi-envelope"></i>
-                    <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input">
+                    <input type="email" formControlName="email" placeholder="sirine@example.com" class="auth-input" [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
                   </div>
+                  <div class="error-msg" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">Email invalide</div>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">PHONE NUMBER</label>
                   <div class="input-container">
                     <i class="bi bi-telephone"></i>
-                    <input type="tel" formControlName="phoneNumber" placeholder="+216 12 345 678" class="auth-input">
+                    <input type="tel" formControlName="phoneNumber" placeholder="+216 12 345 678" class="auth-input" [class.is-invalid]="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched">
                   </div>
+                  <div class="error-msg" *ngIf="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched">Format invalide</div>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">SET PASSWORD</label>
                   <div class="input-container">
                     <i class="bi bi-shield-lock"></i>
-                    <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input">
+                    <input type="password" formControlName="password" placeholder="••••••••••••" class="auth-input" [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
                   </div>
+                  <div class="error-msg" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">8 caractères minimum</div>
                 </div>
 
                 <!-- Next Button (Trainer Step 1) -->
@@ -148,24 +153,26 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
                 
                 <div class="form-group">
                   <label class="input-label">SUBJECTS YOU CAN TEACH</label>
-                  <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon">
+                  <input type="text" formControlName="subjects" placeholder="e.g., Java, Python, Web Development" class="auth-input no-icon" [class.is-invalid]="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">
                   <small class="field-hint">Separate multiple subjects with commas</small>
+                  <div class="error-msg" *ngIf="registerForm.get('subjects')?.invalid && registerForm.get('subjects')?.touched">Sujets requis</div>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">YEARS OF EXPERIENCE</label>
-                  <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon">
+                  <input type="text" formControlName="experience" placeholder="e.g., 5 years" class="auth-input no-icon" [class.is-invalid]="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">
+                  <div class="error-msg" *ngIf="registerForm.get('experience')?.invalid && registerForm.get('experience')?.touched">Expérience requise</div>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">LINKEDIN PROFILE (optional) </label>
                   <input type="url" formControlName="certificatesLink" placeholder="https://..." class="auth-input no-icon">
-                  <small class="field-hint">Link to your certificates or portfolio</small>
                 </div>
 
                 <div class="form-group">
                   <label class="input-label">WHY DO YOU WANT TO BE A TRAINER?</label>
-                  <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea"></textarea>
+                  <textarea formControlName="message" rows="4" placeholder="Tell us about your motivation and teaching experience..." class="auth-textarea" [class.is-invalid]="registerForm.get('message')?.invalid && registerForm.get('message')?.touched"></textarea>
+                  <div class="error-msg" *ngIf="registerForm.get('message')?.invalid && registerForm.get('message')?.touched">Précisez votre motivation (20 chars min)</div>
                 </div>
 
                 <div class="step-actions">
@@ -424,6 +431,18 @@ import { TrainerRequestService } from '../../../trainer-requests/services/traine
     }
 
     .auth-input.no-icon, .auth-textarea { padding-left: 1rem; }
+    
+    .auth-input.is-invalid, .auth-textarea.is-invalid {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
 
     .auth-input:focus, .auth-textarea:focus {
       outline: none;
@@ -628,7 +647,8 @@ export class RegisterComponent {
     private userService: UserService,
     private authService: AuthService,
     private trainerRequestService: TrainerRequestService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -698,6 +718,7 @@ export class RegisterComponent {
     if (this.registerForm.invalid || this.isSubmitting) return;
 
     this.isSubmitting = true;
+    this.cdr.detectChanges();
 
     if (this.selectedRole === 'LEARNER') {
       this.registerAsLearner();
@@ -720,6 +741,7 @@ export class RegisterComponent {
       },
       error: (e: unknown) => {
         this.isSubmitting = false;
+        this.cdr.detectChanges();
         console.error('Registration failed', e);
         if (e instanceof HttpErrorResponse && e.status === 409) {
           alert('Email already exists. Please use a different email.');
@@ -747,17 +769,16 @@ export class RegisterComponent {
         if (!createdUser?.id) {
           console.error('ERROR: No user ID in response');
           this.isSubmitting = false;
+          this.cdr.detectChanges();
           alert('Registration failed. Please try again.');
           return;
         }
 
         // Show success after submit click has completed
         this.isSubmitting = false;
-        setTimeout(() => {
-          this.showSuccessModal = true;
-        }, 0);
+        this.showSuccessModal = true;
+        this.cdr.detectChanges();
 
-        // Submit trainer request in background
         const request = {
           userId: createdUser.id,
           subjects: this.registerForm.value.subjects,
@@ -766,19 +787,30 @@ export class RegisterComponent {
           certificatesLink: this.registerForm.value.certificatesLink
         };
 
-        console.log('Submitting trainer request...', request);
-        this.trainerRequestService.submitRequest(request).subscribe({
-          next: (response) => {
-            console.log('Trainer request submitted', response);
-          },
-          error: (e: unknown) => {
-            console.error('Trainer request failed', e);
-          }
-        });
+        // Trainer request requires JWT; obtain session then submit
+        this.authService
+          .login(this.registerForm.value.email, this.registerForm.value.password)
+          .pipe(
+            switchMap((loginRes) => {
+              if (loginRes.user && loginRes.token) {
+                this.authService.setSession(loginRes.user, loginRes.token);
+              }
+              return this.trainerRequestService.submitRequest(request);
+            })
+          )
+          .subscribe({
+            next: (response) => {
+              console.log('Trainer request submitted', response);
+            },
+            error: (e: unknown) => {
+              console.error('Trainer request or login failed', e);
+            }
+          });
       },
       error: (e: unknown) => {
         console.error('Trainer registration failed', e);
         this.isSubmitting = false;
+        this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
           alert('Email already exists. Please use a different email.');
           return;

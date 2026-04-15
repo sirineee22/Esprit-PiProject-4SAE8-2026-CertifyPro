@@ -18,11 +18,14 @@
       <header class="event-header">
         <div class="header-top">
           <span class="type-badge">{{ typeLabel(event.type) }}</span>
+          <span class="type-badge">{{ event.learningLevel || 'BEGINNER' }}</span>
           <span class="mode-badge" [class.online]="event.mode === 'ONLINE'">
             <i class="bi bi-{{ event.mode === 'ONLINE' ? 'broadcast' : 'geo-alt' }}"></i>
             {{ event.mode === 'ONLINE' ? 'En ligne — Zoom' : ('Présentiel — ' + (event.location || 'Tunis, Lac 2')) }}
           </span>
-          @if ((event.participantCount || 0) >= event.maxParticipants) {
+          @if (event.status === 'CANCELLED') {
+          <span class="status-badge cancelled">CANCELLED</span>
+          } @else if ((event.participantCount || 0) >= event.maxParticipants) {
           <span class="status-badge full">FULL</span>
           } @else {
           <span class="status-badge open">OPEN</span>
@@ -91,74 +94,81 @@
         </div>
       </section>
 
-      <section class="content-section reviews-section">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="m-0">Reviews and Ratings</h3>
-          <div class="avg-rating" *ngIf="reviewsCount > 0">
-            <i class="bi bi-star-fill text-warning me-1"></i>
-            <strong>{{ averageRating }} / 5</strong>
-            <span class="text-muted ms-1">({{ reviewsCount }} reviews)</span>
+      @if (canSubmitFeedback) {
+      <section class="content-section feedback-section">
+        <h3>Mini feedback</h3>
+        <div class="feedback-box">
+          <div class="mb-3">
+            <label class="form-label">Was it easy / medium / hard?</label>
+            <select class="form-select" [(ngModel)]="feedback.difficulty">
+              <option value="EASY">Easy</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HARD">Hard</option>
+            </select>
           </div>
-        </div>
-
-        @if (canReview) {
-        <div class="add-review-card shadow-sm mb-5">
-          <h5>Share your experience</h5>
-          <div class="star-rating-input mb-3">
-            @for (star of [1,2,3,4,5]; track star) {
-            <i class="bi" [class.bi-star-fill]="userReview.rating >= star" [class.bi-star]="userReview.rating < star"
-              (click)="setRating(star)"></i>
-            }
+          <div class="mb-3">
+            <label class="form-label">Did you understand the content?</label>
+            <select class="form-select" [(ngModel)]="feedback.understood">
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">Not really</option>
+            </select>
           </div>
-          <textarea class="form-control mb-3" [(ngModel)]="userReview.comment"
-            placeholder="What did you think of this event?" rows="3"></textarea>
-          <button class="btn btn-primary w-100" (click)="submitReview()"
-            [disabled]="isSubmittingReview || !userReview.comment.trim()">
-            {{ isSubmittingReview ? 'Submitting...' : 'Publish my review' }}
+          <div class="mb-3">
+            <label class="form-label">Rate the event (1-5)</label>
+            <input class="form-control" type="number" min="1" max="5" [(ngModel)]="feedback.rating" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">What do you want next?</label>
+            <input class="form-control" type="text" [(ngModel)]="feedback.whatNext" placeholder="ex: more SQL and dashboards" />
+          </div>
+          <button class="btn btn-primary" (click)="submitFeedback()" [disabled]="feedbackSubmitting">
+            {{ feedbackSubmitting ? 'Submitting...' : 'Submit feedback' }}
           </button>
+          @if (feedbackError) {
+          <div class="alert alert-danger mt-3 mb-0">{{ feedbackError }}</div>
+          }
         </div>
-        }
 
-        <div class="reviews-list">
-          @if (loadingReviews) {
-          <div class="text-center py-5">
-            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-            <p class="text-muted small mt-2">Loading reviews...</p>
+        @if (nextSuggestion) {
+        <div class="suggestion-box mt-3">
+          <p class="mb-2"><strong>{{ nextSuggestion.message }}</strong></p>
+          <p class="mb-2">Target level: <span class="type-badge">{{ nextSuggestion.targetLevel }}</span></p>
+          @if (nextSuggestion.suggestedEvent) {
+          <div class="suggested-card">
+            <div class="fw-bold">{{ nextSuggestion.suggestedEvent.title }}</div>
+            <div class="text-muted small">{{ nextSuggestion.suggestedEvent.category || 'General' }} - {{ formatDate(nextSuggestion.suggestedEvent.dateStart) }}</div>
+            <a class="btn btn-sm btn-outline-primary mt-2" [routerLink]="['/events', nextSuggestion.suggestedEvent.id]">Open suggested event</a>
           </div>
           } @else {
-          @for (r of reviews; track r.id) {
-          <div class="review-item">
-            <div class="review-header">
-              <div class="user-info">
-                <span class="user-avatar">{{ (r.learnerFirstName.charAt(0) || '') + (r.learnerLastName.charAt(0) || '') }}</span>
-                <span class="user-name">{{ r.learnerFirstName }} {{ r.learnerLastName }}</span>
-              </div>
-              <div class="stars">
-                @for (s of [1,2,3,4,5]; track s) {
-                <i class="bi" [class.bi-star-fill]="r.rating >= s" [class.bi-star]="r.rating < s"></i>
-                }
-              </div>
-            </div>
-            <p class="comment">{{ r.comment }}</p>
-            <span class="review-date">{{ formatDateShort(r.createdAt || '') }}</span>
-          </div>
-          } @empty {
-          <div class="empty-reviews text-center py-4 text-muted border rounded-3">
-            <i class="bi bi-chat-left-text fs-2 mb-2 d-inline-block"></i>
-            <p>Be the first to give your opinion!</p>
-          </div>
-          }
+          <div class="text-muted">No matching event yet. Try again after new events are added.</div>
           }
         </div>
+        }
       </section>
-
+      }
 
     </div>
 
     <!-- Sidebar Actions & Chat -->
     <aside class="sidebar">
       <div class="action-card">
-        @if (registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED') {
+        @if (canManageEvent) {
+        <div class="manage-box mb-3">
+          <div class="manage-title">Trainer actions</div>
+          <button class="btn btn-outline-secondary w-100 mb-2" (click)="editEvent()" [disabled]="event.status !== 'UPCOMING'">
+            <i class="bi bi-pencil me-2"></i> Edit event
+          </button>
+          <button class="btn btn-danger w-100" (click)="deleteEvent()" [disabled]="deleting">
+            <i class="bi bi-trash me-2"></i> {{ deleting ? 'Deleting...' : 'Delete event' }}
+          </button>
+        </div>
+        }
+        @if (event.status === 'CANCELLED') {
+        <div class="cancelled-banner">
+          <i class="bi bi-x-circle-fill"></i>
+          This event has been cancelled
+        </div>
+        } @else if (isLearner && (registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED')) {
         <div class="registered-banner"
           [style.background-color]="registrationStatus === 'ATTENDED' ? '#e0f2fe' : '#ecfdf5'"
           [style.color]="registrationStatus === 'ATTENDED' ? '#0369a1' : '#065f46'">
@@ -175,20 +185,28 @@
           [disabled]="unregistering || registrationStatus === 'ATTENDED'">
           Unregister
         </button>
-        } @else if (registrationStatus === 'WAITLISTED') {
-        <div class="waitlist-banner">
-          <i class="bi bi-hourglass-split"></i>
-          On waitlist
+        } @else if (isLearner && registrationStatus === 'PENDING') {
+        <div class="registration-pending-banner">
+          <i class="bi bi-hourglass-top"></i>
+          Inscription en attente d'approbation
         </div>
         <button class="btn btn-outline-danger w-100 mt-3" (click)="unregister()" [disabled]="unregistering">
-          Leave waitlist
+          Annuler ma demande
         </button>
-        } @else if (isPastEvent) {
+        } @else if (isLearner && registrationStatus === 'WAITLISTED') {
+        <div class="waitlist-banner">
+          <i class="bi bi-hourglass-split"></i>
+          Sur liste d'attente
+        </div>
+        <button class="btn btn-outline-danger w-100 mt-3" (click)="unregister()" [disabled]="unregistering">
+          Quitter la liste d'attente
+        </button>
+        } @else if (isLearner && isPastEvent) {
         <div class="finished-banner">
           <i class="bi bi-calendar-x"></i>
           This event is over
         </div>
-        } @else {
+        } @else if (isLearner) {
         @if ((event.participantCount || 0) >= event.maxParticipants) {
         <button class="btn btn-warning w-100 btn-lg btn-waitlist" (click)="register()" [disabled]="registering">
           Join waitlist
@@ -203,9 +221,12 @@
         <button class="btn btn-outline-success w-100 mt-3" (click)="shareOnWhatsApp()">
           <i class="bi bi-whatsapp me-2"></i> Share on WhatsApp
         </button>
+        <button class="btn btn-outline-primary w-100 mt-2" (click)="downloadEventPdf()">
+          <i class="bi bi-file-earmark-pdf me-2"></i> Download event PDF
+        </button>
       </div>
 
-      @if ((registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED') && isLearner && user) {
+      @if ((registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED' || registrationStatus === 'PENDING') && isLearner && user) {
       <div class="event-pass shadow-lg mt-3">
         <div class="pass-header">
           <div class="pass-logo">Certify<span>Pro</span></div>

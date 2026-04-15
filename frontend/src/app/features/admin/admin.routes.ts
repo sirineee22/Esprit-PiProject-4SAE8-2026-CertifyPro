@@ -11,10 +11,12 @@ import { AdminEventsComponent } from './pages/admin-events/admin-events.componen
 export const adminRoutes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
   { path: 'trainer-requests', component: TrainerRequestsComponent },
-    { path: 'products', component: ProductListComponent },
-    { path: 'productss', component: ProductsListComponentAdmin },
-    { path: 'orders', component: OrdersListComponent },
-    { path: 'posts', component: Forumadmin },
-    { path: 'events', component: AdminEventsComponent },
+  { path: 'products', component: ProductListComponent },
+  { path: 'productss', component: ProductsListComponentAdmin },
+  { path: 'orders', component: OrdersListComponent },
+  { path: 'posts', component: Forumadmin },
+  { path: 'events', component: AdminEventsComponent },
+  { path: 'events/:id/registrations', loadComponent: () => import('../events/pages/event-registrations/event-registrations.component').then(c => c.EventRegistrationsComponent) },
+  { path: 'audit-logs', loadComponent: () => import('./pages/audit-logs/audit-logs.component').then(c => c.AuditLogsComponent) },
   ...usersRoutes,
 ];

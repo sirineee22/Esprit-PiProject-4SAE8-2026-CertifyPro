@@ -1,21 +1,28 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UserService } from '../../../users/services/users.api';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
+import { EventsApiService } from '../../../events/services/events.api';
 import { User } from '../../../../shared/models/user.model';
+import { AuditLog } from '../../../../shared/models/audit.model';
+import { HttpClient } from '@angular/common/http';
 
 interface DashboardStats {
     totalUsers: number;
     totalLearners: number;
     totalTrainers: number;
     pendingRequests: number;
+    totalEvents: number;
+    upcomingEvents: number;
+    totalRegistrations: number;
 }
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     template: `
     <div class="dashboard-container">
       <header class="dashboard-header">
@@ -81,7 +88,19 @@ interface DashboardStats {
                 <span class="trend warning">Review</span>
               </div>
             </div>
+            <div class="stat-card">
+            <div class="stat-icon sessions">
+              <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="stat-details">
+              <h3>Total Events</h3>
+              <div class="value-row">
+                <span class="value">{{stats.totalEvents}}</span>
+                <span class="trend success">{{stats.upcomingEvents}} Upcoming</span>
+              </div>
+            </div>
           </div>
+        </div>
         </div>
 
         <div class="dashboard-content">
@@ -110,6 +129,35 @@ interface DashboardStats {
                 <i class="bi bi-inbox"></i>
                 <p>No users yet</p>
               </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity (Audit) -->
+          <div class="card recent-audit">
+            <div class="card-header">
+              <h2>Recent Activity</h2>
+              <button class="btn-text" routerLink="/admin/audit-logs">History</button>
+            </div>
+            <div class="activity-list">
+              @for (log of recentLogs; track log.id) {
+              <div class="activity-item">
+                <div class="item-icon" [ngClass]="getActionClass(log.action)">
+                   <i class="bi" [ngClass]="getActionIcon(log.action)"></i>
+                </div>
+                <div class="item-info">
+                  <p class="text">
+                    <strong>{{ log.actorEmail || 'System' }}</strong>
+                    <span>{{ log.action }}</span>
+                  </p>
+                  <span class="email">{{ log.details }} — {{ formatTime(log.createdAt) }}</span>
+                </div>
+              </div>
+              } @empty {
+              <div class="empty-message">
+                <i class="bi bi-clock-history"></i>
+                <p>No recent activity</p>
+              </div>
+              }
             </div>
           </div>
 
@@ -146,6 +194,16 @@ interface DashboardStats {
                 </div>
                 <div class="metric-bar">
                   <div class="bar-fill pending" [style.width.%]="getPendingPercentage()"></div>
+                </div>
+              </div>
+
+              <div class="metric">
+                <div class="metric-header">
+                  <span class="metric-label">Event Activity</span>
+                  <span class="metric-value">{{stats.totalRegistrations}} Reg.</span>
+                </div>
+                <div class="metric-bar">
+                  <div class="bar-fill sessions" [style.width.%]="70"></div>
                 </div>
               </div>
             </div>
@@ -287,6 +345,7 @@ interface DashboardStats {
     .stat-icon.learners { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
     .stat-icon.trainers { background: linear-gradient(135deg, #10b981, #059669); color: white; }
     .stat-icon.pending { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .stat-icon.sessions { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
 
     .stat-details {
       flex: 1;
@@ -492,6 +551,7 @@ interface DashboardStats {
     .bar-fill.learner { background: linear-gradient(90deg, #3b82f6, #2563eb); }
     .bar-fill.trainer { background: linear-gradient(90deg, #10b981, #059669); }
     .bar-fill.pending { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .bar-fill.sessions { background: linear-gradient(90deg, #ec4899, #db2777); }
 
     @media (max-width: 1024px) {
       .dashboard-content { grid-template-columns: 1fr; }
@@ -510,14 +570,20 @@ export class DashboardComponent implements OnInit {
         totalUsers: 0,
         totalLearners: 0,
         totalTrainers: 0,
-        pendingRequests: 0
+        pendingRequests: 0,
+        totalEvents: 0,
+        upcomingEvents: 0,
+        totalRegistrations: 0
     };
     recentUsers: User[] = [];
+    recentLogs: AuditLog[] = [];
     isLoading = true;
 
     constructor(
         private userService: UserService,
         private trainerRequestService: TrainerRequestService,
+        private eventService: EventsApiService,
+        private http: HttpClient,
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -530,20 +596,34 @@ export class DashboardComponent implements OnInit {
 
         forkJoin({
             users: this.userService.getAll(),
-            requests: this.trainerRequestService.getPendingRequests()
+            requests: this.trainerRequestService.getPendingRequests(),
+            eventStats: this.eventService.adminStats()
         }).subscribe({
-            next: ({ users, requests }) => {
+            next: ({ users, requests, eventStats }) => {
                 // Calculate stats
                 this.stats.totalUsers = users.length;
                 this.stats.totalLearners = users.filter(u => u.role?.name === 'LEARNER').length;
                 this.stats.totalTrainers = users.filter(u => u.role?.name === 'TRAINER').length;
                 this.stats.pendingRequests = requests.length;
 
-                // Get recent users (last 5, excluding admins)
+                // Event stats
+                this.stats.totalEvents = eventStats.totalEvents;
+                this.stats.upcomingEvents = eventStats.upcoming;
+                this.stats.totalRegistrations = eventStats.totalRegistrations;
+
+                // Get recent users (last 3, excluding admins)
                 this.recentUsers = users
                     .filter(u => u.role?.name !== 'ADMIN')
-                    .slice(-5)
+                    .slice(-3)
                     .reverse();
+
+                // Fetch recent audit logs from API
+                this.http.get<AuditLog[]>('http://localhost:8080/api/admin/audit').subscribe({
+                    next: (logs) => {
+                        this.recentLogs = logs.slice(0, 4); // Top 4
+                        this.cdr.detectChanges();
+                    }
+                });
 
                 this.isLoading = false;
                 this.cdr.detectChanges();
@@ -582,5 +662,29 @@ export class DashboardComponent implements OnInit {
         const total = this.stats.totalUsers + this.stats.pendingRequests;
         if (total === 0) return 0;
         return (this.stats.pendingRequests / total) * 100;
+    }
+
+    getActionClass(action: string) {
+        if (action.includes('DELETE')) return 'admin'; // Red/Orange
+        if (action.includes('UPDATE')) return 'trainer'; // Green/Teal
+        return 'learner'; // Blue
+    }
+
+    getActionIcon(action: string) {
+        if (action.includes('DELETE')) return 'bi-trash';
+        if (action.includes('UPDATE')) return 'bi-pencil-square';
+        if (action.includes('USER')) return 'bi-person-badge';
+        return 'bi-activity';
+    }
+
+    formatTime(d: string) {
+        const date = new Date(d);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+        return date.toLocaleDateString();
     }
 }

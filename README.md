@@ -84,27 +84,22 @@ All services communicate through REST APIs and are registered using **Eureka Ser
 
 ---
 
-## 📂 Project Structure
-certifypro
-│
-├── frontend/ # Angular application
-│ ├── src/
-│ ├── angular.json
-│ └── package.json
-│
-├── backend/
-│ ├── api-gateway/
-│ ├── discovery-server/
-│ ├── user-service/
-│ ├── training-service/
-│ ├── event-service/
-│ ├── forum-service/
-│ ├── messaging-service/
-│ ├── certification-service/
-│ ├── ecommerce-service/
-│ └── notification-service/
-│
-└── README.md
+## ⚙️ Project Ecosystem Details
+
+- **Frontend:** Angular (`ng serve` → port **4200**)
+- **API entry:** Spring Cloud **Gateway** (port **8080** or **8081**) — routes to microservices
+- **Services:** `user-service`, `event-service` (register with **Eureka**)
+- **Discovery:** Eureka server (port **8761**)
+- **DB:** PostgreSQL (local)
+
+The Angular app calls the gateway only (see `frontend/src/app/core/api/api.config.ts`).
+
+| Service        | Typical port | Role                                      |
+|----------------|--------------|-------------------------------------------|
+| api-gateway    | 8080/8081    | Single HTTP entry (`/api/users`, `/api/events`, …) |
+| discovery-server | 8761       | Service registry                          |
+| user-service   | 8883         | Users, auth, roles, trainer-requests      |
+| event-service  | 8884         | Events, registrations, reviews          |
 
 ---
 
@@ -119,49 +114,31 @@ certifypro
 
 ---
 
+## 🚀 Getting Started
+
+### Prerequisites
+- Java 17+
+- Node.js & npm
+- PostgreSQL
+- Maven
+
+### Run (Full Stack)
+
+1. **PostgreSQL** — Create DBs: `userdb`, `eventdb`, `forumdb`, `ecommerce_db`.
+2. **Eureka** — Start discovery server first.
+3. **Microservices** — Start `user-service`, `event-service`, etc. (each registers with Eureka).
+4. **Gateway** — Start `api-gateway` on **8080** or **8081**.
+5. **Frontend** — `cd frontend && npm install && npx ng serve`.
+
+**API base URL:** `http://localhost:8080` (or `8081`).
+
+---
+
 ## 🎓 Academic Context
 
 - **Developed at:** Esprit School of Engineering – Tunisia
 - **Program:** PIDEV – 3rd Year Engineering Program
 - **Academic Year:** 2025–2026
 
----
-
-## ⚙️ Getting Started
-
-### Prerequisites
-- Java 11+
-- Node.js & npm
-- PostgreSQL
-- Maven
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/username/certifypro.git
-cd certifypro
-Run Backend Services
-
-bash
-# Start Discovery Server first
-cd backend/discovery-server
-mvn spring-boot:run
-
-# Start API Gateway
-cd ../api-gateway
-mvn spring-boot:run
-
-# Start other services in separate terminals
-cd ../user-service
-mvn spring-boot:run
-# Repeat for other services
-Run Frontend
-
-bash
-cd frontend
-npm install
-ng serve
-
-🙏 Acknowledgments
+🙏 **Acknowledgments**
 This project was developed as part of the PIDEV course at Esprit School of Engineering – Tunisia. Special thanks to our instructors and supervisors for their guidance throughout this academic project.

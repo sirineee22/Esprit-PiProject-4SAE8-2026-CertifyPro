@@ -6,12 +6,13 @@ import { routes } from './app.routes';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { jwtInterceptor } from './core/auth/jwt.interceptor';
 import { unauthorizedInterceptor } from './core/auth/unauthorized.interceptor';
+import { timeoutInterceptor } from './core/auth/timeout.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideRouter(routes),
-    provideHttpClient(withFetch(), withInterceptors([jwtInterceptor, unauthorizedInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([timeoutInterceptor, jwtInterceptor, unauthorizedInterceptor])),
     provideAnimations()
   ]
 };

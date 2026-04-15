@@ -1,12 +1,18 @@
 package com.training.events.controller;
 
 import com.training.events.entity.Event;
+import com.training.events.entity.EventInteraction;
+import com.training.events.entity.EventFeedback;
 import com.training.events.entity.EventRegistration;
 import com.training.events.entity.ProgramItem;
+import com.training.events.repository.EventFeedbackRepository;
 import com.training.events.repository.EventRegistrationRepository;
-import com.training.events.repository.ReviewRepository;
 import com.training.events.repository.EventRepository;
+import com.training.events.repository.EventInteractionRepository;
 import com.training.events.security.JwtAuthenticationFilter;
+import com.training.events.service.EventService;
+import com.training.events.service.EventInteractionService;
+import com.training.events.service.RecommendationService;
 import com.training.events.dto.CreateEventRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -14,10 +20,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,12 +38,31 @@ public class EventController {
 
     private final EventRepository eventRepository;
     private final EventRegistrationRepository registrationRepository;
-    private final ReviewRepository reviewRepository;
+    private final RestTemplate restTemplate;
+    private final RecommendationService recommendationService;
+    private final EventInteractionService interactionService;
+    private final EventInteractionRepository interactionRepository;
+    private final EventFeedbackRepository feedbackRepository;
+    private final EventService eventService;
 
-    public EventController(EventRepository eventRepository, EventRegistrationRepository registrationRepository, ReviewRepository reviewRepository) {
+    public EventController(
+            EventRepository eventRepository,
+            EventRegistrationRepository registrationRepository,
+            RestTemplate restTemplate,
+            RecommendationService recommendationService,
+            EventInteractionService interactionService,
+            EventInteractionRepository interactionRepository,
+            EventFeedbackRepository feedbackRepository,
+            EventService eventService
+    ) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
-        this.reviewRepository = reviewRepository;
+        this.restTemplate = restTemplate;
+        this.recommendationService = recommendationService;
+        this.interactionService = interactionService;
+        this.interactionRepository = interactionRepository;
+        this.feedbackRepository = feedbackRepository;
+        this.eventService = eventService;
     }
 
     private JwtAuthenticationFilter.JwtUserDetails getCurrentUser() {
@@ -57,47 +88,63 @@ public class EventController {
         return isAdmin() || isOwner(event);
     }
 
-    // ---- REVIEWS ----
-    @GetMapping("/{id}/reviews")
-    public ResponseEntity<List<com.training.events.entity.Review>> getReviews(@PathVariable Long id) {
-        return ResponseEntity.ok(reviewRepository.findByEventIdOrderByCreatedAtDesc(id));
+    private Map<Long, Long> activeParticipantCountByEventId() {
+        Collection<EventRegistration.RegistrationStatus> statuses = List.of(
+                EventRegistration.RegistrationStatus.APPROVED,
+                EventRegistration.RegistrationStatus.PENDING,
+                EventRegistration.RegistrationStatus.ATTENDED
+        );
+        return registrationRepository.countByEventIdAndStatusIn(statuses).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue(),
+                        Long::sum
+                ));
     }
 
-    @PostMapping("/{id}/reviews")
-    public ResponseEntity<?> postReview(@PathVariable Long id, @RequestBody com.training.events.entity.Review reviewRequest) {
-        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
-        if (user == null || !"LEARNER".equals(user.role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Only learners can post reviews"));
+    private void attachParticipantCounts(List<Event> events) {
+        if (events == null || events.isEmpty()) return;
+        Map<Long, Long> counts = activeParticipantCountByEventId();
+        for (Event event : events) {
+            event.setParticipantCount(counts.getOrDefault(event.getId(), 0L).intValue());
         }
-
-        Event e = eventRepository.findById(id).orElse(null);
-        if (e == null) return ResponseEntity.notFound().build();
-
-        // Check if event is finished
-        if (e.getDateEnd().isAfter(Instant.now())) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "You can only review finished events"));
-        }
-
-        // Check if learner is registered
-        if (!registrationRepository.existsByEventIdAndLearnerId(id, user.userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "You must be registered to review this event"));
-        }
-
-        // Check if already reviewed
-        if (reviewRepository.existsByEventIdAndLearnerId(id, user.userId)) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "You have already reviewed this event"));
-        }
-
-        com.training.events.entity.Review review = new com.training.events.entity.Review();
-        review.setEvent(e);
-        review.setLearnerId(user.userId);
-        review.setLearnerFirstName(reviewRequest.getLearnerFirstName());
-        review.setLearnerLastName(reviewRequest.getLearnerLastName());
-        review.setRating(reviewRequest.getRating());
-        review.setComment(reviewRequest.getComment());
-
-        return ResponseEntity.ok(reviewRepository.save(review));
     }
+
+    private void attachParticipantCount(Event event) {
+        if (event == null) return;
+        attachParticipantCounts(List.of(event));
+    }
+
+    private void dispatchNotification(List<Long> recipientIds, String type, String title, String message, Long eventId) {
+        if (recipientIds == null || recipientIds.isEmpty()) return;
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("recipientIds", recipientIds);
+            payload.put("type", type);
+            payload.put("title", title);
+            payload.put("message", message);
+            payload.put("eventId", eventId);
+            restTemplate.postForObject("http://USER-SERVICE/api/users/internal/notifications/dispatch", payload, String.class);
+        } catch (Exception e) {
+            System.err.println(">>> [WARN] Notification dispatch failed: " + e.getMessage());
+        }
+    }
+
+    private void grantXp(Long userId, String action, Long eventId) {
+        if (userId == null || action == null || action.isBlank()) return;
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("userId", userId);
+            payload.put("action", action);
+            payload.put("eventId", eventId);
+            restTemplate.postForObject("http://USER-SERVICE/api/users/internal/progress/xp-grant", payload, String.class);
+        } catch (Exception e) {
+            System.err.println(">>> [WARN] XP grant failed: " + e.getMessage());
+        }
+    }
+
+    // ---- EVENTS ----
 
     // ---- PUBLIC ----
     @GetMapping
@@ -109,27 +156,194 @@ public class EventController {
             @RequestParam(defaultValue = "10") int size
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, org.springframework.data.domain.Sort.by("dateStart").descending());
-        Page<Event> events;
-        if (Boolean.TRUE.equals(upcomingOnly)) {
-            events = eventRepository.findByStatusAndDateStartAfter(
-                    Event.EventStatus.UPCOMING, Instant.now(), pageRequest);
-        } else {
-            events = eventRepository.findAll(pageRequest);
-        }
-        if (type != null || mode != null) {
-            List<Event> list = events.getContent().stream()
-                    .filter(e -> (type == null || e.getType() == type) && (mode == null || e.getMode() == mode))
-                    .toList();
-            events = new org.springframework.data.domain.PageImpl<>(list, pageRequest, list.size());
-        }
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.listEvents(type, mode, upcomingOnly, pageRequest));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<Event> getEvent(@PathVariable Long id) {
-        return eventRepository.findById(id)
+        return eventService.getEvent(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<Event>> recommendations(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "6") int limit
+    ) {
+        List<Event> recommendations = recommendationService.getRecommendations(userId, limit);
+        attachParticipantCounts(recommendations);
+        return ResponseEntity.ok(recommendations);
+    }
+
+    @PostMapping("/interactions")
+    public ResponseEntity<?> trackInteraction(@RequestBody InteractionRequest request) {
+        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
+        if (user == null || request == null || request.eventId() == null || request.type() == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid interaction payload"));
+        }
+
+        Event event = eventRepository.findById(request.eventId()).orElse(null);
+        if (event == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        EventInteraction.InteractionType interactionType;
+        try {
+            interactionType = EventInteraction.InteractionType.valueOf(request.type().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid interaction type"));
+        }
+
+        interactionService.track(user.userId, event, interactionType);
+        return ResponseEntity.ok(java.util.Map.of("message", "Tracked"));
+    }
+
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<?> submitFeedback(@PathVariable Long id, @RequestBody FeedbackRequest request) {
+        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
+        if (user == null || !"LEARNER".equalsIgnoreCase(user.role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Learner only"));
+        }
+        if (request == null || request.difficulty() == null || request.understood() == null || request.rating() == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Missing feedback fields"));
+        }
+        if (request.rating() < 1 || request.rating() > 5) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "rating must be between 1 and 5"));
+        }
+
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) return ResponseEntity.notFound().build();
+
+        EventFeedback feedback = feedbackRepository.findByEventIdAndLearnerId(id, user.userId).orElseGet(EventFeedback::new);
+        feedback.setEvent(event);
+        feedback.setLearnerId(user.userId);
+        try {
+            feedback.setDifficulty(EventFeedback.Difficulty.valueOf(request.difficulty().toUpperCase()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid difficulty"));
+        }
+        feedback.setUnderstood(request.understood());
+        feedback.setRating(request.rating());
+        feedback.setWhatNext(request.whatNext());
+        feedbackRepository.save(feedback);
+        grantXp(user.userId, "SUBMIT_FEEDBACK", event.getId());
+        dispatchNotification(
+                List.of(event.getTrainerId()),
+                "FEEDBACK_SUBMITTED",
+                "New feedback submitted",
+                "A learner submitted feedback for event \"" + event.getTitle() + "\".",
+                event.getId()
+        );
+
+        return ResponseEntity.ok(buildNextSuggestion(event, feedback));
+    }
+
+    @GetMapping("/{id}/feedback/suggestion")
+    public ResponseEntity<?> feedbackSuggestion(@PathVariable Long id) {
+        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
+        if (user == null || !"LEARNER".equalsIgnoreCase(user.role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) return ResponseEntity.notFound().build();
+
+        var feedbackOpt = feedbackRepository.findByEventIdAndLearnerId(id, user.userId);
+        if (feedbackOpt.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of("message", "No feedback yet"));
+        }
+        return ResponseEntity.ok(buildNextSuggestion(event, feedbackOpt.get()));
+    }
+
+    private java.util.Map<String, Object> buildNextSuggestion(Event currentEvent, EventFeedback feedback) {
+        Event.LearningLevel targetLevel = switch (feedback.getDifficulty()) {
+            case EASY -> escalateLevel(currentEvent.getLearningLevel());
+            case MEDIUM -> Event.LearningLevel.ADVANCED;
+            case HARD -> Event.LearningLevel.INTERMEDIATE;
+        };
+
+        String currentCategory = currentEvent.getCategory() == null ? "" : currentEvent.getCategory().toLowerCase();
+        java.util.Set<String> currentSkills = currentEvent.getRequiredSkills() == null
+                ? java.util.Set.of()
+                : currentEvent.getRequiredSkills().stream().map(String::toLowerCase).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<String> preferredWords = feedback.getWhatNext() == null
+                ? java.util.Set.of()
+                : java.util.Arrays.stream(feedback.getWhatNext().toLowerCase().split("\\W+"))
+                    .filter(s -> s.length() > 2).collect(java.util.stream.Collectors.toSet());
+
+        java.time.Instant now = java.time.Instant.now();
+        java.util.List<Event> candidates = eventRepository.findByStatusAndDateStartAfterOrderByDateStartAsc(Event.EventStatus.UPCOMING, now).stream()
+                .filter(e -> !e.getId().equals(currentEvent.getId()))
+                .toList();
+
+        // Pass 1: strict target level + same category
+        Event suggestion = candidates.stream()
+                .filter(e -> e.getLearningLevel() == targetLevel)
+                .filter(e -> currentCategory.isBlank() || (e.getCategory() != null && e.getCategory().toLowerCase().contains(currentCategory)))
+                .max(java.util.Comparator.comparingInt(e -> scoreCandidate(e, currentSkills, preferredWords)))
+                .orElse(null);
+
+        // Pass 2: target level, any category
+        if (suggestion == null) {
+            suggestion = candidates.stream()
+                    .filter(e -> e.getLearningLevel() == targetLevel)
+                    .max(java.util.Comparator.comparingInt(e -> scoreCandidate(e, currentSkills, preferredWords)))
+                    .orElse(null);
+        }
+
+        // Pass 3: closest level fallback (never return empty if upcoming events exist)
+        if (suggestion == null && !candidates.isEmpty()) {
+            suggestion = candidates.stream()
+                    .min(java.util.Comparator.<Event>comparingInt(e -> levelDistance(e.getLearningLevel(), targetLevel))
+                            .thenComparingInt(e -> -scoreCandidate(e, currentSkills, preferredWords)))
+                    .orElse(null);
+        }
+
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("targetLevel", targetLevel.name());
+        res.put("message", switch (feedback.getDifficulty()) {
+            case EASY -> "You said this event was easy. We suggest a harder next step.";
+            case MEDIUM -> "You said medium difficulty. We suggest an advanced follow-up.";
+            case HARD -> "You said hard. We suggest an intermediate consolidation event.";
+        });
+        res.put("suggestedEvent", suggestion);
+        return res;
+    }
+
+    private int scoreCandidate(Event event, java.util.Set<String> currentSkills, java.util.Set<String> preferredWords) {
+        int score = 0;
+        if (event.getRequiredSkills() != null) {
+            for (String s : event.getRequiredSkills()) {
+                if (s == null) continue;
+                String k = s.toLowerCase();
+                if (currentSkills.contains(k)) score += 3;
+                if (preferredWords.contains(k)) score += 5;
+            }
+        }
+        if (event.getCategory() != null) {
+            String c = event.getCategory().toLowerCase();
+            for (String w : preferredWords) {
+                if (c.contains(w)) score += 4;
+            }
+        }
+        return score;
+    }
+
+    private Event.LearningLevel escalateLevel(Event.LearningLevel current) {
+        if (current == Event.LearningLevel.BEGINNER) return Event.LearningLevel.INTERMEDIATE;
+        return Event.LearningLevel.ADVANCED;
+    }
+
+    private int levelDistance(Event.LearningLevel a, Event.LearningLevel b) {
+        return Math.abs(levelRank(a) - levelRank(b));
+    }
+
+    private int levelRank(Event.LearningLevel level) {
+        return switch (level) {
+            case BEGINNER -> 0;
+            case INTERMEDIATE -> 1;
+            case ADVANCED -> 2;
+        };
     }
 
     // ---- TRAINER ----
@@ -140,50 +354,12 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Only trainers can create events"));
         }
 
-        if (request.getDateStart().isBefore(Instant.now().minusSeconds(300))) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "dateStart must be in the future (at least >= current time - 5min)"));
+        try {
+            Event created = eventService.createEvent(request, user.userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
-        if (!request.getDateEnd().isAfter(request.getDateStart())) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "dateEnd must be after dateStart"));
-        }
-        if (request.getMaxParticipants() == null || request.getMaxParticipants() <= 0) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "maxParticipants must be > 0"));
-        }
-        if (request.getMode() == Event.EventMode.ONLINE && (request.getMeetingLink() == null || request.getMeetingLink().isBlank())) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "meetingLink required for ONLINE events"));
-        }
-        if (request.getMode() == Event.EventMode.ONSITE && (request.getLocation() == null || request.getLocation().isBlank())) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "location required for ONSITE events"));
-        }
-        if (request.getMode() == Event.EventMode.HYBRID) {
-            if (request.getMeetingLink() == null || request.getMeetingLink().isBlank())
-                return ResponseEntity.badRequest().body(java.util.Map.of("message", "meetingLink required for HYBRID"));
-            if (request.getLocation() == null || request.getLocation().isBlank())
-                return ResponseEntity.badRequest().body(java.util.Map.of("message", "location required for HYBRID"));
-        }
-
-        Event event = new Event();
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setTrainerId(user.userId);
-        event.setTrainerFirstName(request.getTrainerFirstName());
-        event.setTrainerLastName(request.getTrainerLastName());
-        event.setType(request.getType());
-        event.setMode(request.getMode());
-        event.setDateStart(request.getDateStart());
-        event.setDateEnd(request.getDateEnd());
-        event.setMeetingLink(request.getMeetingLink());
-        event.setLocation(request.getLocation());
-        event.setMaxParticipants(request.getMaxParticipants());
-        event.setStatus(Event.EventStatus.UPCOMING);
-
-        if (request.getProgram() != null) {
-            event.setProgram(request.getProgram().stream()
-                .map(p -> new ProgramItem(p.getTime(), p.getActivity()))
-                .collect(Collectors.toList()));
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(eventRepository.save(event));
     }
 
     @GetMapping("/my")
@@ -192,34 +368,23 @@ public class EventController {
         if (user == null || !"TRAINER".equals(user.role)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(eventRepository.findByTrainerIdOrderByDateStartDesc(user.userId));
+        List<Event> events = eventRepository.findByTrainerIdOrderByDateStartDesc(user.userId);
+        attachParticipantCounts(events);
+        return ResponseEntity.ok(events);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable Long id, @Valid @RequestBody CreateEventRequest request) {
-        Event event = eventRepository.findById(id).orElse(null);
-        if (event == null) return ResponseEntity.notFound().build();
-        if (!canModify(event)) return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not allowed");
+        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setType(request.getType());
-        event.setMode(request.getMode());
-        event.setDateStart(request.getDateStart());
-        event.setDateEnd(request.getDateEnd());
-        event.setMeetingLink(request.getMeetingLink());
-        event.setLocation(request.getLocation());
-        event.setMaxParticipants(request.getMaxParticipants());
-        event.setUpdatedAt(Instant.now());
-
-        if (request.getProgram() != null) {
-            event.getProgram().clear();
-            event.getProgram().addAll(request.getProgram().stream()
-                .map(p -> new ProgramItem(p.getTime(), p.getActivity()))
-                .collect(Collectors.toList()));
+        try {
+            Event updated = eventService.updateEvent(id, request, isAdmin(), user.userId);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
-
-        return ResponseEntity.ok(eventRepository.save(event));
     }
 
     @PutMapping("/{id}/cancel")
@@ -232,12 +397,61 @@ public class EventController {
         event.setUpdatedAt(Instant.now());
         eventRepository.save(event);
 
-        List<EventRegistration> regs = registrationRepository.findByEventAndStatus(event, EventRegistration.RegistrationStatus.REGISTERED);
+        List<EventRegistration> regs = registrationRepository.findByEvent(event);
+        List<Long> learnerIds = new java.util.ArrayList<>();
         for (EventRegistration r : regs) {
-            r.setStatus(EventRegistration.RegistrationStatus.CANCELLED);
-            registrationRepository.save(r);
+            if (r.getStatus() != EventRegistration.RegistrationStatus.CANCELLED && 
+                r.getStatus() != EventRegistration.RegistrationStatus.REJECTED) {
+                r.setStatus(EventRegistration.RegistrationStatus.CANCELLED);
+                registrationRepository.save(r);
+                learnerIds.add(r.getLearnerId());
+            }
         }
+
+        if (!learnerIds.isEmpty()) {
+            try {
+                java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                payload.put("learnerIds", learnerIds);
+                payload.put("eventTitle", event.getTitle());
+
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+                
+                org.springframework.web.context.request.ServletRequestAttributes attrs = 
+                    (org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+                if (attrs != null) {
+                    String token = attrs.getRequest().getHeader("Authorization");
+                    if (token != null) {
+                        headers.set("Authorization", token);
+                        System.out.println(">>> [DEBUG] Forwarding Authorization header to user-service.");
+                    }
+                }
+
+                org.springframework.http.HttpEntity<java.util.Map<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(payload, headers);
+
+                String resp = restTemplate.postForObject("http://USER-SERVICE/api/users/internal/notifications/event-cancelled", requestEntity, String.class);
+                System.out.println(">>> [INFO] Notified user-service about event cancellation. Response: " + resp);
+            } catch (Exception e) {
+                System.err.println(">>> [ERROR] Failed to notify users of event cancellation: " + e.getMessage());
+            }
+        }
+        
         return ResponseEntity.ok(java.util.Map.of("message", "Event cancelled"));
+    }
+
+    @Transactional
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteEvent(@PathVariable Long id) {
+        JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            eventService.deleteEvent(id, isAdmin(), user.userId);
+            return ResponseEntity.ok(java.util.Map.of("message", "Event deleted"));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
 
@@ -248,68 +462,25 @@ public class EventController {
         try {
             JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
             
-            if (user == null || !"LEARNER".equals(user.role)) {
-                System.out.println(">>> [DEBUG] Registration attempt for event " + id + " failed: User not authenticated or not a learner.");
+            if (user == null || !"LEARNER".equalsIgnoreCase(user.role)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Seuls les apprenants peuvent s'inscrire"));
-            }
-
-            System.out.println(">>> [DEBUG] Registration attempt for event " + id + " by user " + user.userId);
-
-            Event event = eventRepository.findById(id).orElse(null);
-            if (event == null) {
-                System.out.println(">>> [DEBUG] Event not found: " + id);
-                return ResponseEntity.notFound().build();
-            }
-            
-            if (event.getStatus() != Event.EventStatus.UPCOMING) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("message", "L'événement n'est plus ouvert aux inscriptions"));
-            }
-            // Safe null check for dateEnd
-            if (event.getDateEnd() != null && event.getDateEnd().isBefore(Instant.now())) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("message", "L'événement est déjà terminé"));
-            }
-
-            var optReg = registrationRepository.findByEventAndLearnerId(event, user.userId);
-            if (optReg.isPresent()) {
-                EventRegistration existing = optReg.get();
-                if (existing.getStatus() == EventRegistration.RegistrationStatus.REGISTERED) {
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", "Vous êtes déjà inscrit"));
-                }
-                if (existing.getStatus() == EventRegistration.RegistrationStatus.WAITLISTED) {
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", "Vous êtes déjà en liste d'attente"));
-                }
-            }
-
-            long count = registrationRepository.findByEventAndStatus(event, EventRegistration.RegistrationStatus.REGISTERED).size();
-            EventRegistration.RegistrationStatus finalStatus = EventRegistration.RegistrationStatus.REGISTERED;
-            String message = "Registered";
-
-            if (count >= event.getMaxParticipants()) {
-                finalStatus = EventRegistration.RegistrationStatus.WAITLISTED;
-                message = "Waitlisted";
             }
 
             String firstName = body != null ? body.get("firstName") : null;
             String lastName = body != null ? body.get("lastName") : null;
 
-            EventRegistration reg = optReg.orElse(new EventRegistration());
-            reg.setEvent(event);
-            reg.setLearnerId(user.userId);
-            reg.setLearnerFirstName(firstName != null ? firstName : "Learner");
-            reg.setLearnerLastName(lastName != null ? lastName : "#" + user.userId);
-            reg.setStatus(finalStatus);
-            if (reg.getId() == null) {
-                reg.setRegisteredAt(Instant.now());
-            }
+            EventRegistration reg = eventService.register(id, user.userId, firstName, lastName);
             
-            System.out.println(">>> [DEBUG] Saving registration with status: " + finalStatus);
-            registrationRepository.save(reg);
-            System.out.println(">>> [DEBUG] Registration saved successfully");
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("message", message, "status", finalStatus));
+            String message = reg.getStatus() == EventRegistration.RegistrationStatus.WAITLISTED 
+                ? "Liste d'attente (Événement complet)" 
+                : "Demande d'inscription envoyée. En attente d'approbation.";
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("message", message, "status", reg.getStatus()));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) return ResponseEntity.notFound().build();
+            if (e.getMessage().contains("Already registered")) return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            System.err.println(">>> [ERROR] Registration failed for event " + id);
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("message", "Erreur interne: " + e.getMessage()));
         }
@@ -318,7 +489,7 @@ public class EventController {
     @DeleteMapping("/{id}/register")
     public ResponseEntity<?> unregister(@PathVariable Long id) {
         JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
-        if (user == null || !"LEARNER".equals(user.role)) {
+        if (user == null || !"LEARNER".equalsIgnoreCase(user.role)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -332,13 +503,22 @@ public class EventController {
         EventRegistration.RegistrationStatus oldStatus = reg.getStatus();
         reg.setStatus(EventRegistration.RegistrationStatus.CANCELLED);
         registrationRepository.save(reg);
+        interactionService.track(user.userId, event, EventInteraction.InteractionType.CANCEL);
+        grantXp(user.userId, "CANCEL_EVENT", event.getId());
 
-        // If the cancelled person was actually registered, and there's a waitlist, promote the first one
-        if (oldStatus == EventRegistration.RegistrationStatus.REGISTERED) {
+        // If the cancelled person was approved or pending, and there's a waitlist, promote the first one to PENDING
+        if (oldStatus == EventRegistration.RegistrationStatus.APPROVED || oldStatus == EventRegistration.RegistrationStatus.PENDING) {
             registrationRepository.findFirstByEventAndStatusOrderByRegisteredAtAsc(event, EventRegistration.RegistrationStatus.WAITLISTED)
                 .ifPresent(next -> {
-                    next.setStatus(EventRegistration.RegistrationStatus.REGISTERED);
+                    next.setStatus(EventRegistration.RegistrationStatus.PENDING);
                     registrationRepository.save(next);
+                    dispatchNotification(
+                            List.of(next.getLearnerId()),
+                            "WAITLIST_PROMOTED",
+                            "You moved from waitlist",
+                            "You moved from waitlist to pending approval for \"" + event.getTitle() + "\".",
+                            event.getId()
+                    );
                 });
         }
 
@@ -348,15 +528,16 @@ public class EventController {
     @GetMapping("/my-registrations")
     public ResponseEntity<List<RegistrationDto>> myRegistrations() {
         JwtAuthenticationFilter.JwtUserDetails user = getCurrentUser();
-        if (user == null || !"LEARNER".equals(user.role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         System.out.println(">>> [DEBUG] myRegistrations for user " + user.userId);
         
         List<EventRegistration> regs = registrationRepository.findByLearnerIdAndStatusIn(
                 user.userId, 
-                List.of(EventRegistration.RegistrationStatus.REGISTERED, 
+                List.of(EventRegistration.RegistrationStatus.APPROVED, 
+                        EventRegistration.RegistrationStatus.PENDING,
                         EventRegistration.RegistrationStatus.WAITLISTED, 
                         EventRegistration.RegistrationStatus.ATTENDED)
         );
@@ -371,6 +552,8 @@ public class EventController {
     }
 
     public record RegistrationDto(Event event, String status) {}
+    public record InteractionRequest(Long eventId, String type) {}
+    public record FeedbackRequest(String difficulty, Boolean understood, Integer rating, String whatNext) {}
 
 
 

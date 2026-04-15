@@ -1,0 +1,115 @@
+<applications>
+  <versions__delta>1</versions__delta>
+  <apps__hashcode>UP_3_</apps__hashcode>
+  <application>
+    <name>API-GATEWAY</name>
+    <instance>
+      <instanceId>DESKTOP-65LNB59:api-gateway:8080</instanceId>
+      <hostName>DESKTOP-65LNB59</hostName>
+      <app>API-GATEWAY</app>
+      <ipAddr>192.168.100.2</ipAddr>
+      <status>UP</status>
+      <overriddenstatus>UNKNOWN</overriddenstatus>
+      <port enabled="true">8080</port>
+      <securePort enabled="false">443</securePort>
+      <countryId>1</countryId>
+      <dataCenterInfo class="com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo">
+        <name>MyOwn</name>
+      </dataCenterInfo>
+      <leaseInfo>
+        <renewalIntervalInSecs>30</renewalIntervalInSecs>
+        <durationInSecs>90</durationInSecs>
+        <registrationTimestamp>1775414784201</registrationTimestamp>
+        <lastRenewalTimestamp>1775415234386</lastRenewalTimestamp>
+        <evictionTimestamp>0</evictionTimestamp>
+        <serviceUpTimestamp>1775414783549</serviceUpTimestamp>
+      </leaseInfo>
+      <metadata>
+        <management.port>8080</management.port>
+      </metadata>
+      <homePageUrl>http://DESKTOP-65LNB59:8080/</homePageUrl>
+      <statusPageUrl>http://DESKTOP-65LNB59:8080/actuator/info</statusPageUrl>
+      <healthCheckUrl>http://DESKTOP-65LNB59:8080/actuator/health</healthCheckUrl>
+      <vipAddress>api-gateway</vipAddress>
+      <secureVipAddress>api-gateway</secureVipAddress>
+      <isCoordinatingDiscoveryServer>false</isCoordinatingDiscoveryServer>
+      <lastUpdatedTimestamp>1775414784201</lastUpdatedTimestamp>
+      <lastDirtyTimestamp>1775414783541</lastDirtyTimestamp>
+      <actionType>ADDED</actionType>
+    </instance>
+  </application>
+  <application>
+    <name>EVENT-SERVICE</name>
+    <instance>
+      <instanceId>EVENT-SERVICE:8884</instanceId>
+      <hostName>192.168.100.2</hostName>
+      <app>EVENT-SERVICE</app>
+      <ipAddr>192.168.100.2</ipAddr>
+      <status>UP</status>
+      <overriddenstatus>UNKNOWN</overriddenstatus>
+      <port enabled="true">8884</port>
+      <securePort enabled="false">443</securePort>
+      <countryId>1</countryId>
+      <dataCenterInfo class="com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo">
+        <name>MyOwn</name>
+      </dataCenterInfo>
+      <leaseInfo>
+        <renewalIntervalInSecs>30</renewalIntervalInSecs>
+        <durationInSecs>90</durationInSecs>
+        <registrationTimestamp>1775414799902</registrationTimestamp>
+        <lastRenewalTimestamp>1775415250212</lastRenewalTimestamp>
+        <evictionTimestamp>0</evictionTimestamp>
+        <serviceUpTimestamp>1775414799394</serviceUpTimestamp>
+      </leaseInfo>
+      <metadata>
+        <management.port>8884</management.port>
+      </metadata>
+      <homePageUrl>http://192.168.100.2:8884/</homePageUrl>
+      <statusPageUrl>http://192.168.100.2:8884/actuator/info</statusPageUrl>
+      <healthCheckUrl>http://192.168.100.2:8884/actuator/health</healthCheckUrl>
+      <vipAddress>EVENT-SERVICE</vipAddress>
+      <secureVipAddress>EVENT-SERVICE</secureVipAddress>
+      <isCoordinatingDiscoveryServer>false</isCoordinatingDiscoveryServer>
+      <lastUpdatedTimestamp>1775414799902</lastUpdatedTimestamp>
+      <lastDirtyTimestamp>1775414799359</lastDirtyTimestamp>
+      <actionType>ADDED</actionType>
+    </instance>
+  </application>
+  <application>
+    <name>USER-SERVICE</name>
+    <instance>
+      <instanceId>USER-SERVICE:8883</instanceId>
+      <hostName>192.168.100.2</hostName>
+      <app>USER-SERVICE</app>
+      <ipAddr>192.168.100.2</ipAddr>
+      <status>UP</status>
+      <overriddenstatus>UNKNOWN</overriddenstatus>
+      <port enabled="true">8883</port>
+      <securePort enabled="false">443</securePort>
+      <countryId>1</countryId>
+      <dataCenterInfo class="com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo">
+        <name>MyOwn</name>
+      </dataCenterInfo>
+      <leaseInfo>
+        <renewalIntervalInSecs>30</renewalIntervalInSecs>
+        <durationInSecs>90</durationInSecs>
+        <registrationTimestamp>1775414788095</registrationTimestamp>
+        <lastRenewalTimestamp>1775415238382</lastRenewalTimestamp>
+        <evictionTimestamp>0</evictionTimestamp>
+        <serviceUpTimestamp>1775414787575</serviceUpTimestamp>
+      </leaseInfo>
+      <metadata>
+        <management.port>8883</management.port>
+      </metadata>
+      <homePageUrl>http://192.168.100.2:8883/</homePageUrl>
+      <statusPageUrl>http://192.168.100.2:8883/actuator/info</statusPageUrl>
+      <healthCheckUrl>http://192.168.100.2:8883/actuator/health</healthCheckUrl>
+      <vipAddress>USER-SERVICE</vipAddress>
+      <secureVipAddress>USER-SERVICE</secureVipAddress>
+      <isCoordinatingDiscoveryServer>false</isCoordinatingDiscoveryServer>
+      <lastUpdatedTimestamp>1775414788095</lastUpdatedTimestamp>
+      <lastDirtyTimestamp>1775414787543</lastDirtyTimestamp>
+      <actionType>ADDED</actionType>
+    </instance>
+  </application>
+</applications>

@@ -47,8 +47,9 @@
           <span class="type-badge">{{ e.type }}</span>
           @if (isLearner && e.regStatus) {
           <span class="status-badge" [class.open]="e.regStatus === 'REGISTERED'"
-            [class.full]="e.regStatus === 'WAITLISTED'">
-            {{ e.regStatus === 'WAITLISTED' ? 'Pending' : 'Confirmed' }}
+            [class.full]="e.regStatus === 'WAITLISTED'"
+            [class.bg-secondary]="e.regStatus === 'PENDING'">
+            {{ e.regStatus === 'WAITLISTED' ? 'Sur liste d\'attente' : (e.regStatus === 'PENDING' ? 'En attente' : 'Confirmé') }}
           </span>
           } @else {
           <span class="status-badge" [class]="getEventStatus(e).class">
@@ -100,6 +101,12 @@
           <button class="icon-btn" title="Add to calendar" (click)="addToCalendar(e)">
             <i class="bi bi-calendar-plus"></i>
           </button>
+          @if (!isLearner) {
+          <button class="icon-btn icon-btn-delete" title="Delete event" (click)="deleteEvent(e)"
+            [disabled]="deletingId === e.id">
+            <i class="bi bi-trash"></i>
+          </button>
+          }
         </div>
         <div class="main-btns">
           <a (click)="goToEvent(e)" class="btn-link">Details</a>
