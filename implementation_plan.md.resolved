@@ -1,0 +1,65 @@
+# Room CRUD Admin Interface
+
+Build a full Room management page in the Angular admin panel. Admins can view, create, edit, and delete Rooms. The backend `/api/rooms` endpoints will be restricted to `ADMIN` role only.
+
+## Proposed Changes
+
+### Backend
+
+#### [MODIFY] [SecurityConfig.java](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/backend/services/user-service/src/main/java/com/training/platform/security/SecurityConfig.java)
+- Add rule: `POST`, `PUT`, `DELETE` on `/api/rooms/**` → restricted to `ROLE_ADMIN`.
+- `GET /api/rooms/**` → any authenticated user (so trainers can pick rooms when creating sessions later).
+
+#### [MODIFY] [RoomController.java](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/backend/services/user-service/src/main/java/com/training/platform/controller/RoomController.java)
+- Add `@CrossOrigin` awareness (already handled by global CORS). No changes needed unless specific annotations needed.
+
+---
+
+### Frontend
+
+#### [MODIFY] [api.config.ts](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/app/core/api/api.config.ts)
+- Add `rooms` endpoint to `API_ENDPOINTS`.
+
+#### [NEW] `features/rooms/services/rooms.api.ts`
+- Angular service using `HttpClient` to call the backend `/api/rooms` endpoints (CRUD).
+
+#### [NEW] `features/rooms/pages/rooms-list/rooms-list.component.ts`
+- Component that fetches all rooms on init.
+- [openAddModal()](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/app/features/users/pages/users-list/users-list.component.ts#82-97) / [openEditModal(room)](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/app/features/users/pages/users-list/users-list.component.ts#98-112) / `closeModal()`.
+- `saveRoom()` → calls create or update.
+- [deleteRoom(id, name)](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/backend/services/user-service/src/main/java/com/training/platform/service/RoomService.java#48-51) → confirm dialog before deleting.
+
+#### [NEW] `features/rooms/pages/rooms-list/rooms-list.component.html`
+- Page header with "Add Room" button.
+- Loading spinner.
+- Data Table: columns for Name, Capacity, Projector, Computers, Whiteboard, Status (Available/Unavailable), Actions.
+- Add/Edit modal with all Room fields, including boolean toggles for equipment.
+
+#### [NEW] `features/rooms/pages/rooms-list/rooms-list.component.css`
+- Reuse same CSS variables as [users-list.component.css](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/app/features/users/pages/users-list/users-list.component.css) (they use CSS custom properties like `var(--primary)` from the global [styles.css](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/styles.css)).
+- Add status badge styles for Available / Unavailable.
+
+#### [NEW] `features/rooms/rooms.routes.ts`
+- Defines route: `{ path: 'rooms', component: RoomsListComponent }`.
+
+#### [MODIFY] [admin.routes.ts](file:///c:/PI%20AMMAR/Esprit-PiProject-4SAE8-2026-CertifyPro/frontend/src/app/features/admin/admin.routes.ts)
+- Import and spread `...roomsRoutes` inside `adminRoutes`.
+
+#### [MODIFY] Admin sidebar/layout
+- Add a "Rooms" navigation link to the admin layout sidebar, pointing to `/admin/rooms`.
+
+---
+
+## Verification Plan
+
+### Manual Verification
+1. Start the Spring Boot backend.
+2. Run `npm start` from the `frontend/` directory.
+3. Navigate to `http://localhost:4200` in a browser.
+4. Log in as an **ADMIN** user.
+5. Click on the admin sidebar link for **"Rooms"** → should navigate to `/admin/rooms`.
+6. Verify the rooms table loads (empty or with existing data).
+7. Click **"Add Room"** → a modal should appear. Fill in a room name and capacity → click "Create Room" → the new room appears in the table.
+8. Click **"Edit"** on a room → the modal should pre-fill the room's details → change the capacity → click "Save" → the table updates.
+9. Click **"Delete"** on a room → a confirmation prompt appears → confirm → the room disappears from the table.
+10. Log in as a **LEARNER** or **TRAINER** → navigate directly to `http://localhost:4200/admin/rooms` → should be redirected to login (route guarded by `authGuard` + `adminGuard`).

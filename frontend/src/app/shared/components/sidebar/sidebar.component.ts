@@ -56,6 +56,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-calendar-event"></i>
             <span>Events</span>
           </a>
+          <a routerLink="/admin/rooms" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-door-open-fill"></i>
+            <span>Rooms</span>
+          </a>
           <a routerLink="/admin/audit-logs" routerLinkActive="active" class="nav-link">
             <i class="bi bi-clock-history"></i>
             <span>Audit & History</span>

@@ -1,0 +1,84 @@
+<div class="groups-page">
+    <div class="groups-container">
+
+        <div class="groups-header">
+            <div class="header-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="header-text">
+                <h1>Workgroups</h1>
+                <p>Collaborate with your peers and trainers</p>
+            </div>
+            <button *ngIf="isTrainer" class="btn btn-create" (click)="showCreateForm = !showCreateForm">
+                <i class="bi bi-plus-lg"></i> Create Group
+            </button>
+        </div>
+
+        <!-- Success/Error -->
+        <div class="alert alert-success" *ngIf="successMsg"><i class="bi bi-check-circle-fill"></i> {{ successMsg }}
+        </div>
+        <div class="alert alert-error" *ngIf="errorMsg"><i class="bi bi-exclamation-circle-fill"></i> {{ errorMsg }}
+        </div>
+
+        <!-- Create Group Form -->
+        <div class="create-form" *ngIf="showCreateForm">
+            <h3><i class="bi bi-plus-circle"></i> New Group</h3>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newGroupName" class="form-input" placeholder="Group Name" />
+            </div>
+            <div class="form-group">
+                <textarea [(ngModel)]="newGroupDesc" class="form-input" placeholder="Description (optional)"
+                    rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Visibility</label>
+                <select [(ngModel)]="newGroupVisibility" class="form-input">
+                    <option value="PUBLIC">Public — anyone can join</option>
+                    <option value="PRIVATE">Private — invite only</option>
+                </select>
+            </div>
+            <button class="btn btn-create" (click)="createGroup()"><i class="bi bi-check-lg"></i> Create</button>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="isLoading" class="loading">
+            <div class="spinner-sm"></div> Loading groups...
+        </div>
+
+        <!-- My Groups -->
+        <div class="section" *ngIf="!isLoading">
+            <h2 class="section-title"><i class="bi bi-bookmark-star-fill"></i> My Groups</h2>
+            <div class="groups-grid" *ngIf="myGroups.length > 0">
+                <a [routerLink]="['/groups', group.id]" class="group-badge" *ngFor="let group of myGroups">
+                    <div class="badge-icon" [class.private]="group.visibility === 'PRIVATE'">
+                        <i [class]="group.visibility === 'PRIVATE' ? 'bi bi-lock-fill' : 'bi bi-globe2'"></i>
+                    </div>
+                    <div class="badge-info">
+                        <h3>{{ group.name }}</h3>
+                        <p>{{ group.description || 'No description' }}</p>
+                        <span class="badge-meta">by {{ group.teacherName || 'Teacher' }}</span>
+                    </div>
+                    <div class="badge-arrow"><i class="bi bi-chevron-right"></i></div>
+                </a>
+            </div>
+            <p class="empty-msg" *ngIf="myGroups.length === 0">You are not part of any groups yet.</p>
+        </div>
+
+        <!-- Discover Groups -->
+        <div class="section discover" *ngIf="!isLoading">
+            <h2 class="section-title"><i class="bi bi-compass-fill"></i> Discover More Groups</h2>
+            <div class="groups-grid" *ngIf="publicGroups.length > 0">
+                <div class="group-badge discover-badge" *ngFor="let group of publicGroups">
+                    <div class="badge-icon"><i class="bi bi-globe2"></i></div>
+                    <div class="badge-info">
+                        <h3>{{ group.name }}</h3>
+                        <p>{{ group.description || 'No description' }}</p>
+                        <span class="badge-meta">by {{ group.teacherName || 'Teacher' }}</span>
+                    </div>
+                    <button class="btn btn-join" (click)="joinGroup(group)"><i class="bi bi-box-arrow-in-right"></i>
+                        Join</button>
+                </div>
+            </div>
+            <p class="empty-msg" *ngIf="publicGroups.length === 0">No public groups available right now.</p>
+        </div>
+
+    </div>
+</div>

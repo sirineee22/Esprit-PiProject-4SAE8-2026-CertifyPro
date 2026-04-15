@@ -91,6 +91,10 @@ import { AppNotification, UserService } from '../../../features/users/services/u
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
           </div>
+          <a routerLink="/groups" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Groups' : ''">
+            <i class="bi bi-people"></i>
+            <span>Groups</span>
+          </a>
         </div>
         
         <!-- Trainer/Admin Section -->

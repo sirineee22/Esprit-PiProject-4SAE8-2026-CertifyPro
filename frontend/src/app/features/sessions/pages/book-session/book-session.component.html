@@ -1,0 +1,151 @@
+<div class="booking-page">
+    <div class="booking-container">
+
+        <!-- Page Header -->
+        <div class="booking-header">
+            <div class="header-icon">
+                <i class="bi bi-calendar-plus-fill"></i>
+            </div>
+            <div class="header-text">
+                <h1>Book a Training Session</h1>
+                <p>Schedule an in-person session for your learners</p>
+            </div>
+        </div>
+
+        <!-- Trainer Info Badge & Export Actions -->
+        <div class="trainer-actions-row"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div class="trainer-badge" style="margin-bottom: 0;">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Booking as: <strong>{{ trainerName }}</strong></span>
+            </div>
+            <div class="export-actions" style="display: flex; gap: 0.5rem;" *ngIf="trainerId">
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="downloadPdf()"
+                    [disabled]="isExportingPdf">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                    {{ isExportingPdf ? 'Exporting...' : 'Export Schedule PDF' }}
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" (click)="downloadQr()"
+                    [disabled]="isGeneratingQr">
+                    <i class="bi bi-qr-code-scan"></i>
+                    {{ isGeneratingQr ? 'Generating...' : 'Calendar QR Code' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Feedback Messages -->
+        <div class="alert alert-success" *ngIf="successMessage">
+            <i class="bi bi-check-circle-fill"></i> {{ successMessage }}
+        </div>
+        <div class="alert alert-error" *ngIf="errorMessage">
+            <i class="bi bi-exclamation-circle-fill"></i> {{ errorMessage }}
+        </div>
+
+        <div *ngIf="isLoading" class="loading-rooms">
+            <div class="spinner-sm"></div>
+            <span>Loading available rooms...</span>
+        </div>
+
+        <form class="booking-form" (ngSubmit)="submitSession()" *ngIf="!isLoading">
+
+            <!-- Topic -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-journal-text"></i>
+                    Session Topic
+                </label>
+                <input type="text" [(ngModel)]="topic" name="topic" class="form-input"
+                    placeholder="e.g. Spring Boot Fundamentals, React Hooks Workshop" />
+            </div>
+
+            <!-- Start Time -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-clock"></i>
+                    Start Date & Time
+                </label>
+                <input type="datetime-local" [(ngModel)]="startTimeRaw" name="startTime"
+                    class="form-input datetime-input" [min]="minDateTime" (change)="onStartTimeChange()" />
+            </div>
+
+            <!-- End Time Options -->
+            <div class="form-group" *ngIf="endTimeOptions.length > 0">
+                <label class="form-label">
+                    <i class="bi bi-hourglass-split"></i>
+                    Session Duration
+                </label>
+                <div class="duration-chips">
+                    <button type="button" class="duration-chip" *ngFor="let option of endTimeOptions"
+                        [class.selected]="isEndTimeSelected(option)" (click)="selectEndTime(option)">
+                        <span class="chip-hours">+{{ option.hours }}h</span>
+                        <span class="chip-time">ends {{ option.label.split('(')[1]?.replace(')', '') }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Room Selection -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-door-open-fill"></i>
+                    Select Room
+                </label>
+                <select [(ngModel)]="selectedRoomId" name="room" class="form-input form-select">
+                    <option [ngValue]="null" disabled>-- Choose a room --</option>
+                    <option *ngFor="let room of rooms" [ngValue]="room.id">
+                        {{ room.name }} — Capacity: {{ room.capacity }}
+                        <ng-container *ngIf="room.hasProjector"> 📽️</ng-container>
+                        <ng-container *ngIf="room.hasComputers"> 💻</ng-container>
+                        <ng-container *ngIf="room.hasWhiteboard"> 📋</ng-container>
+                    </option>
+                </select>
+                <div class="room-features" *ngIf="selectedRoomId">
+                    <ng-container *ngFor="let room of rooms">
+                        <ng-container *ngIf="room.id === selectedRoomId">
+                            <span class="feature-tag" *ngIf="room.hasProjector"><i class="bi bi-projector"></i>
+                                Projector</span>
+                            <span class="feature-tag" *ngIf="room.hasComputers"><i class="bi bi-pc-display"></i>
+                                Computers</span>
+                            <span class="feature-tag" *ngIf="room.hasWhiteboard"><i class="bi bi-easel"></i>
+                                Whiteboard</span>
+                            <span class="capacity-tag"><i class="bi bi-people"></i> Max {{ room.capacity }}
+                                persons</span>
+                        </ng-container>
+                    </ng-container>
+                </div>
+            </div>
+
+            <!-- Student Invitations -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-envelope-plus"></i>
+                    Invite Students
+                </label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" [(ngModel)]="studentNameInput" name="studentName" class="form-input"
+                        placeholder="Type a student's full name to invite..."
+                        (keyup.enter)="$event.preventDefault(); addStudent()" />
+                    <button type="button" class="btn btn-secondary" (click)="addStudent()">Add</button>
+                </div>
+                <div class="invites-list" *ngIf="studentsToInvite.length > 0">
+                    <div class="feature-tag" *ngFor="let student of studentsToInvite; let i = index"
+                        style="display: inline-block; padding-right: 5px; margin: 3px;">
+                        <span>{{ student }}</span>
+                        <button type="button" (click)="removeStudent(i)"
+                            style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: red;">&times;</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-book" [disabled]="isSubmitting">
+                <span *ngIf="!isSubmitting">
+                    <i class="bi bi-calendar-check-fill"></i> Confirm Booking
+                </span>
+                <span *ngIf="isSubmitting">
+                    <div class="spinner-btn"></div> Booking...
+                </span>
+            </button>
+
+        </form>
+    </div>
+</div>

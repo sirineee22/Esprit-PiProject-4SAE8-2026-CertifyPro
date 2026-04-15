@@ -19,4 +19,9 @@ export const API_ENDPOINTS = {
   progression: `${API_BASE_URL}/api/progression`,
   stats: `${API_BASE_URL}/api/stats`,
   favorites: `${API_BASE_URL}/api/favorites`,
+  
+  // Planned Sessions & Collaborations
+  rooms: `${API_BASE_URL}/api/rooms`,
+  schedules: `${API_BASE_URL}/api/schedules`,
+  groups: `${API_BASE_URL}/api/groups`,
 };

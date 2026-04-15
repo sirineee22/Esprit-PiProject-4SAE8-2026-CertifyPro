@@ -8,6 +8,7 @@ import { ProductsListComponentAdmin } from '../../product-list/products-listadmi
 import { Forumadmin } from '../../forumadmin/forumadmin';
 import { AdminEventsComponent } from './pages/admin-events/admin-events.component';
 import { formationRoutes } from '../formation/formation.routes';
+import { roomsRoutes } from '../rooms/rooms.routes';
 
 export const adminRoutes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
@@ -21,4 +22,5 @@ export const adminRoutes: Routes = [
   { path: 'audit-logs', loadComponent: () => import('./pages/audit-logs/audit-logs.component').then(c => c.AuditLogsComponent) },
   ...usersRoutes,
   { path: 'trainings', children: formationRoutes },
+  ...roomsRoutes,
 ];

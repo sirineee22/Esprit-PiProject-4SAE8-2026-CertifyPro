@@ -84,6 +84,12 @@ import { API_BASE_URL } from '../../../core/api/api.config';
                 
                 <!-- Regular User Links -->
                 <ng-container *ngIf="!isAdmin">
+                  <a *ngIf="isTrainer" routerLink="/book-session" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-calendar-plus"></i> Book a Session
+                  </a>
+                  <a *ngIf="isTrainer" routerLink="/my-sessions" class="dropdown-item" (click)="isDropdownOpen = false">
+                    <i class="bi bi-calendar-event"></i> My Sessions
+                  </a>
                   <a routerLink="/profile" class="dropdown-item" (click)="isDropdownOpen = false">
                     <i class="bi bi-person"></i> My Profile
                   </a>
@@ -117,6 +123,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
         <ng-container *ngIf="isLoggedIn">
           <a class="nav-link-modern" routerLink="/" (click)="isMenuOpen = false">Accueil</a>
           <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">Mon Profil</a>
+          <a *ngIf="isTrainer" class="nav-link-modern" routerLink="/book-session" (click)="isMenuOpen = false">Réserver une Session</a>
+          <a *ngIf="isTrainer" class="nav-link-modern" routerLink="/my-sessions" (click)="isMenuOpen = false">Mes Sessions</a>
           <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">Mes Cours</a>
           <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">Mes Certifications</a>
         </ng-container>

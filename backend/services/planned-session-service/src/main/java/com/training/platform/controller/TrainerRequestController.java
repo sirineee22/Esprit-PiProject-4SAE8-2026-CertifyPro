@@ -1,13 +1,9 @@
 package com.training.platform.controller;
 
-import com.training.platform.entity.Role;
+import com.training.platform.client.UserServiceClient;
 import com.training.platform.entity.TrainerRequest;
-import com.training.platform.entity.User;
-import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.TrainerRequestRepository;
-import com.training.platform.repository.UserRepository;
-import com.training.platform.security.JwtAuthenticationFilter;
-import com.training.platform.service.EmailService;
+import jakarta.validation.Valid;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,13 +27,9 @@ public class TrainerRequestController {
     private TrainerRequestRepository trainerRequestRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserServiceClient userServiceClient;
 
-    @Autowired
-    private RoleRepository roleRepository;
 
-    @Autowired
-    private EmailService emailService;
 
     private static final int COOLDOWN_DAYS = 7;
 
@@ -59,30 +51,30 @@ public class TrainerRequestController {
                     .body("You can only submit a request for your own account");
         }
 
-        User user = userRepository.findById(dto.userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Check if user is LEARNER
-        if (user.getRole() == null || !"LEARNER".equals(user.getRole().getName())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Only learners can request trainer status");
+        try {
+            String role = userServiceClient.getUserRole(dto.userId);
+            if (!"LEARNER".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only learners can request trainer status");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or error fetching user role");
         }
 
         // Check for pending request
-        if (trainerRequestRepository.existsByUserAndStatus(user, TrainerRequest.RequestStatus.PENDING)) {
+        if (trainerRequestRepository.existsByUserIdAndStatus(dto.userId, TrainerRequest.RequestStatus.PENDING)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("You already have a pending trainer request");
         }
 
         // Check cooldown after rejection
         Optional<TrainerRequest> lastRejected = trainerRequestRepository
-                .findFirstByUserAndStatusOrderByCreatedAtDesc(user, TrainerRequest.RequestStatus.REJECTED);
-        
+                .findFirstByUserIdAndStatusOrderByCreatedAtDesc(dto.userId, TrainerRequest.RequestStatus.REJECTED);
+
         if (lastRejected.isPresent() && lastRejected.get().getRejectedAt() != null) {
             long daysSinceRejection = ChronoUnit.DAYS.between(
-                    lastRejected.get().getRejectedAt(), 
-                    LocalDateTime.now()
-            );
+                    lastRejected.get().getRejectedAt(),
+                    LocalDateTime.now());
             if (daysSinceRejection < COOLDOWN_DAYS) {
                 long daysRemaining = COOLDOWN_DAYS - daysSinceRejection;
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -92,7 +84,7 @@ public class TrainerRequestController {
 
         // Create request
         TrainerRequest request = new TrainerRequest();
-        request.setUser(user);
+        request.setUserId(dto.userId);
         request.setSubjects(dto.subjects);
         request.setMessage(dto.message);
         request.setExperience(dto.experience);
@@ -111,9 +103,7 @@ public class TrainerRequestController {
         if (!"ADMIN".equals(principal.role) && !principal.userId.equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only view your own requests");
         }
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(trainerRequestRepository.findByUserOrderByCreatedAtDesc(user));
+        return ResponseEntity.ok(trainerRequestRepository.findByUserIdOrderByCreatedAtDesc(userId));
     }
 
     @GetMapping
@@ -137,15 +127,13 @@ public class TrainerRequestController {
         request.setUpdatedAt(LocalDateTime.now());
         trainerRequestRepository.save(request);
 
-        // Update user role to TRAINER and activate account
-        User user = request.getUser();
-        Role trainerRole = roleRepository.findByName("TRAINER")
-                .orElseThrow(() -> new RuntimeException("TRAINER role not found"));
-        user.setRole(trainerRole);
-        user.setActive(true);
-        userRepository.save(user);
-
-        emailService.sendTrainerApprovalEmail(user.getEmail(), user.getFirstName());
+        // Update user role to TRAINER and activate account via FeignClient
+        try {
+            userServiceClient.approveTrainerRole(request.getUserId());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating user role in user-service: " + e.getMessage());
+        }
 
         return ResponseEntity.ok("Request approved successfully");
     }
@@ -164,8 +152,6 @@ public class TrainerRequestController {
         request.setUpdatedAt(LocalDateTime.now());
         request.setRejectedAt(LocalDateTime.now());
         trainerRequestRepository.save(request);
-
-        emailService.sendTrainerRejectionEmail(request.getUser().getEmail(), request.getUser().getFirstName());
 
         return ResponseEntity.ok("Request rejected");
     }

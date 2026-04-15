@@ -77,6 +77,12 @@ public class SecurityConfig {
                 // Formations (Training Service)
                 .requestMatchers(HttpMethod.GET, "/api/formations/**").permitAll()
                 
+                // planned-session
+                .requestMatchers(HttpMethod.GET, "/api/rooms/**").authenticated()
+                .requestMatchers("/api/rooms/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/schedules/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/schedules").hasRole("TRAINER")
+                
                 // Catch-all
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

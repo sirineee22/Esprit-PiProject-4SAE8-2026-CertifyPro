@@ -9,6 +9,8 @@ import { MyCoursesComponent } from './features/my-courses/pages/my-courses.compo
 import { AboutComponent } from './features/about/pages/about.component';
 import { authRoutes } from './features/auth/auth.routes';
 import { adminRoutes } from './features/admin/admin.routes';
+import { sessionsRoutes } from './features/sessions/sessions.routes';
+import { groupsRoutes } from './features/groups/groups.routes';
 import { authGuard } from './core/guards/auth.guard';
 import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
@@ -54,7 +56,6 @@ export const routes: Routes = [
             { path: 'about', component: AboutComponent },
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
-            
             // Events
             { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
 
@@ -64,6 +65,10 @@ export const routes: Routes = [
             { path: 'shop/productss', component: ProductsListComponent },
             { path: 'shop/products/:id', component: ProductDetailsComponent },
             { path: 'shop/cart', component: CartComponent },
+
+            // Planning & Collaborations
+            ...sessionsRoutes,
+            ...groupsRoutes
         ]
     },
 
