@@ -14,6 +14,13 @@ interface QuizQuestion {
   [key: string]: any; // Allow indexing for fallback keys like ['question']
 }
 
+interface IssuedCertificateRecord {
+  certId: string;
+  learnerName: string;
+  certificationTitle: string;
+  issuedOn: string;
+}
+
 @Component({
   selector: 'app-exam-quiz',
   standalone: true,
@@ -43,7 +50,7 @@ interface QuizQuestion {
               <i class="bi" [ngClass]="isPracticeMode() ? 'bi-lightbulb' : 'bi-award'"></i>
               {{ isPracticeMode() ? 'Practice Mode' : 'Real Exam' }}
             </div>
-            <div class="timer-chip" *ngIf="isPracticeMode() && timeRemainingSeconds !== null">
+            <div class="timer-chip" *ngIf="timeRemainingSeconds !== null">
               <i class="bi bi-clock-history"></i>
               {{ formatTime(timeRemainingSeconds) }}
             </div>
@@ -254,6 +261,8 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
   correctCount = 0;
   certificateGenerated = false;
   private timerRef: ReturnType<typeof setInterval> | null = null;
+  private examDeadlineMs: number | null = null;
+  private readonly onVisibilityOrFocus = () => this.syncTimerNow();
 
   constructor(
     private route: ActivatedRoute,
@@ -275,10 +284,14 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     }
 
     this.loadExamData();
+    document.addEventListener('visibilitychange', this.onVisibilityOrFocus);
+    window.addEventListener('focus', this.onVisibilityOrFocus);
   }
 
   ngOnDestroy(): void {
     this.clearTimer();
+    document.removeEventListener('visibilitychange', this.onVisibilityOrFocus);
+    window.removeEventListener('focus', this.onVisibilityOrFocus);
   }
 
   loadExamData() {
@@ -310,7 +323,7 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
                     this.selectedAnswers = {}; // reset
                     this.requiredScore = activeExam.passingScore || cert.requiredScore || 70;
                     this.durationMinutes = activeExam.durationMinutes || 0;
-                    if (this.isPracticeMode() && this.durationMinutes > 0) {
+                    if (this.durationMinutes > 0) {
                       this.startTimer(this.durationMinutes);
                     }
                     this.isLoading = false;
@@ -357,7 +370,7 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
           this.selectedAnswers = {};
           this.requiredScore = this.isPracticeMode() ? 0 : (cert.requiredScore || 70);
           this.durationMinutes = criteria.examDurationMinutes || 0;
-          if (this.isPracticeMode() && this.durationMinutes > 0) {
+          if (this.durationMinutes > 0) {
             this.startTimer(this.durationMinutes);
           }
           this.isLoading = false;
@@ -406,9 +419,7 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
   }
 
   submitExam() {
-    if (this.isPracticeMode()) {
-      this.clearTimer();
-    }
+    this.clearTimer();
     // Calculate Score
     this.correctCount = 0;
     this.questions.forEach((q, idx) => {
@@ -432,19 +443,12 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
   private startTimer(minutes: number): void {
     this.clearTimer();
-    this.timeRemainingSeconds = Math.max(0, minutes * 60);
+    const totalSeconds = Math.max(0, minutes * 60);
+    this.examDeadlineMs = Date.now() + totalSeconds * 1000;
+    this.syncTimerNow();
     this.timerRef = setInterval(() => {
-      if (this.timeRemainingSeconds === null) {
-        return;
-      }
-      if (this.timeRemainingSeconds <= 1) {
-        this.timeRemainingSeconds = 0;
-        this.clearTimer();
-        this.submitExam();
-        return;
-      }
-      this.timeRemainingSeconds -= 1;
-    }, 1000);
+      this.syncTimerNow();
+    }, 250);
   }
 
   private clearTimer(): void {
@@ -452,6 +456,32 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
       clearInterval(this.timerRef);
       this.timerRef = null;
     }
+    this.examDeadlineMs = null;
+  }
+
+  private updateTimerFromDeadline(): void {
+    if (this.examDeadlineMs === null) {
+      return;
+    }
+    const remainingMs = this.examDeadlineMs - Date.now();
+    this.timeRemainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  }
+
+  private syncTimerNow(): void {
+    if (this.examDeadlineMs === null || this.examCompleted) {
+      return;
+    }
+
+    // Force Angular UI refresh even without user interaction.
+    this.zone.run(() => {
+      this.updateTimerFromDeadline();
+      this.cdr.detectChanges();
+
+      if (this.timeRemainingSeconds !== null && this.timeRemainingSeconds <= 0) {
+        this.clearTimer();
+        this.submitExam();
+      }
+    });
   }
 
   formatTime(totalSeconds: number): string {
@@ -634,11 +664,24 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     const certTitle = this.examTitle.replace(/\s+Exam$/i, '').trim();
     const issueDate = new Date().toLocaleDateString();
     const certId = `CERT-${this.certId}-${Date.now().toString().slice(-6)}`;
+    const certificatePreviewImageUrl = this.buildCertificatePreviewImageUrl({
+      certId,
+      learnerName,
+      certTitle,
+      issueDate
+    });
+    this.saveIssuedCertificate({
+      certId,
+      learnerName,
+      certificationTitle: certTitle,
+      issuedOn: issueDate
+    });
     const [
       template,
       logo,
       decorativeCorner,
-      signatureStrip
+      signatureStrip,
+      qrCode
     ] = await Promise.all([
       this.loadCertificateTemplateImage(),
       this.loadImageAsset([
@@ -655,7 +698,8 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
         '/assets/Capture%20d%27%C3%A9cran%202026-04-15%20183512.png',
         "/assets/Capture d'écran 2026-04-15 183512.png",
         'assets/Capture d\'écran 2026-04-15 183512.png'
-      ])
+      ]),
+      this.loadQrCodeDataUrl(certificatePreviewImageUrl)
     ]);
 
     const pageWidth = template?.width ?? 1200;
@@ -724,6 +768,17 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     doc.text(`Issued on ${issueDate}`, 38, pageHeight - 22);
     doc.text(`Certificate ID: ${certId}`, pageWidth - 280, pageHeight - 22);
 
+    if (qrCode) {
+      const qrSize = 110;
+      const qrX = pageWidth - qrSize - 36;
+      const qrY = pageHeight - qrSize - 150;
+      doc.addImage(qrCode, 'PNG', qrX, qrY, qrSize, qrSize);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor('#0f172a');
+      doc.text('Scan to authenticate', qrX + qrSize / 2, qrY - 8, { align: 'center' });
+    }
+
     const safeName = learnerName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     doc.save(`certificate-${safeName || 'learner'}-${this.certId}.pdf`);
   }
@@ -769,6 +824,55 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
 
       tryLoad(0);
     });
+  }
+
+  private saveIssuedCertificate(record: IssuedCertificateRecord): void {
+    const raw = localStorage.getItem('issued-certificates');
+    const items: IssuedCertificateRecord[] = raw ? JSON.parse(raw) : [];
+    const filtered = items.filter(item => item.certId !== record.certId);
+    filtered.push(record);
+    localStorage.setItem('issued-certificates', JSON.stringify(filtered));
+  }
+
+  private loadQrCodeDataUrl(content: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(content)}`;
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(image, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      image.onerror = () => resolve(null);
+      image.src = qrUrl;
+    });
+  }
+
+  private buildCertificatePreviewImageUrl(data: {
+    certId: string;
+    learnerName: string;
+    certTitle: string;
+    issueDate: string;
+  }): string {
+    // Keep URL short and scanner-friendly: opens a remote PNG directly.
+    const compactName = data.learnerName.slice(0, 28);
+    const compactTitle = data.certTitle.slice(0, 40);
+    const text = [
+      'CERTIFICATE AUTHENTICATED',
+      `ID: ${data.certId}`,
+      compactName,
+      compactTitle,
+      data.issueDate
+    ].join('\n');
+    return `https://dummyimage.com/1200x700/eff6ff/0f172a.png&text=${encodeURIComponent(text)}`;
   }
 
   private tryPracticeMetadataQuestions(cert: any): boolean {

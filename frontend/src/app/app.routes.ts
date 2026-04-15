@@ -9,6 +9,7 @@ import { CertificationDetailComponent } from './features/certifications/pages/ce
 import { CreateCertificationComponent } from './features/certifications/pages/create-certification.component';
 import { ExamQuizComponent } from './features/certifications/pages/exam-quiz.component';
 import { ExamModeSelectComponent } from './features/certifications/pages/exam-mode-select.component';
+import { CertificateVerifyComponent } from './features/certifications/pages/certificate-verify.component';
 import { MyCoursesComponent } from './features/my-courses/pages/my-courses.component';
 import { AboutComponent } from './features/about/pages/about.component';
 import { authRoutes } from './features/auth/auth.routes';
@@ -34,6 +35,7 @@ export const routes: Routes = [
             { path: 'certifications/:id', component: CertificationDetailComponent },
             { path: 'certifications/:id/exam', component: ExamModeSelectComponent, canActivate: [authGuard] },
             { path: 'certifications/:id/exam/:mode', component: ExamQuizComponent, canActivate: [authGuard] },
+            { path: 'certificate/verify', component: CertificateVerifyComponent },
             { path: 'trainer/create-certification', component: CreateCertificationComponent, canActivate: [authGuard, trainerGuard] },
             { path: 'my-courses', component: MyCoursesComponent, canActivate: [authGuard, nonAdminGuard] },
             { path: 'my-certifications', component: CertificationsListComponent, canActivate: [authGuard, nonAdminGuard] },
