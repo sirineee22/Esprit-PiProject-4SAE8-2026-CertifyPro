@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/audit")
-@CrossOrigin(origins = "*")
 public class AuditLogController {
 
     private final AuditLogRepository auditLogRepository;

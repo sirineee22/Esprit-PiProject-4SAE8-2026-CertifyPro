@@ -717,9 +717,15 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     this.currentUser = this.authService.getCurrentUser();
     this.sub = this.authService.currentUser$.subscribe((u) => {
       this.currentUser = u;
+      if (u) {
+        this.loadNotifications();
+      }
     });
-    this.loadNotifications();
-    this.notificationsSub = interval(30000).subscribe(() => this.loadNotifications());
+
+    if (this.currentUser) {
+      this.loadNotifications();
+      this.notificationsSub = interval(30000).subscribe(() => this.loadNotifications());
+    }
   }
 
   ngOnDestroy() {

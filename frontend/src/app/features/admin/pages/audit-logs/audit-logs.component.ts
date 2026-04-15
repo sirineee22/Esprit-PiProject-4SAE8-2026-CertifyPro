@@ -109,7 +109,7 @@ export class AuditLogsComponent implements OnInit {
 
   loadLogs() {
     this.loading = true;
-    this.http.get<AuditLog[]>('http://localhost:8080/api/admin/audit').subscribe({
+    this.http.get<AuditLog[]>(API_ENDPOINTS.audit).subscribe({
       next: (data) => {
         console.log('Audit Logs loaded:', data);
         this.logs = data;

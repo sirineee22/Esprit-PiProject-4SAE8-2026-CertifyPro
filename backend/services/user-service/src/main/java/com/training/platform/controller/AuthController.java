@@ -66,9 +66,9 @@ public class AuthController {
 
             return finalizeLogin(user);
         } catch (Exception e) {
-            log.error("Login 500 for email={}", request != null ? request.email : "?", e);
+            log.error("Login 500 for email={}. Error: {}", request != null ? request.email : "?", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Login failed. Please try again.");
+                    .body("Login failed: " + e.getMessage());
         }
     }
 

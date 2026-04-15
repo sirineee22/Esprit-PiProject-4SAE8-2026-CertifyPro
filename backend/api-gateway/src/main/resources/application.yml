@@ -1,15 +1,12 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
     name: api-gateway
   cloud:
     gateway:
-      default-filters:
-        # When downstream services also add CORS headers, the browser rejects duplicate values.
-        # This keeps only the first occurrence.
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -28,7 +25,7 @@ spring:
         locator:
           enabled: true
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_LAST
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_FIRST
       routes:
         - id: user-service
           uri: lb://USER-SERVICE
@@ -59,3 +56,7 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 5
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10

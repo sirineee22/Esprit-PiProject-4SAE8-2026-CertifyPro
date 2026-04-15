@@ -159,13 +159,6 @@ public class EventController {
         return ResponseEntity.ok(eventService.listEvents(type, mode, upcomingOnly, pageRequest));
     }
 
-    @GetMapping("/{id:\\d+}")
-    public ResponseEntity<Event> getEvent(@PathVariable Long id) {
-        return eventService.getEvent(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     @GetMapping("/recommendations")
     public ResponseEntity<List<Event>> recommendations(
             @RequestParam Long userId,
@@ -174,6 +167,13 @@ public class EventController {
         List<Event> recommendations = recommendationService.getRecommendations(userId, limit);
         attachParticipantCounts(recommendations);
         return ResponseEntity.ok(recommendations);
+    }
+
+    @GetMapping("/{id:\\d+}")
+    public ResponseEntity<Event> getEvent(@PathVariable Long id) {
+        return eventService.getEvent(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/interactions")
@@ -477,10 +477,13 @@ public class EventController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("message", message, "status", reg.getStatus()));
         } catch (RuntimeException e) {
+            System.err.println(">>> [ERROR] Registration failed: " + e.getMessage());
             if (e.getMessage().contains("not found")) return ResponseEntity.notFound().build();
             if (e.getMessage().contains("Already registered")) return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
             return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            System.err.println(">>> [ERROR] Unexpected error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("message", "Erreur interne: " + e.getMessage()));
         }

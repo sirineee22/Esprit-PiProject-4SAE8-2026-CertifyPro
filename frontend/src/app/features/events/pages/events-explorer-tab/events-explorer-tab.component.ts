@@ -81,7 +81,8 @@ export class EventsExplorerTabComponent {
 
   ngOnInit(): void {
     this.load();
-    this.refreshService.refreshed.subscribe(() => this.load());
+    // Temporarily disabled to prevent login timeouts
+    // this.refreshService.refreshed.subscribe(() => this.load());
   }
 
   load(): void {

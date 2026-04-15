@@ -8,6 +8,7 @@ import { EventsApiService } from '../../../events/services/events.api';
 import { User } from '../../../../shared/models/user.model';
 import { AuditLog } from '../../../../shared/models/audit.model';
 import { HttpClient } from '@angular/common/http';
+import { API_ENDPOINTS } from '../../../../core/api/api.config';
 
 interface DashboardStats {
     totalUsers: number;
@@ -618,7 +619,7 @@ export class DashboardComponent implements OnInit {
                     .reverse();
 
                 // Fetch recent audit logs from API
-                this.http.get<AuditLog[]>('http://localhost:8080/api/admin/audit').subscribe({
+                this.http.get<AuditLog[]>(API_ENDPOINTS.audit).subscribe({
                     next: (logs) => {
                         this.recentLogs = logs.slice(0, 4); // Top 4
                         this.cdr.detectChanges();

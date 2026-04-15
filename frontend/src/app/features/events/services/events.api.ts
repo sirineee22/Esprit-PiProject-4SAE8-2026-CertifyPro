@@ -165,18 +165,18 @@ export class EventsApiService {
 
   // Registration Management (Admin/Trainer)
   getRegistrations(eventId: number): Observable<EventRegistration[]> {
-    return this.http.get<EventRegistration[]>(`http://localhost:8080/api/events/management/${eventId}/registrations`);
+    return this.http.get<EventRegistration[]>(`${this.base}/management/${eventId}/registrations`);
   }
 
   approveRegistration(regId: number): Observable<void> {
-    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/approve`, {});
+    return this.http.put<void>(`${this.base}/management/registrations/${regId}/approve`, {});
   }
 
   rejectRegistration(regId: number): Observable<void> {
-    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/reject`, {});
+    return this.http.put<void>(`${this.base}/management/registrations/${regId}/reject`, {});
   }
 
   markAsAttended(regId: number): Observable<void> {
-    return this.http.put<void>(`http://localhost:8080/api/events/management/registrations/${regId}/attend`, {});
+    return this.http.put<void>(`${this.base}/management/registrations/${regId}/attend`, {});
   }
 }
