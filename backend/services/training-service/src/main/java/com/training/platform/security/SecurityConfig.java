@@ -60,8 +60,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/trainer-requests").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/formations/**").permitAll() // Allow viewing content
-                        .requestMatchers("/api/formations/**").authenticated() // Require auth for creation/deletion
+                        .requestMatchers(HttpMethod.GET, "/api/formations/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/formations/**").hasAnyRole("TRAINER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/formations/**").hasAnyRole("TRAINER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/formations/**").hasAnyRole("TRAINER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/evaluations/**").hasAnyRole("STUDENT", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

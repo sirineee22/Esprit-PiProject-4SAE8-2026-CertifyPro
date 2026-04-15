@@ -29,6 +29,8 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**,/api/roles/**
+          filters:
+            - AuthenticationFilter
         - id: auth-service
           uri: lb://USER-SERVICE
           predicates:
@@ -37,30 +39,44 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+          filters:
+            - AuthenticationFilter
         - id: evaluations-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/evaluations/**,/api/evaluations
+          filters:
+            - AuthenticationFilter
         - id: formations-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/formations/**,/api/formations
+          filters:
+            - AuthenticationFilter
         - id: quizzes-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/quizzes/**,/api/quizzes
+          filters:
+            - AuthenticationFilter
         - id: progression-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/progression/**,/api/progression
+          filters:
+            - AuthenticationFilter
         - id: favorites-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/favorites/**,/api/favorites
+          filters:
+            - AuthenticationFilter
         - id: stats-service
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/stats/**,/api/stats
+          filters:
+            - AuthenticationFilter
 
 eureka:
   client:
