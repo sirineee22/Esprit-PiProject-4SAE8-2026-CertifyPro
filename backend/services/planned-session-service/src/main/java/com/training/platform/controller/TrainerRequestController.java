@@ -3,6 +3,7 @@ package com.training.platform.controller;
 import com.training.platform.client.UserServiceClient;
 import com.training.platform.entity.TrainerRequest;
 import com.training.platform.repository.TrainerRequestRepository;
+import com.training.platform.security.JwtAuthenticationFilter;
 import jakarta.validation.Valid;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
