@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import { API_ENDPOINTS } from '../../../core/api/api.config';
+import { AuthService } from '../../../core/auth/auth.service';
 
 interface QuizQuestion {
   questionText: string;
@@ -119,11 +120,15 @@ interface QuizQuestion {
               <p *ngIf="!isPracticeMode()">Required Score: <strong>{{ requiredScore }}%</strong></p>
               <p>Correct Answers: <strong>{{ correctCount }} / {{ questions.length }}</strong></p>
               <p *ngIf="isPracticeMode()">This mode is for learning only and does not affect certification status.</p>
+              <p *ngIf="!isPracticeMode() && passed">You can now download your certificate.</p>
             </div>
 
             <div class="result-actions">
               <button class="btn-submit" *ngIf="isPracticeMode()" (click)="downloadPracticeReport()">
                 <i class="bi bi-file-earmark-pdf-fill"></i> Download Repport PDF
+              </button>
+              <button class="btn-submit" *ngIf="!isPracticeMode() && passed" (click)="downloadCertificatePdf()">
+                <i class="bi bi-award-fill"></i> Download Certificate
               </button>
               <button class="btn-primary" (click)="goBack()">Return to Certification</button>
             </div>
@@ -247,6 +252,7 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
   passed = false;
   finalScore = 0;
   correctCount = 0;
+  certificateGenerated = false;
   private timerRef: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -254,7 +260,8 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     private router: Router,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone
+    private zone: NgZone,
+    private auth: AuthService
   ) { }
 
   ngOnInit() {
@@ -414,6 +421,10 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
     this.passed = this.finalScore >= this.requiredScore;
 
     this.examCompleted = true;
+    if (!this.isPracticeMode() && this.passed && !this.certificateGenerated) {
+      this.certificateGenerated = true;
+      this.downloadCertificatePdf();
+    }
 
     // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -577,6 +588,7 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
   private loadLogoDataUrl(): Promise<string | null> {
     return new Promise((resolve) => {
       const candidatePaths = [
+        '/assets/Capture%20d%27%C3%A9cran%202026-04-15%20174848.png',
         "/assets/Capture d'écran 2026-04-15 174848.png",
         '/assets/Capture d\u2019\u00e9cran 2026-04-15 174848.png',
         '/assets/certifypro-logo.svg'
@@ -603,10 +615,159 @@ export class ExamQuizComponent implements OnInit, OnDestroy {
           resolve(canvas.toDataURL('image/png'));
         };
         image.onerror = () => tryLoadAt(index + 1);
-        image.src = encodeURI(candidatePaths[index]);
+        image.src = candidatePaths[index].includes('%')
+          ? candidatePaths[index]
+          : encodeURI(candidatePaths[index]);
       };
 
       tryLoadAt(0);
+    });
+  }
+
+  async downloadCertificatePdf(): Promise<void> {
+    if (this.isPracticeMode() || !this.passed) {
+      return;
+    }
+
+    const currentUser = this.auth.getCurrentUser();
+    const learnerName = `${currentUser?.firstName ?? ''} ${currentUser?.lastName ?? ''}`.trim() || 'Learner';
+    const certTitle = this.examTitle.replace(/\s+Exam$/i, '').trim();
+    const issueDate = new Date().toLocaleDateString();
+    const certId = `CERT-${this.certId}-${Date.now().toString().slice(-6)}`;
+    const [
+      template,
+      logo,
+      decorativeCorner,
+      signatureStrip
+    ] = await Promise.all([
+      this.loadCertificateTemplateImage(),
+      this.loadImageAsset([
+        '/assets/Capture%20d%27%C3%A9cran%202026-04-15%20174848.png',
+        "/assets/Capture d'écran 2026-04-15 174848.png",
+        'assets/Capture d\'écran 2026-04-15 174848.png'
+      ]),
+      this.loadImageAsset([
+        '/assets/Capture%20d%27%C3%A9cran%202026-04-15%20183503.png',
+        "/assets/Capture d'écran 2026-04-15 183503.png",
+        'assets/Capture d\'écran 2026-04-15 183503.png'
+      ]),
+      this.loadImageAsset([
+        '/assets/Capture%20d%27%C3%A9cran%202026-04-15%20183512.png',
+        "/assets/Capture d'écran 2026-04-15 183512.png",
+        'assets/Capture d\'écran 2026-04-15 183512.png'
+      ])
+    ]);
+
+    const pageWidth = template?.width ?? 1200;
+    const pageHeight = template?.height ?? 850;
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [pageWidth, pageHeight]
+    });
+
+    if (template?.dataUrl) {
+      // Use the exact template image provided by the user.
+      doc.addImage(template.dataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+    } else {
+      doc.setFillColor(252, 250, 245);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
+    }
+
+    // Add user-provided branded assets for a more professional look.
+    if (decorativeCorner?.dataUrl) {
+      doc.addImage(
+        decorativeCorner.dataUrl,
+        'PNG',
+        pageWidth - 190,
+        0,
+        190,
+        260
+      );
+    }
+
+    if (logo?.dataUrl) {
+      doc.addImage(logo.dataUrl, 'PNG', 32, 26, 200, 48);
+    }
+
+    if (signatureStrip?.dataUrl) {
+      doc.addImage(
+        signatureStrip.dataUrl,
+        'PNG',
+        (pageWidth - 560) / 2,
+        pageHeight - 220,
+        560,
+        160
+      );
+    }
+
+    // Overlay dynamic values while preserving original certificate design.
+    doc.setTextColor('#111827');
+    doc.setFont('times', 'italic');
+    doc.setFontSize(Math.max(52, Math.round(pageWidth * 0.07)));
+    doc.text(learnerName, pageWidth / 2, pageHeight * 0.42, { align: 'center' });
+
+    doc.setTextColor('#1f2937');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(Math.max(18, Math.round(pageWidth * 0.02)));
+    doc.text(
+      `${certTitle}`,
+      pageWidth / 2,
+      pageHeight * 0.55,
+      { align: 'center' }
+    );
+
+    doc.setFontSize(Math.max(13, Math.round(pageWidth * 0.013)));
+    doc.setTextColor('#334155');
+    doc.text(`Issued on ${issueDate}`, 38, pageHeight - 22);
+    doc.text(`Certificate ID: ${certId}`, pageWidth - 280, pageHeight - 22);
+
+    const safeName = learnerName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    doc.save(`certificate-${safeName || 'learner'}-${this.certId}.pdf`);
+  }
+
+  private loadCertificateTemplateImage(): Promise<{ dataUrl: string; width: number; height: number } | null> {
+    return this.loadImageAsset([
+      '/assets/certification%20exemple.png',
+      '/assets/certification exemple.png',
+      'assets/certification exemple.png'
+    ]);
+  }
+
+  private loadImageAsset(paths: string[]): Promise<{ dataUrl: string; width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      const tryLoad = (index: number) => {
+        if (index >= paths.length) {
+          resolve(null);
+          return;
+        }
+
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+          ctx.drawImage(image, 0, 0);
+          resolve({
+            dataUrl: canvas.toDataURL('image/png'),
+            width: image.width,
+            height: image.height
+          });
+        };
+        image.onerror = () => tryLoad(index + 1);
+        const raw = paths[index];
+        image.src = raw.includes('%') ? raw : encodeURI(raw);
+      };
+
+      tryLoad(0);
     });
   }
 
