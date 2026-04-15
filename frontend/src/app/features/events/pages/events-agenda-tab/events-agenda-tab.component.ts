@@ -22,6 +22,7 @@ export class EventsAgendaTabComponent implements OnDestroy {
   loading = true;
   error: string | null = null;
   unregisteringId: number | null = null;
+  deletingId: number | null = null;
 
   // Calendar properties
   currentMonth: Date = new Date();
@@ -53,7 +54,7 @@ export class EventsAgendaTabComponent implements OnDestroy {
     this.loading = true;
     this.error = null;
     const obs: Observable<any[]> = this.isLearner
-      ? this.api.myRegistrations()
+      ? this.api.myRegistrations(true)
       : this.api.myEvents();
 
     obs.subscribe({
@@ -62,7 +63,7 @@ export class EventsAgendaTabComponent implements OnDestroy {
           // list is MyRegistration[]
           this.events = list.map(r => ({
             ...r.event,
-            regStatus: r.status
+            regStatus: r.status === 'APPROVED' ? 'REGISTERED' : r.status
           }));
         } else {
           // list is Event[]
@@ -82,11 +83,28 @@ export class EventsAgendaTabComponent implements OnDestroy {
     this.unregisteringId = e.id;
     this.api.unregister(e.id).subscribe({
       next: () => {
+        this.events = this.events.filter(ev => ev.id !== e.id);
+        this.generateCalendar();
         this.unregisteringId = null;
-        this.load();
       },
       error: () => {
         this.unregisteringId = null;
+      },
+    });
+  }
+
+  deleteEvent(e: Event): void {
+    if (this.isLearner) return;
+    if (!confirm('Supprimer définitivement cet événement ?')) return;
+    this.deletingId = e.id;
+    this.api.delete(e.id).subscribe({
+      next: () => {
+        this.events = this.events.filter(ev => ev.id !== e.id);
+        this.generateCalendar();
+        this.deletingId = null;
+      },
+      error: () => {
+        this.deletingId = null;
       },
     });
   }
@@ -129,6 +147,7 @@ export class EventsAgendaTabComponent implements OnDestroy {
   }
 
   getEventStatus(e: Event): { label: string, class: string } {
+    if (e.status === 'CANCELLED') return { label: 'Annulé', class: 'cancelled' };
     const count = this.getParticipantCount(e);
     if (count >= e.maxParticipants) return { label: 'Complet', class: 'full' };
     const start = new Date(e.dateStart).getTime();

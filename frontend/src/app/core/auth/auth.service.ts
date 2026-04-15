@@ -5,8 +5,10 @@ import { API_ENDPOINTS } from '../api/api.config';
 import { User } from '../../shared/models/user.model';
 
 export interface LoginResponse {
-  token: string;
-  user: User;
+  token?: string;
+  user?: User;
+  mfaRequired?: boolean;
+  email?: string;
 }
 
 @Injectable({
@@ -23,6 +25,10 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${API_ENDPOINTS.auth}/login`, { email, password });
+  }
+
+  verify2fa(email: string, code: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${API_ENDPOINTS.auth}/verify-2fa`, { email, code });
   }
 
   private loadUser(): User | null {

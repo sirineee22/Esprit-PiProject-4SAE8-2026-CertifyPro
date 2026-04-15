@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,7 @@ export class EventsExplorerTabComponent {
   error: string | null = null;
   myRegistrations: MyRegistration[] = [];
   registeredEventIds: number[] = [];
+  recommendedEvents: Event[] = [];
 
   // Filters
   typeFilter = '';
@@ -43,10 +44,34 @@ export class EventsExplorerTabComponent {
     public api: EventsApiService,
     private refreshService: EventRefreshService,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
+  private resolveCurrentUserId(): number | null {
+    const user = this.auth.getCurrentUser();
+    if (user?.id) {
+      return user.id;
+    }
+
+    const token = this.auth.getToken();
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      const id = Number(payload?.sub);
+      return Number.isFinite(id) ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
   goToEvent(e: Event): void {
+    if (this.isLearner) {
+      this.api.trackInteraction(e.id, 'CLICK').subscribe({ error: () => undefined });
+    }
     this.router.navigate(['/events', e.id], { state: { event: e } });
   }
 
@@ -62,31 +87,44 @@ export class EventsExplorerTabComponent {
   load(): void {
     this.loading = true;
     this.error = null;
-    this.api
-      .list({
-        upcomingOnly: this.upcomingOnly,
-        page: 0,
-        size: 100,
-      })
-      .subscribe({
-        next: (p) => {
-          this.page = p;
-          this.allEvents = p.content ?? [];
-          this.loading = false;
-          if (this.isLearner) {
-            this.api.myRegistrations().subscribe((list: MyRegistration[]) => {
-              this.myRegistrations = list;
-              this.registeredEventIds = list
-                .filter(r => (r.status as string) === 'REGISTERED' || (r.status as string) === 'WAITLISTED' || (r.status as string) === 'ATTENDED')
-                .map(r => r.event.id);
-            });
-          }
+
+    if (this.isLearner) {
+      const userId = this.resolveCurrentUserId();
+      if (userId) {
+        this.api.recommendations(userId, 6).subscribe({
+          next: (events) => this.recommendedEvents = events ?? [],
+          error: () => this.recommendedEvents = [],
+        });
+      } else {
+        this.recommendedEvents = [];
+      }
+
+      this.api.myRegistrations(true).subscribe({
+        next: (list) => {
+          this.myRegistrations = list;
+          this.registeredEventIds = list
+            .filter(r => ['REGISTERED', 'APPROVED', 'WAITLISTED', 'ATTENDED', 'PENDING'].includes(r.status as string))
+            .map(r => r.event.id);
         },
-        error: (err) => {
-          this.error = err?.error?.message || err?.message || 'Erreur chargement';
-          this.loading = false;
-        },
+        error: () => {
+          this.registeredEventIds = [];
+        }
       });
+    }
+
+    this.api.list({ upcomingOnly: this.upcomingOnly, page: 0, size: 100 }).subscribe({
+      next: (p) => {
+        this.page = p;
+        this.allEvents = p.content ?? [];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.error = err?.error?.message || err?.message || 'Erreur chargement';
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   isRegistered(id: number): boolean {
@@ -95,7 +133,8 @@ export class EventsExplorerTabComponent {
 
   getRegistrationStatus(eventId: number): string {
     const reg = this.myRegistrations.find(r => r.event.id === eventId);
-    return reg ? reg.status : 'NONE';
+    if (!reg) return 'NONE';
+    return reg.status === 'APPROVED' ? 'REGISTERED' : reg.status;
   }
 
   onFilterChange(): void {
@@ -245,6 +284,7 @@ export class EventsExplorerTabComponent {
   }
 
   getEventStatus(e: Event): { label: string, class: string } {
+    if (e.status === 'CANCELLED') return { label: 'Annulé', class: 'cancelled' };
     if (this.isPast(e)) return { label: 'Terminé', class: 'finished' };
     const count = this.getParticipantCount(e);
     if (count >= e.maxParticipants) return { label: 'Full', class: 'full' };

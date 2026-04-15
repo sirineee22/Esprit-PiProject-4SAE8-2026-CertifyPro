@@ -63,13 +63,15 @@ import { User } from '../../../../shared/models/user.model';
         <!-- Right Panel: Form -->
         <div class="right-panel">
           <div class="form-wrapper">
-            <h2 class="form-title">Identity Access</h2>
+            <h2 class="form-title">{{ mfaRequired ? 'Security Verification' : 'Identity Access' }}</h2>
             <p class="form-subtitle">
-              New to the platform? 
-              <a routerLink="/register" class="accent-link">Register now</a>
+              {{ mfaRequired ? 'Enter the 6-digit code from your authenticator app.' : 'New to the platform?' }} 
+              <a *ngIf="!mfaRequired" routerLink="/register" class="accent-link">Register now</a>
+              <button *ngIf="mfaRequired" (click)="mfaRequired = false" class="btn-text-link">Back to login</button>
             </p>
 
-            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+            <!-- Standard Login Form -->
+            <form *ngIf="!mfaRequired" [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
               <div class="form-group">
                 <label class="input-label">WORK EMAIL ADDRESS</label>
                 <div class="input-container">
@@ -104,6 +106,23 @@ import { User } from '../../../../shared/models/user.model';
                   <i class="bi bi-microsoft color-microsoft"></i> Microsoft
                 </button>
               </div>
+            </form>
+
+            <!-- MFA Verification Form -->
+            <form *ngIf="mfaRequired" [formGroup]="mfaForm" (ngSubmit)="onVerifyMfa()" class="auth-form">
+              <div class="form-group">
+                <label class="input-label">VERIFICATION CODE</label>
+                <div class="input-container mfa-container">
+                  <i class="bi bi-shield-check"></i>
+                  <input type="text" formControlName="code" placeholder="000 000" maxlength="6" class="auth-input mfa-input text-center">
+                </div>
+                <p class="mfa-hint">Open your authenticator app to see your code.</p>
+              </div>
+
+              <button type="submit" class="submit-btn mfa-btn" [disabled]="mfaForm.invalid || isSubmitting">
+                <span *ngIf="!isSubmitting">Verify & Continue <i class="bi bi-check-circle"></i></span>
+                <span *ngIf="isSubmitting">Verifying…</span>
+              </button>
             </form>
           </div>
           
@@ -335,6 +354,18 @@ import { User } from '../../../../shared/models/user.model';
 
     .accent-link:hover { text-decoration: underline; }
 
+    .btn-text-link {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-weight: 600;
+      padding: 0;
+      cursor: pointer;
+      font-size: inherit;
+    }
+
+    .btn-text-link:hover { text-decoration: underline; }
+
     .form-group { margin-bottom: 1.5rem; position: relative; }
 
     .input-label {
@@ -376,6 +407,10 @@ import { User } from '../../../../shared/models/user.model';
       box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
 
+    .text-center { text-align: center; }
+    .mfa-input { letter-spacing: 0.5em; font-size: 1.5rem; font-weight: 800; padding: 1rem; }
+    .mfa-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; font-weight: 500; }
+
     .forgot-btn {
       position: absolute;
       right: 0;
@@ -416,6 +451,9 @@ import { User } from '../../../../shared/models/user.model';
     }
 
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .mfa-btn { background: #1e293b; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.25); }
+    .mfa-btn:hover:not(:disabled) { background: #0f172a; }
 
     .divider {
       text-align: center;
@@ -506,7 +544,10 @@ import { User } from '../../../../shared/models/user.model';
 })
 export class LoginComponent {
   loginForm: FormGroup;
+  mfaForm: FormGroup;
   isSubmitting = false;
+  mfaRequired = false;
+  mfaEmail = '';
 
   constructor(
     private fb: FormBuilder,
@@ -517,6 +558,10 @@ export class LoginComponent {
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
+
+    this.mfaForm = this.fb.group({
+      code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
+    });
   }
 
   onSubmit() {
@@ -526,13 +571,19 @@ export class LoginComponent {
 
     this.isSubmitting = true;
     const { email, password } = this.loginForm.value as { email: string; password: string };
+    
     this.authService.login(email, password).subscribe({
       next: (response: LoginResponse) => {
-        this.authService.setSession(response.user, response.token);
-        if (response.user.role?.name === 'ADMIN') {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.router.navigate(['/']);
+        this.isSubmitting = false;
+        
+        if (response.mfaRequired) {
+          this.mfaRequired = true;
+          this.mfaEmail = response.email || email;
+          return;
+        }
+
+        if (response.user && response.token) {
+          this.handleLoginSuccess(response.user!, response.token!);
         }
       },
       error: (e: unknown) => {
@@ -541,12 +592,37 @@ export class LoginComponent {
           alert('Invalid email or password.');
           return;
         }
-        if (e instanceof HttpErrorResponse && e.status === 500) {
-          alert('Server error. Please try again or contact support.');
-          return;
-        }
         alert('Login failed. Please try again.');
       }
     });
+  }
+
+  onVerifyMfa() {
+    if (this.mfaForm.invalid || this.isSubmitting) return;
+
+    this.isSubmitting = true;
+    const code = this.mfaForm.value.code;
+
+    this.authService.verify2fa(this.mfaEmail, code).subscribe({
+      next: (response: LoginResponse) => {
+        this.isSubmitting = false;
+        if (response.user && response.token) {
+          this.handleLoginSuccess(response.user!, response.token!);
+        }
+      },
+      error: (e: unknown) => {
+        this.isSubmitting = false;
+        alert('Code invalide ou expiré.');
+      }
+    });
+  }
+
+  private handleLoginSuccess(user: User, token: string) {
+    this.authService.setSession(user, token);
+    if (user.role?.name === 'ADMIN') {
+      this.router.navigate(['/admin/dashboard']);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 }

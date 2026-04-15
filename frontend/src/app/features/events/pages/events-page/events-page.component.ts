@@ -48,11 +48,13 @@ export class EventsPageComponent implements OnInit {
   }
 
   get isLearner(): boolean {
-    return this.auth.getCurrentUser()?.role?.name === 'LEARNER';
+    const role = (this.auth.getCurrentUser()?.role?.name || '').toUpperCase();
+    return role.includes('LEARNER');
   }
 
   get isTrainer(): boolean {
-    return this.auth.getCurrentUser()?.role?.name === 'TRAINER';
+    const role = (this.auth.getCurrentUser()?.role?.name || '').toUpperCase();
+    return role.includes('TRAINER');
   }
 
   get isLoggedIn(): boolean {

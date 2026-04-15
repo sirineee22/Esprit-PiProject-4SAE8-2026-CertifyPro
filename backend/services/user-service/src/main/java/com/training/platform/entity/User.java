@@ -41,15 +41,36 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
+    @jakarta.validation.constraints.Pattern(regexp = "^(\\+\\d{1,3}[- ]?)?\\d{8,12}$", message = "Format de numéro de téléphone invalide")
     private String phoneNumber;
 
     @Size(max = 500)
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    private boolean active = true;
+    private Boolean active = true;
+
+    public boolean isActive() {
+        return Boolean.TRUE.equals(this.active);
+    }
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @Column(name = "last_login")
+    private java.time.Instant lastLogin;
+
+    @Column(name = "last_activity_at")
+    private java.time.Instant lastActivityAt;
+
+    private Boolean twoFactorEnabled = false;
+
+    public boolean isTwoFactorEnabled() {
+        return Boolean.TRUE.equals(this.twoFactorEnabled);
+    }
+
+    @Column(name = "two_factor_secret")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String twoFactorSecret;
 }

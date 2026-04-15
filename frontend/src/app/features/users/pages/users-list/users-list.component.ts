@@ -237,4 +237,11 @@ export class UsersListComponent implements OnInit {
             this.deleteUser(user.id, `${user.firstName} ${user.lastName}`);
         }
     }
+
+    formatDate(d: string) {
+        if (!d) return 'Never';
+        return new Date(d).toLocaleDateString('fr-FR', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+    }
 }

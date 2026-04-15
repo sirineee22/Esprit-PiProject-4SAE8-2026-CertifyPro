@@ -27,12 +27,12 @@ public class EventRegistration {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RegistrationStatus status = RegistrationStatus.REGISTERED;
+    private RegistrationStatus status = RegistrationStatus.PENDING;
 
     @Column(name = "registered_at", nullable = false, updatable = false)
     private Instant registeredAt = Instant.now();
 
-    public enum RegistrationStatus { REGISTERED, CANCELLED, ATTENDED, WAITLISTED }
+    public enum RegistrationStatus { PENDING, APPROVED, REJECTED, CANCELLED, ATTENDED, WAITLISTED, REGISTERED }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

@@ -2,6 +2,7 @@ package com.training.platform.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,7 +27,27 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * High-priority chain: internal microservice paths bypass all Spring Security
+     * so that event-service can call user-service without a JWT token.
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain internalFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/users/internal/**")
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
+            );
+        return http.build();
+    }
+
+    /**
+     * Main chain: all other API endpoints require valid JWT.
+     */
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.disable())
@@ -37,8 +58,17 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/trainer-requests").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/profile-image/**").permitAll()
+                // Sensitive user / role APIs
+                .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasRole("ADMIN")
+                .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                // Trainer requests: list / approve / reject = admin only
+                .requestMatchers(HttpMethod.GET, "/api/trainer-requests").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/approve").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/reject").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/trainer-requests/my-requests").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/trainer-requests").authenticated()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

@@ -44,6 +44,28 @@
                                 }
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Current level <span class="req">*</span></label>
+                            <select formControlName="learningLevel" class="form-select">
+                                @for (l of levels; track l) {
+                                <option [value]="l">{{ l }}</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <input type="text" formControlName="category" class="form-control"
+                                placeholder="ex: Data Analytics, Web, AI" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section mt-4">
+                    <h3 class="section-title">Skills and requirements</h3>
+                    <div class="form-group mb-4">
+                        <label class="form-label">Required skills</label>
+                        <input type="text" formControlName="requiredSkillsText" class="form-control"
+                            placeholder="SQL, Python, Statistics (comma separated)" />
                     </div>
                 </div>
 
@@ -52,7 +74,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Start date and time <span class="req">*</span></label>
-                            <input type="datetime-local" formControlName="dateStart" class="form-control" />
+                            <input type="datetime-local" formControlName="dateStart" class="form-control" [min]="minStartDateTime" />
+                            <small class="text-muted">Must be at least 3 minutes from now.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">End date and time <span class="req">*</span></label>

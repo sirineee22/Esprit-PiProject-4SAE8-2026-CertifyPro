@@ -6,6 +6,7 @@ import com.training.platform.entity.User;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.TrainerRequestRepository;
 import com.training.platform.repository.UserRepository;
+import com.training.platform.service.EmailService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import com.training.platform.security.JwtAuthenticationFilter;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -33,18 +37,31 @@ public class TrainerRequestController {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     private static final int COOLDOWN_DAYS = 7;
+
+    private JwtAuthenticationFilter.JwtUserDetails getCurrentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getDetails() == null) return null;
+        Object details = auth.getDetails();
+        return details instanceof JwtAuthenticationFilter.JwtUserDetails u ? u : null;
+    }
 
     @PostMapping
     public ResponseEntity<?> submitRequest(@Valid @RequestBody TrainerRequestDto dto) {
-        System.out.println("Received trainer request for userId: " + dto.userId);
-        
-        // Get user
+        JwtAuthenticationFilter.JwtUserDetails principal = getCurrentUser();
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+        }
+        if (!principal.userId.equals(dto.userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only submit a request for your own account");
+        }
+
         User user = userRepository.findById(dto.userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println("User found: " + user.getEmail() + ", Role: " + 
-            (user.getRole() != null ? user.getRole().getName() : "NULL"));
 
         // Check if user is LEARNER
         if (user.getRole() == null || !"LEARNER".equals(user.getRole().getName())) {
@@ -87,7 +104,14 @@ public class TrainerRequestController {
     }
 
     @GetMapping("/my-requests")
-    public ResponseEntity<List<TrainerRequest>> getMyRequests(@RequestParam Long userId) {
+    public ResponseEntity<?> getMyRequests(@RequestParam Long userId) {
+        JwtAuthenticationFilter.JwtUserDetails principal = getCurrentUser();
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!"ADMIN".equals(principal.role) && !principal.userId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only view your own requests");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(trainerRequestRepository.findByUserOrderByCreatedAtDesc(user));
@@ -95,14 +119,12 @@ public class TrainerRequestController {
 
     @GetMapping
     public ResponseEntity<List<TrainerRequest>> getAllPendingRequests() {
-        // TODO: Add admin role check
         return ResponseEntity.ok(trainerRequestRepository.findByStatus(TrainerRequest.RequestStatus.PENDING));
     }
 
     @PutMapping("/{id}/approve")
     @Transactional
     public ResponseEntity<?> approveRequest(@PathVariable Long id) {
-        // TODO: Add admin role check
         TrainerRequest request = trainerRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
@@ -126,12 +148,13 @@ public class TrainerRequestController {
         user.setActive(true);
         userRepository.save(user);
 
+        emailService.sendTrainerApprovalEmail(user.getEmail(), user.getFirstName());
+
         return ResponseEntity.ok("Request approved successfully");
     }
 
     @PutMapping("/{id}/reject")
     public ResponseEntity<?> rejectRequest(@PathVariable Long id) {
-        // TODO: Add admin role check
         TrainerRequest request = trainerRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
@@ -144,6 +167,8 @@ public class TrainerRequestController {
         request.setUpdatedAt(LocalDateTime.now());
         request.setRejectedAt(LocalDateTime.now());
         trainerRequestRepository.save(request);
+
+        emailService.sendTrainerRejectionEmail(request.getUser().getEmail(), request.getUser().getFirstName());
 
         return ResponseEntity.ok("Request rejected");
     }

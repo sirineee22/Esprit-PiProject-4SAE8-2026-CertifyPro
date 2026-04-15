@@ -70,6 +70,19 @@ public class Event {
     @Column(nullable = false)
     private EventStatus status = EventStatus.UPCOMING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "learning_level")
+    private LearningLevel learningLevel = LearningLevel.BEGINNER;
+
+    @Size(max = 120)
+    @Column(name = "category")
+    private String category;
+
+    @ElementCollection
+    @CollectionTable(name = "event_required_skills", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "skill")
+    private List<String> requiredSkills = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -84,15 +97,26 @@ public class Event {
     @Transient
     private Integer participantCount;
 
+    @Transient
+    private Double recommendationScore;
+
+    @Transient
+    private List<String> recommendationReasons;
+
     public enum EventType { WEBINAR, WORKSHOP, QNA, MEETUP, BOOTCAMP }
     public enum EventMode { ONLINE, ONSITE, HYBRID }
     public enum EventStatus { UPCOMING, CANCELLED, DONE }
+    public enum LearningLevel { BEGINNER, INTERMEDIATE, ADVANCED }
 
     // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Integer getParticipantCount() { return participantCount != null ? participantCount : 0; }
     public void setParticipantCount(Integer participantCount) { this.participantCount = participantCount; }
+    public Double getRecommendationScore() { return recommendationScore; }
+    public void setRecommendationScore(Double recommendationScore) { this.recommendationScore = recommendationScore; }
+    public List<String> getRecommendationReasons() { return recommendationReasons; }
+    public void setRecommendationReasons(List<String> recommendationReasons) { this.recommendationReasons = recommendationReasons; }
     public Integer getWaitlistCount() { return 0; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -120,6 +144,12 @@ public class Event {
     public void setMaxParticipants(Integer maxParticipants) { this.maxParticipants = maxParticipants; }
     public EventStatus getStatus() { return status; }
     public void setStatus(EventStatus status) { this.status = status; }
+    public LearningLevel getLearningLevel() { return learningLevel != null ? learningLevel : LearningLevel.BEGINNER; }
+    public void setLearningLevel(LearningLevel learningLevel) { this.learningLevel = learningLevel; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public List<String> getRequiredSkills() { return requiredSkills; }
+    public void setRequiredSkills(List<String> requiredSkills) { this.requiredSkills = requiredSkills; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

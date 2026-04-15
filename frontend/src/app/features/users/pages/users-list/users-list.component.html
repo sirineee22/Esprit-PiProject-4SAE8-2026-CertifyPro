@@ -22,6 +22,7 @@
                     <th>Email</th>
                     <th>Role</th>
                     <th>Status</th>
+                    <th>Last Login</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -40,6 +41,9 @@
                         <span class="status-badge" [class.active]="user.active">
                             {{ user.active ? 'Active' : 'Inactive' }}
                         </span>
+                    </td>
+                    <td class="small text-muted">
+                        {{ user.lastLogin ? formatDate(user.lastLogin) : 'Never' }}
                     </td>
                     <td class="actions-cell">
                         <button class="btn-edit" (click)="handleEditClick(user)">

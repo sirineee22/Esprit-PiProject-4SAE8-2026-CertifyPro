@@ -33,6 +33,7 @@
     "@types/leaflet": "^1.9.21",
     "google-libphonenumber": "^3.2.44",
     "intl-tel-input": "^19.5.7",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "ngx-bootstrap": "^21.0.1",
     "ngx-intl-tel-input": "^17.0.0",

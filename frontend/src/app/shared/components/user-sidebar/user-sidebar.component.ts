@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
 import { API_BASE_URL } from '../../../core/api/api.config';
+import { AppNotification, UserService } from '../../../features/users/services/users.api';
 
 @Component({
   selector: 'app-user-sidebar',
@@ -113,6 +114,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             </div>
           </a>
           <div class="profile-card-actions" *ngIf="!isCollapsed">
+            <button type="button" class="action-btn bell-btn" (click)="toggleNotifications()" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <span *ngIf="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+            </button>
             <a routerLink="/profile" routerLinkActive="active" class="action-btn" title="Settings">
               <i class="bi bi-gear"></i>
             </a>
@@ -121,9 +126,32 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             </button>
           </div>
           <div class="profile-card-actions collapsed-actions" *ngIf="isCollapsed">
+            <button type="button" class="action-btn bell-btn" (click)="toggleNotifications()" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <span *ngIf="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+            </button>
             <a routerLink="/profile" class="action-btn" title="Settings"><i class="bi bi-gear"></i></a>
             <button type="button" class="action-btn logout-btn" (click)="logout()" title="Logout"><i class="bi bi-box-arrow-right"></i></button>
           </div>
+        </div>
+        <div class="notifications-panel" *ngIf="notificationsOpen">
+          <div class="notifications-header">
+            <strong>Notifications</strong>
+            <span class="small text-muted">{{ unreadCount }} unread</span>
+          </div>
+          <div class="notifications-list" *ngIf="notifications.length > 0; else noNotif">
+            <button type="button" class="notif-item" *ngFor="let n of notifications" (click)="openNotification(n)">
+              <div class="notif-dot" [class.unread]="!n.read"></div>
+              <div class="notif-content">
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-message">{{ n.message }}</div>
+                <div class="notif-time">{{ formatNotifDate(n.createdAt) }}</div>
+              </div>
+            </button>
+          </div>
+          <ng-template #noNotif>
+            <div class="text-muted small py-2">No notifications yet.</div>
+          </ng-template>
         </div>
       </div>
     </aside>
@@ -471,6 +499,95 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       color: #dc2626;
     }
 
+    .bell-btn {
+      position: relative;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notifications-panel {
+      margin-top: 0.75rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.5rem;
+      max-height: 280px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .notifications-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.3rem 0.4rem;
+    }
+
+    .notifications-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .notif-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 0.4rem;
+      display: flex;
+      gap: 0.5rem;
+      text-align: left;
+    }
+
+    .notif-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 0.35rem;
+      background: #cbd5e1;
+      flex-shrink: 0;
+    }
+
+    .notif-dot.unread {
+      background: #f59e0b;
+    }
+
+    .notif-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #27324B;
+    }
+
+    .notif-message {
+      font-size: 0.75rem;
+      color: #475569;
+      line-height: 1.3;
+    }
+
+    .notif-time {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      margin-top: 0.2rem;
+    }
+
     .collapsed-card {
       padding: 0.75rem 0;
       background: transparent;
@@ -576,12 +693,16 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isCollapsed = false;
   avatarImgError = false;
+  notifications: AppNotification[] = [];
+  notificationsOpen = false;
   @Output() sidebarToggled = new EventEmitter<boolean>();
   private sub?: Subscription;
+  private notificationsSub?: Subscription;
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private userService: UserService
   ) { }
 
   ngOnInit() {
@@ -589,10 +710,13 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     this.sub = this.authService.currentUser$.subscribe((u) => {
       this.currentUser = u;
     });
+    this.loadNotifications();
+    this.notificationsSub = interval(30000).subscribe(() => this.loadNotifications());
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
+    this.notificationsSub?.unsubscribe();
   }
 
   avatarUrl(): string | null {
@@ -621,6 +745,61 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     this.sidebarToggled.emit(this.isCollapsed);
+  }
+
+  get unreadCount(): number {
+    return this.notifications.filter(n => !n.read).length;
+  }
+
+  toggleNotifications() {
+    this.notificationsOpen = !this.notificationsOpen;
+    if (this.notificationsOpen) {
+      this.loadNotifications();
+    }
+  }
+
+  private loadNotifications() {
+    this.userService.getMyNotifications().subscribe({
+      next: (items) => this.notifications = items ?? [],
+      error: () => this.notifications = []
+    });
+  }
+
+  openNotification(n: AppNotification) {
+    const targetRoute = this.resolveNotificationRoute(n);
+    if (!n.read) {
+      this.userService.markNotificationAsRead(n.id).subscribe({
+        next: () => {
+          n.read = true;
+          if (targetRoute) {
+            this.router.navigate(targetRoute);
+          }
+        },
+        error: () => {
+          if (targetRoute) this.router.navigate(targetRoute);
+        }
+      });
+      return;
+    }
+    if (targetRoute) this.router.navigate(targetRoute);
+  }
+
+  private resolveNotificationRoute(n: AppNotification): any[] | null {
+    if (!n.eventId) return null;
+    // For learner registration-related notifications, open participants page directly.
+    if (['REGISTRATION_APPROVED', 'WAITLIST_PROMOTED'].includes(n.type)) {
+      return ['/events', n.eventId, 'participants'];
+    }
+    return ['/events', n.eventId];
+  }
+
+  formatNotifDate(value: string): string {
+    return new Date(value).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   logout() {
