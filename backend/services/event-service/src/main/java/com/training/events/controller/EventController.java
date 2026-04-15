@@ -44,6 +44,7 @@ public class EventController {
     private final EventInteractionRepository interactionRepository;
     private final EventFeedbackRepository feedbackRepository;
     private final EventService eventService;
+    private final com.training.events.service.GeminiService geminiService;
 
     public EventController(
             EventRepository eventRepository,
@@ -53,7 +54,8 @@ public class EventController {
             EventInteractionService interactionService,
             EventInteractionRepository interactionRepository,
             EventFeedbackRepository feedbackRepository,
-            EventService eventService
+            EventService eventService,
+            com.training.events.service.GeminiService geminiService
     ) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
@@ -63,6 +65,7 @@ public class EventController {
         this.interactionRepository = interactionRepository;
         this.feedbackRepository = feedbackRepository;
         this.eventService = eventService;
+        this.geminiService = geminiService;
     }
 
     private JwtAuthenticationFilter.JwtUserDetails getCurrentUser() {
@@ -197,6 +200,36 @@ public class EventController {
 
         interactionService.track(user.userId, event, interactionType);
         return ResponseEntity.ok(java.util.Map.of("message", "Tracked"));
+    }
+
+    @PostMapping("/{id:\\d+}/chat")
+    public ResponseEntity<com.training.events.dto.ChatResponse> chatWithEventBot(
+            @PathVariable Long id,
+            @RequestBody com.training.events.dto.ChatRequest request) {
+        System.out.println(">>> [CHAT] Received request for event ID: " + id + " message: " + request.getMessage());
+        return eventRepository.findById(id).map(event -> {
+            String systemPrompt = String.format(
+                "You are an AI assistant for the event titled '%s'. " +
+                "Event Description: '%s'. " +
+                "Date: %s. " +
+                "Trainer: %s. " +
+                "Answer the following question from a student concisely and politely based on this event context. " +
+                "Question: %s",
+                event.getTitle(),
+                event.getDescription() != null ? event.getDescription() : "No detailed description provided.",
+                event.getDateStart() != null ? event.getDateStart().toString() : "Not specified",
+                event.getTrainerFirstName() + " " + event.getTrainerLastName(),
+                request.getMessage()
+            );
+
+            System.out.println(">>> [CHAT] System Prompt prepared. Calling Gemini...");
+            String aiResponse = geminiService.generateResponse(systemPrompt);
+            System.out.println(">>> [CHAT] Gemini replied: " + aiResponse);
+            return ResponseEntity.ok(new com.training.events.dto.ChatResponse(aiResponse));
+        }).orElseGet(() -> {
+            System.out.println(">>> [CHAT] Event NOT FOUND: " + id);
+            return ResponseEntity.notFound().build();
+        });
     }
 
     @PostMapping("/{id}/feedback")

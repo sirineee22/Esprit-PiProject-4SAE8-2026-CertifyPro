@@ -8,11 +8,12 @@ import { UserService } from '../../../users/services/users.api';
 import { Event, FeedbackSuggestionResponse } from '../../../../shared/models/event.model';
 import * as L from 'leaflet';
 import jsPDF from 'jspdf';
+import { EventChatbotComponent } from '../../components/event-chatbot/event-chatbot.component';
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, EventChatbotComponent],
   templateUrl: './event-detail.component.html',
   styleUrl: './event-detail.component.css',
 })

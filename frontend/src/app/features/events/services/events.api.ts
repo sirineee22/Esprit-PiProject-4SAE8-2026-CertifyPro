@@ -179,4 +179,8 @@ export class EventsApiService {
   markAsAttended(regId: number): Observable<void> {
     return this.http.put<void>(`${this.base}/management/registrations/${regId}/attend`, {});
   }
+
+  chat(eventId: number, message: string): Observable<{ text: string }> {
+    return this.http.post<{ text: string }>(`${this.base}/${eventId}/chat`, { message });
+  }
 }
