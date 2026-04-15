@@ -31,7 +31,19 @@ export class SessionService {
         return this.http.get<SessionSchedule[]>(`${this.url}/trainer/${trainerId}`);
     }
 
-    getAllSessions(): Observable<SessionSchedule[]> {
-        return this.http.get<SessionSchedule[]>(this.url);
+    updateSessionStatus(id: number, status: string): Observable<SessionSchedule> {
+        return this.http.patch<SessionSchedule>(`${this.url}/${id}/status`, status);
+    }
+
+    exportPdf(trainerId: number): Observable<Blob> {
+        return this.http.get(`${this.url}/trainer/${trainerId}/export/pdf`, { responseType: 'blob' });
+    }
+
+    exportQr(trainerId: number): Observable<Blob> {
+        return this.http.get(`${this.url}/trainer/${trainerId}/export/qr`, { responseType: 'blob' });
+    }
+
+    inviteStudent(sessionId: number, studentName: string): Observable<any> {
+        return this.http.post(`${this.url}/${sessionId}/invite?studentName=${encodeURIComponent(studentName)}`, {}, { responseType: 'text' });
     }
 }

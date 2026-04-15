@@ -33,9 +33,21 @@ spring:
           predicates:
             - Path=/api/auth/**
         - id: trainer-requests-service
-          uri: lb://USER-SERVICE
+          uri: lb://PLANNED-SESSION-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+        - id: planned-session-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/schedules/**
+        - id: room-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/rooms/**
+        - id: collaboration-service
+          uri: lb://COLLABORATION-SERVICE
+          predicates:
+            - Path=/api/groups/**
 
 eureka:
   client:

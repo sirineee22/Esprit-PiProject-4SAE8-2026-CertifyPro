@@ -76,6 +76,10 @@ import { User } from '../../models/user.model';
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
           </div>
+          <a routerLink="/groups" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Groups' : ''">
+            <i class="bi bi-people"></i>
+            <span>Groups</span>
+          </a>
         </div>
         
         <!-- Trainer Section (only for trainers) -->

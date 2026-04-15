@@ -10,6 +10,7 @@ import { AboutComponent } from './features/about/pages/about.component';
 import { authRoutes } from './features/auth/auth.routes';
 import { adminRoutes } from './features/admin/admin.routes';
 import { sessionsRoutes } from './features/sessions/sessions.routes';
+import { groupsRoutes } from './features/groups/groups.routes';
 import { authGuard } from './core/guards/auth.guard';
 import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
@@ -36,7 +37,8 @@ export const routes: Routes = [
             { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
             { path: 'community', redirectTo: '', pathMatch: 'full' },
             { path: 'forum', redirectTo: '', pathMatch: 'full' },
-            ...sessionsRoutes
+            ...sessionsRoutes,
+            ...groupsRoutes
         ]
     },
 

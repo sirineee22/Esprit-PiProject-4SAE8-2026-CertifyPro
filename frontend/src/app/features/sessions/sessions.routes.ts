@@ -8,5 +8,10 @@ export const sessionsRoutes: Routes = [
         path: 'book-session',
         component: BookSessionComponent,
         canActivate: [authGuard, rolesGuard(['TRAINER'])]
+    },
+    {
+        path: 'my-sessions',
+        loadComponent: () => import('./pages/my-sessions/my-sessions.component').then(m => m.MySessionsComponent),
+        canActivate: [authGuard, rolesGuard(['TRAINER'])]
     }
 ];

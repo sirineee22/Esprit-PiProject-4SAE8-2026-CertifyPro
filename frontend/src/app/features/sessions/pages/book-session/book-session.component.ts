@@ -33,6 +33,14 @@ export class BookSessionComponent implements OnInit {
     successMessage = '';
     errorMessage = '';
 
+    // Feature: Invitations
+    studentNameInput = '';
+    studentsToInvite: string[] = [];
+
+    // Loading states for export buttons
+    isExportingPdf = false;
+    isGeneratingQr = false;
+
     constructor(
         private authService: AuthService,
         private sessionService: SessionService,
@@ -142,8 +150,20 @@ export class BookSessionComponent implements OnInit {
             trainer: { id: this.trainerId },
             room: { id: this.selectedRoomId }
         }).subscribe({
-            next: () => {
+            next: (createdSession) => {
                 this.successMessage = '✅ Session booked successfully!';
+
+                // Invite students if any
+                if (this.studentsToInvite.length > 0 && createdSession.id) {
+                    this.studentsToInvite.forEach(student => {
+                        this.sessionService.inviteStudent(createdSession.id, student).subscribe({
+                            next: () => console.log('Successfully invited', student),
+                            error: (err) => console.error('Error inviting', student, err)
+                        });
+                    });
+                    this.successMessage += ` Invitations are being sent to ${this.studentsToInvite.length} student(s).`;
+                }
+
                 this.resetForm();
                 this.isSubmitting = false;
                 this.cdr.detectChanges();
@@ -166,5 +186,66 @@ export class BookSessionComponent implements OnInit {
         this.selectedEndTime = '';
         this.endTimeOptions = [];
         this.selectedRoomId = null;
+        this.studentNameInput = '';
+        this.studentsToInvite = [];
+    }
+
+    addStudent(): void {
+        if (this.studentNameInput.trim()) {
+            this.studentsToInvite.push(this.studentNameInput.trim());
+            this.studentNameInput = '';
+        }
+    }
+
+    removeStudent(index: number): void {
+        this.studentsToInvite.splice(index, 1);
+    }
+
+    downloadPdf(): void {
+        if (!this.trainerId) return;
+        this.isExportingPdf = true;
+        this.sessionService.exportPdf(this.trainerId).subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Trainer_${this.trainerId}_Schedule.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                this.isExportingPdf = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                alert('Failed to drop PDF schedule.');
+                this.isExportingPdf = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    downloadQr(): void {
+        if (!this.trainerId) return;
+        this.isGeneratingQr = false;
+        this.sessionService.exportQr(this.trainerId).subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Trainer_${this.trainerId}_CalendarQR.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                this.isGeneratingQr = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                alert('Failed to generate QR Code.');
+                this.isGeneratingQr = false;
+                this.cdr.detectChanges();
+            }
+        });
     }
 }

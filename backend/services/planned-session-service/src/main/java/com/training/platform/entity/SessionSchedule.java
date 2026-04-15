@@ -26,12 +26,12 @@ public class SessionSchedule {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trainer_id", nullable = false)
-    private User trainer;
+    @Column(name = "trainer_id", nullable = false)
+    private Long trainerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Room room;
 
     // Links to the course/module id this session belongs to

@@ -56,7 +56,7 @@ public class UserController {
             // Assign default LEARNER role if no role provided
             if (user.getRole() == null) {
                 user.setRole(roleRepository.findByName("LEARNER")
-                    .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
+                        .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             }
 
             return ResponseEntity.ok(userRepository.save(user));
@@ -102,5 +102,33 @@ public class UserController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/approve-trainer")
+    public ResponseEntity<?> approveTrainerRole(@PathVariable Long id) {
+        return userRepository.findById(id).map(user -> {
+            com.training.platform.entity.Role trainerRole = roleRepository.findByName("TRAINER")
+                    .orElseThrow(() -> new RuntimeException("TRAINER role not found"));
+            user.setRole(trainerRole);
+            user.setActive(true);
+            userRepository.save(user);
+            return ResponseEntity.ok("User upgraded to trainer");
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/role")
+    public ResponseEntity<String> getUserRole(@PathVariable Long id) {
+        return userRepository.findById(id).map(user -> {
+            return ResponseEntity.ok(user.getRole() != null ? user.getRole().getName() : "");
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity
+                .ok(userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name));
     }
 }

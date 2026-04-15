@@ -5,4 +5,5 @@ export const API_ENDPOINTS = {
   auth: `${API_BASE_URL}/api/auth`,
   rooms: `${API_BASE_URL}/api/rooms`,
   schedules: `${API_BASE_URL}/api/schedules`,
+  groups: `${API_BASE_URL}/api/groups`,
 };

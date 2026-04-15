@@ -61,7 +61,7 @@ public class SessionScheduleService {
             throw new IllegalArgumentException("Room is already booked for this time period");
         }
         if (repository.existsByTrainerIdAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
-                schedule.getTrainer().getId(), schedule.getEndTime(), schedule.getStartTime())) {
+                schedule.getTrainerId(), schedule.getEndTime(), schedule.getStartTime())) {
             throw new IllegalArgumentException("Trainer is already booked for this time period");
         }
         return repository.save(schedule);
@@ -72,16 +72,48 @@ public class SessionScheduleService {
             schedule.setTopic(updatedSchedule.getTopic());
             schedule.setStartTime(updatedSchedule.getStartTime());
             schedule.setEndTime(updatedSchedule.getEndTime());
-            schedule.setTrainer(updatedSchedule.getTrainer());
+            schedule.setTrainerId(updatedSchedule.getTrainerId());
             schedule.setRoom(updatedSchedule.getRoom());
             schedule.setCourseId(updatedSchedule.getCourseId());
-            schedule.setStatus(updatedSchedule.getStatus());
-            // Need further conflict check here ideally
+
+            // For general updates, we only allow updating status if it's currently
+            // SCHEDULED or CANCELLED
+            // and the session hasn't started yet.
+            if (schedule.getStatus() != updatedSchedule.getStatus()) {
+                validateStatusChange(schedule, updatedSchedule.getStatus());
+                schedule.setStatus(updatedSchedule.getStatus());
+            }
+
             return repository.save(schedule);
         }).orElseThrow(() -> new RuntimeException("Schedule not found with id " + id));
     }
 
+    public SessionSchedule updateSessionStatus(Long id, com.training.platform.entity.SessionStatus newStatus) {
+        return repository.findById(id).map(schedule -> {
+            validateStatusChange(schedule, newStatus);
+            schedule.setStatus(newStatus);
+            return repository.save(schedule);
+        }).orElseThrow(() -> new RuntimeException("Schedule not found with id " + id));
+    }
+
+    private void validateStatusChange(SessionSchedule schedule, com.training.platform.entity.SessionStatus newStatus) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Cannot change status if session has already started or finished
+        if (now.isAfter(schedule.getStartTime())) {
+            throw new IllegalArgumentException(
+                    "Cannot manually change status once the session time has started or passed.");
+        }
+
+        // Trainers can only toggle between SCHEDULED and CANCELLED
+        if (newStatus != com.training.platform.entity.SessionStatus.SCHEDULED &&
+                newStatus != com.training.platform.entity.SessionStatus.CANCELLED) {
+            throw new IllegalArgumentException("Trainers can only set status to SCHEDULED or CANCELLED.");
+        }
+    }
+
     public void deleteSchedule(Long id) {
+
         repository.deleteById(id);
     }
 }
