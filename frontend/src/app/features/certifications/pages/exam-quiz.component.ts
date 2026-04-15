@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -37,8 +37,16 @@ interface QuizQuestion {
           <div class="quiz-header">
             <button class="btn-close" (click)="goBack()"><i class="bi bi-x-lg"></i> Exit</button>
             <h1>{{ examTitle }}</h1>
+            <div class="exam-mode-chip" [class.practice]="isPracticeMode()">
+              <i class="bi" [ngClass]="isPracticeMode() ? 'bi-lightbulb' : 'bi-award'"></i>
+              {{ isPracticeMode() ? 'Practice Mode' : 'Real Exam' }}
+            </div>
+            <div class="timer-chip" *ngIf="isPracticeMode() && timeRemainingSeconds !== null">
+              <i class="bi bi-clock-history"></i>
+              {{ formatTime(timeRemainingSeconds) }}
+            </div>
             <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="(currentQuestionIndex / questions.length) * 100"></div>
+              <div class="progress-fill" [style.width.%]="((currentQuestionIndex + 1) / questions.length) * 100"></div>
             </div>
             <span class="progress-text">Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</span>
           </div>
@@ -49,7 +57,10 @@ interface QuizQuestion {
             <div class="options-container">
               <label class="option-row" 
                     *ngFor="let opt of questions[currentQuestionIndex].options; let i = index"
-                    [class.selected]="selectedAnswers[currentQuestionIndex] === i">
+                    [class.selected]="selectedAnswers[currentQuestionIndex] === i"
+                    [class.correct]="isPracticeMode() && selectedAnswers[currentQuestionIndex] !== undefined && i === questions[currentQuestionIndex].correctOptionIndex"
+                    [class.incorrect]="isPracticeMode() && selectedAnswers[currentQuestionIndex] === i && i !== questions[currentQuestionIndex].correctOptionIndex"
+                    (click)="selectOption(i)">
                 <input type="radio" 
                       [name]="'q' + currentQuestionIndex" 
                       [value]="i" 
@@ -58,6 +69,16 @@ interface QuizQuestion {
                 <div class="option-bubble">{{ getLetter(i) }}</div>
                 <span class="option-text">{{ opt }}</span>
               </label>
+            </div>
+
+            <div class="practice-feedback" *ngIf="isPracticeMode() && selectedAnswers[currentQuestionIndex] !== undefined">
+              <p *ngIf="selectedAnswers[currentQuestionIndex] === questions[currentQuestionIndex].correctOptionIndex" class="ok">
+                <i class="bi bi-check-circle-fill"></i> Correct answer.
+              </p>
+              <p *ngIf="selectedAnswers[currentQuestionIndex] !== questions[currentQuestionIndex].correctOptionIndex" class="ko">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                Not correct. Right answer: <strong>{{ getLetter(questions[currentQuestionIndex].correctOptionIndex) }}</strong>
+              </p>
             </div>
           </div>
 
@@ -79,7 +100,7 @@ interface QuizQuestion {
                     *ngIf="currentQuestionIndex === questions.length - 1"
                     [disabled]="selectedAnswers[currentQuestionIndex] === undefined"
                     (click)="submitExam()">
-              <i class="bi bi-flag-fill"></i> Submit Exam
+              <i class="bi bi-flag-fill"></i> {{ isPracticeMode() ? 'Finish Practice' : 'Submit Exam' }}
             </button>
           </div>
         </ng-container>
@@ -89,12 +110,14 @@ interface QuizQuestion {
             <div class="score-circle">
               <span class="score-value">{{ finalScore | number:'1.0-0' }}%</span>
             </div>
-            <h2 *ngIf="passed">Congratulations! You Passed!</h2>
-            <h2 *ngIf="!passed">Exam Failed. Please try again.</h2>
+            <h2 *ngIf="isPracticeMode()">Practice Completed</h2>
+            <h2 *ngIf="!isPracticeMode() && passed">Congratulations! You Passed!</h2>
+            <h2 *ngIf="!isPracticeMode() && !passed">Exam Failed. Please try again.</h2>
             
             <div class="score-details">
-              <p>Required Score: <strong>{{ requiredScore }}%</strong></p>
+              <p *ngIf="!isPracticeMode()">Required Score: <strong>{{ requiredScore }}%</strong></p>
               <p>Correct Answers: <strong>{{ correctCount }} / {{ questions.length }}</strong></p>
+              <p *ngIf="isPracticeMode()">This mode is for learning only and does not affect certification status.</p>
             </div>
             
             <button class="btn-primary" (click)="goBack()">Return to Certification</button>
@@ -118,6 +141,20 @@ interface QuizQuestion {
     .btn-close { position: absolute; right: 0; top: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 1rem; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: background 0.2s; font-weight: 600; z-index: 10; }
     .btn-close:hover { background: #f8fafc; color: #ef4444; }
     .quiz-header h1 { color: #1e293b; font-size: 1.5rem; margin-bottom: 1.5rem; padding-right: 120px; }
+    .exam-mode-chip, .timer-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0 0.6rem 0.75rem 0;
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .exam-mode-chip.practice { background: #ffedd5; color: #b45309; }
+    .timer-chip { background: #dbeafe; color: #1d4ed8; }
     
     .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
     .progress-fill { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
@@ -131,9 +168,17 @@ interface QuizQuestion {
     .option-row:hover { border-color: #93c5fd; background: #f0f9ff; }
     .option-row.selected { border-color: #3b82f6; background: #eff6ff; }
     .option-row.selected .option-bubble { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .option-row.correct { border-color: #10b981; background: #f0fdf4; }
+    .option-row.correct .option-bubble { border-color: #10b981; color: #065f46; }
+    .option-row.incorrect { border-color: #ef4444; background: #fef2f2; }
+    .option-row.incorrect .option-bubble { border-color: #ef4444; color: #991b1b; }
     
     .option-bubble { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b; transition: all 0.2s; flex-shrink: 0; }
     .option-text { font-size: 1.05rem; color: #334155; }
+    .practice-feedback { margin-top: 1rem; }
+    .practice-feedback p { margin: 0; display: flex; align-items: center; gap: 0.45rem; font-weight: 600; }
+    .practice-feedback .ok { color: #047857; }
+    .practice-feedback .ko { color: #b91c1c; }
 
     .quiz-footer { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin: 0 auto; }
     .btn-nav, .btn-primary, .btn-submit { padding: 0.85rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: none; font-size: 1rem; }
@@ -169,13 +214,16 @@ interface QuizQuestion {
     }
   `]
 })
-export class ExamQuizComponent implements OnInit {
+export class ExamQuizComponent implements OnInit, OnDestroy {
   certId!: number;
   isLoading = true;
   errorMessage = '';
+  examMode: 'practice' | 'real' = 'real';
 
   examTitle = 'Certification Exam';
   requiredScore = 0;
+  durationMinutes = 0;
+  timeRemainingSeconds: number | null = null;
   questions: QuizQuestion[] = [];
 
   // State
@@ -187,6 +235,7 @@ export class ExamQuizComponent implements OnInit {
   passed = false;
   finalScore = 0;
   correctCount = 0;
+  private timerRef: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -198,6 +247,8 @@ export class ExamQuizComponent implements OnInit {
 
   ngOnInit() {
     this.certId = Number(this.route.snapshot.paramMap.get('id'));
+    const mode = this.route.snapshot.paramMap.get('mode');
+    this.examMode = mode === 'practice' ? 'practice' : 'real';
     if (!this.certId) {
       this.errorMessage = 'Invalid Exam Context.';
       this.isLoading = false;
@@ -205,6 +256,10 @@ export class ExamQuizComponent implements OnInit {
     }
 
     this.loadExamData();
+  }
+
+  ngOnDestroy(): void {
+    this.clearTimer();
   }
 
   loadExamData() {
@@ -232,6 +287,10 @@ export class ExamQuizComponent implements OnInit {
                     this.questions = parsed;
                     this.selectedAnswers = {}; // reset
                     this.requiredScore = activeExam.passingScore || cert.requiredScore || 70;
+                    this.durationMinutes = activeExam.durationMinutes || 0;
+                    if (this.isPracticeMode() && this.durationMinutes > 0) {
+                      this.startTimer(this.durationMinutes);
+                    }
                     this.isLoading = false;
                     this.errorMessage = '';
                     this.cdr.detectChanges();
@@ -275,6 +334,10 @@ export class ExamQuizComponent implements OnInit {
           this.questions = metaQuestions;
           this.selectedAnswers = {};
           this.requiredScore = cert.requiredScore || 70;
+          this.durationMinutes = criteria.examDurationMinutes || 0;
+          if (this.isPracticeMode() && this.durationMinutes > 0) {
+            this.startTimer(this.durationMinutes);
+          }
           this.isLoading = false;
           this.errorMessage = '';
           this.cdr.detectChanges();
@@ -300,6 +363,14 @@ export class ExamQuizComponent implements OnInit {
     return String.fromCharCode(65 + index); // 0 -> A, 1 -> B, etc.
   }
 
+  isPracticeMode(): boolean {
+    return this.examMode === 'practice';
+  }
+
+  selectOption(index: number): void {
+    this.selectedAnswers[this.currentQuestionIndex] = index;
+  }
+
   nextQuestion() {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
@@ -313,6 +384,9 @@ export class ExamQuizComponent implements OnInit {
   }
 
   submitExam() {
+    if (this.isPracticeMode()) {
+      this.clearTimer();
+    }
     // Calculate Score
     this.correctCount = 0;
     this.questions.forEach((q, idx) => {
@@ -328,6 +402,36 @@ export class ExamQuizComponent implements OnInit {
 
     // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private startTimer(minutes: number): void {
+    this.clearTimer();
+    this.timeRemainingSeconds = Math.max(0, minutes * 60);
+    this.timerRef = setInterval(() => {
+      if (this.timeRemainingSeconds === null) {
+        return;
+      }
+      if (this.timeRemainingSeconds <= 1) {
+        this.timeRemainingSeconds = 0;
+        this.clearTimer();
+        this.submitExam();
+        return;
+      }
+      this.timeRemainingSeconds -= 1;
+    }, 1000);
+  }
+
+  private clearTimer(): void {
+    if (this.timerRef) {
+      clearInterval(this.timerRef);
+      this.timerRef = null;
+    }
+  }
+
+  formatTime(totalSeconds: number): string {
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
   }
 
   goBack() {
