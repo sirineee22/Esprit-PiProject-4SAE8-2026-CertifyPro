@@ -145,7 +145,8 @@ public class ApiController {
             @RequestParam Long userId,
             @RequestParam String title,
             @RequestParam String content,
-            @RequestParam(required = false) MultipartFile image
+            @RequestParam(required = false) MultipartFile image,
+            HttpServletRequest request
     ) throws IOException {
 
         String imageUrl = null;
@@ -193,7 +194,7 @@ public class ApiController {
 
         postRepository.save(post);
 
-        String token = extractToken(null); // No token available in multipart req usually unless passed
+        String token = extractToken(request); // Fixed: pass the actual request
         return ResponseEntity.ok(
                 mapPost(post, token)
         );
@@ -205,7 +206,8 @@ public class ApiController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
             @PathVariable Long id,
-            @RequestBody Post updatedPost
+            @RequestBody Post updatedPost,
+            HttpServletRequest request
     ){
 
         return postRepository.findById(id)
@@ -221,7 +223,8 @@ public class ApiController {
 
                     postRepository.save(post);
 
-                    return ResponseEntity.ok(mapPost(post, null));
+                    String token = extractToken(request);
+                    return ResponseEntity.ok(mapPost(post, token));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -331,14 +334,21 @@ public class ApiController {
         map.put("userId", post.getUserId());
 
         // 🔥 Fetch Real User from UserServiceClient
-        Map<String, Object> userMap = userServiceClient.getUserById(post.getUserId(), token);
+        Map<String, Object> realUser = userServiceClient.getUserById(post.getUserId(), token);
         
-        if (userMap == null) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", post.getUserId());
+
+        if (realUser != null) {
+            // Map backend fields (firstName/lastName) to frontend fields (prenom/nom)
+            userMap.put("nom", realUser.getOrDefault("lastName", ""));
+            userMap.put("prenom", realUser.getOrDefault("firstName", ""));
+            userMap.put("email", realUser.getOrDefault("email", ""));
+            userMap.put("photo", realUser.getOrDefault("profileImageUrl", null));
+        } else {
             // Fallback if user service is down or user not found
-            userMap = new HashMap<>();
-            userMap.put("id", post.getUserId());
             userMap.put("nom", "Utilisateur");
-            userMap.put("prenom", String.valueOf(post.getUserId()));
+            userMap.put("prenom", "User #" + post.getUserId());
             userMap.put("email", "unknown@certifypro.com");
             userMap.put("photo", null);
         }
