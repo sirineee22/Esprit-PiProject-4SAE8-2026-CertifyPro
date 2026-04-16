@@ -71,11 +71,11 @@ export interface ForumPost {
   providedIn: 'root'
 })
 export class ForumService {
-  private readonly uploadBase = 'http://localhost:8084/uploads';
+  private readonly uploadBase = 'http://localhost:8081/uploads/posts';
 
   private apiUrl = 'http://localhost:8081/api/forum/posts';
- 
-  constructor(private http: HttpClient) {}
+
+  constructor(private http: HttpClient) { }
 
   // =========================
   // 🔥 GET POSTS (NORMALIZED)
@@ -90,6 +90,7 @@ export class ForumService {
         comments: Array.isArray(p.comments) ? p.comments : [],
         user: p.user ?? null,
         imageUrl: p.imageUrl ? `${this.uploadBase}/${p.imageUrl}` : null
+
       })))
     );
   }
@@ -172,7 +173,7 @@ export class ForumService {
     from: string,
     to: string
   ): Observable<any> {
-  
+
     return this.http.post<any>(
       `${this.apiUrl}/translate`,
       {
@@ -211,12 +212,12 @@ export class ForumService {
       { prompt }
     ).pipe(
       map((res) => {
-  
+
         return {
           title: this.decodeUtf(res?.title || ''),
           content: this.decodeUtf(res?.content || '')
         };
-  
+
       })
     );
   }

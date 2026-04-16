@@ -36,7 +36,7 @@ public class ApiController {
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
 
-    private final String uploadDir = System.getProperty("user.dir") + "/uploads/";
+    private final String uploadDir = System.getProperty("user.dir") + "/uploads/posts/";
 
 
     private static final Set<String> LOCAL_BAD_WORDS = Set.of(
@@ -327,9 +327,9 @@ public class ApiController {
 
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("id", post.getUserId());
-        userMap.put("nom", "Aziz");
-        userMap.put("prenom", "Chourabi");
-        userMap.put("email", "aziz@email.com");
+        userMap.put("nom", "Rania");
+        userMap.put("prenom", "Kalai");
+        userMap.put("email", "kalaizar.rania@esprit.tn");
         userMap.put("photo", null);
 
         map.put("user", userMap);
@@ -474,7 +474,7 @@ public class ApiController {
                 );
             }
 
-            String apiKey = "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";
+            String apiKey = "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";
 
             // ==================================================
             // HEADERS
@@ -499,7 +499,7 @@ public class ApiController {
                     Format:
                     {
                       "title":"short catchy title",
-                      "content":"clean professional post with emojis"
+                      "content":"clean professional post without emojis and lenght 20 words"
                     }
     
                     No markdown.
