@@ -7,7 +7,7 @@ export interface SessionRequest {
     topic: string;
     startTime: string; // ISO string: "2026-03-05T10:00:00"
     endTime: string;
-    trainer: { id: number };
+    trainerId: number;
     room: { id: number };
     courseId?: number;
 }

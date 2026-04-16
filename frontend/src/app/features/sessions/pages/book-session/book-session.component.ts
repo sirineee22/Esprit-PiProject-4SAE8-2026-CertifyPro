@@ -147,7 +147,7 @@ export class BookSessionComponent implements OnInit {
             topic: this.topic.trim(),
             startTime: this.startTimeRaw + ':00', // add seconds for backend
             endTime: this.selectedEndTime + ':00',
-            trainer: { id: this.trainerId },
+            trainerId: this.trainerId,
             room: { id: this.selectedRoomId }
         }).subscribe({
             next: (createdSession) => {
@@ -171,7 +171,11 @@ export class BookSessionComponent implements OnInit {
             error: (e: unknown) => {
                 this.isSubmitting = false;
                 if (e instanceof HttpErrorResponse) {
-                    this.errorMessage = '❌ ' + (e.error || 'Booking failed. There may be a conflict.');
+                    let errMsg = 'Booking failed. There may be a conflict.';
+                    if (e.error) {
+                         errMsg = typeof e.error === 'string' ? e.error : (e.error.message || JSON.stringify(e.error));
+                    }
+                    this.errorMessage = '❌ ' + errMsg;
                 } else {
                     this.errorMessage = '❌ An unexpected error occurred.';
                 }
