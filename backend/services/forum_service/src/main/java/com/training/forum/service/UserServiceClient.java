@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -106,34 +104,6 @@ public class UserServiceClient {
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération de l'utilisateur {}: {}", userId, e.getMessage());
             return null;
-        }
-        }
-    }
-
-    public List<Map<String, Object>> getUsersBatch(List<Long> userIds, String token) {
-        if (userIds == null || userIds.isEmpty()) return new ArrayList<>();
-        try {
-            // Utilise l'endpoint /batch qui n'a pas la restriction 403
-            String ids = userIds.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get();
-            String url = API_GATEWAY_URL + "/batch?ids=" + ids;
-            
-            HttpHeaders headers = new HttpHeaders();
-            if (token != null && !token.isEmpty()) {
-                headers.set("Authorization", "Bearer " + token);
-            }
-            org.springframework.http.HttpEntity<?> entity = new org.springframework.http.HttpEntity<>(headers);
-            
-            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                url, 
-                HttpMethod.GET, 
-                entity, 
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-            );
-            
-            return response.getBody();
-        } catch (Exception e) {
-            logger.error("Erreur lors de la récupération du batch d'utilisateurs: {}", e.getMessage());
-            return new ArrayList<>();
         }
     }
 }

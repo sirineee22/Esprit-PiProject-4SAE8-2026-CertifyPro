@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.*;
@@ -369,11 +368,13 @@ public class ApiController {
         userMap.put("id", post.getUserId());
 
         if (realUser != null) {
+            // Map backend fields (firstName/lastName) to frontend fields (prenom/nom)
             userMap.put("nom", realUser.getOrDefault("lastName", ""));
             userMap.put("prenom", realUser.getOrDefault("firstName", ""));
             userMap.put("email", realUser.getOrDefault("email", ""));
             userMap.put("photo", realUser.getOrDefault("profileImageUrl", null));
         } else {
+            // Fallback if user service is down or user not found
             userMap.put("nom", "Utilisateur");
             userMap.put("prenom", "User #" + post.getUserId());
             userMap.put("email", "unknown@certifypro.com");
