@@ -80,5 +80,31 @@ public class UserServiceClient {
             return false;
         }
     }
+
+    public Map<String, Object> getUserById(Long userId, String token) {
+        try {
+            String url = API_GATEWAY_URL + "/" + userId;
+            HttpHeaders headers = new HttpHeaders();
+            if (token != null && !token.isEmpty()) {
+                headers.set("Authorization", "Bearer " + token);
+            }
+            org.springframework.http.HttpEntity<?> entity = new org.springframework.http.HttpEntity<>(headers);
+            
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            }
+            return null;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'utilisateur {}: {}", userId, e.getMessage());
+            return null;
+        }
+    }
 }
 

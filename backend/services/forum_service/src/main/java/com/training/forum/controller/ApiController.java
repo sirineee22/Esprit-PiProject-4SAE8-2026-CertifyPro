@@ -7,6 +7,8 @@ import com.training.forum.entity.Reaction;
 import com.training.forum.repository.CommentRepository;
 import com.training.forum.repository.PostRepository;
 import com.training.forum.repository.ReactionRepository;
+import com.training.forum.service.UserServiceClient;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +37,7 @@ public class ApiController {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
+    private final UserServiceClient userServiceClient;
 
     private final String uploadDir = System.getProperty("user.dir") + "/uploads/posts/";
 
@@ -121,13 +124,14 @@ public class ApiController {
     // 🔹 GET ALL POSTS
     // ================================
     @GetMapping
-    public List<Map<String, Object>> getAllPosts() {
+    public List<Map<String, Object>> getAllPosts(HttpServletRequest request) {
+        String token = extractToken(request);
         List<Post> posts = postRepository.findAll();
 
         List<Map<String, Object>> response = new ArrayList<>();
 
         for (Post post : posts) {
-            response.add(mapPost(post));
+            response.add(mapPost(post, token));
         }
 
         return response;
@@ -189,8 +193,9 @@ public class ApiController {
 
         postRepository.save(post);
 
+        String token = extractToken(null); // No token available in multipart req usually unless passed
         return ResponseEntity.ok(
-                mapPost(post)
+                mapPost(post, token)
         );
     }
 
@@ -216,7 +221,7 @@ public class ApiController {
 
                     postRepository.save(post);
 
-                    return ResponseEntity.ok(mapPost(post));
+                    return ResponseEntity.ok(mapPost(post, null));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -315,7 +320,7 @@ public class ApiController {
     // ================================
     // 🔹 HELPER (DTO MAP)
     // ================================
-    private Map<String, Object> mapPost(Post post) {
+    private Map<String, Object> mapPost(Post post, String token) {
         Map<String, Object> map = new HashMap<>();
 
         map.put("id", post.getId());
@@ -325,12 +330,18 @@ public class ApiController {
         map.put("createdAt", post.getCreatedAt());
         map.put("userId", post.getUserId());
 
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("id", post.getUserId());
-        userMap.put("nom", "Rania");
-        userMap.put("prenom", "Kalai");
-        userMap.put("email", "kalaizar.rania@esprit.tn");
-        userMap.put("photo", null);
+        // 🔥 Fetch Real User from UserServiceClient
+        Map<String, Object> userMap = userServiceClient.getUserById(post.getUserId(), token);
+        
+        if (userMap == null) {
+            // Fallback if user service is down or user not found
+            userMap = new HashMap<>();
+            userMap.put("id", post.getUserId());
+            userMap.put("nom", "Utilisateur");
+            userMap.put("prenom", String.valueOf(post.getUserId()));
+            userMap.put("email", "unknown@certifypro.com");
+            userMap.put("photo", null);
+        }
 
         map.put("user", userMap);
 
@@ -683,5 +694,14 @@ public class ApiController {
         } catch (Exception e) {
             return text;
         }
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        if (request == null) return null;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }
