@@ -361,10 +361,9 @@ public class ApiController {
         List<Comment> commentList = commentRepository.findByPostId(post.getId());
         List<Map<String, Object>> comments = new ArrayList<>();
         
-        // Cache to avoid fetching the same user multiple times for different comments
+        // Cache local pour éviter de multiplier les appels au user-service pour un même post
         Map<Long, Map<String, Object>> userCache = new HashMap<>();
-        // Seed cache with post owner
-        userCache.put(post.getUserId(), realUser != null ? realUser : null);
+        userCache.put(post.getUserId(), realUser);
 
         for (Comment c : commentList) {
             Map<String, Object> cm = new HashMap<>();
@@ -373,13 +372,11 @@ public class ApiController {
             cm.put("userId", c.getUserId());
             cm.put("date", c.getCommentDate());
 
-            // 🔥 Fetch Real User for comment
+            // 🔥 Récupérer l'utilisateur réel pour le commentaire
             Long cUserId = c.getUserId();
-            Map<String, Object> cRealUser;
+            Map<String, Object> cRealUser = userCache.get(cUserId);
             
-            if (userCache.containsKey(cUserId)) {
-                cRealUser = userCache.get(cUserId);
-            } else {
+            if (cRealUser == null && !userCache.containsKey(cUserId)) {
                 cRealUser = userServiceClient.getUserById(cUserId, token);
                 userCache.put(cUserId, cRealUser);
             }
