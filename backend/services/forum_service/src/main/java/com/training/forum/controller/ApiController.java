@@ -128,10 +128,30 @@ public class ApiController {
         String token = extractToken(request);
         List<Post> posts = postRepository.findAll();
 
-        List<Map<String, Object>> response = new ArrayList<>();
+        // 1. Collect all User IDs from posts and comments
+        Set<Long> userIds = new HashSet<>();
+        for (Post p : posts) {
+            userIds.add(p.getUserId());
+            List<Comment> commentList = commentRepository.findByPostId(p.getId());
+            for (Comment c : commentList) {
+                userIds.add(c.getUserId());
+            }
+        }
 
+        // 2. Fetch all users in one batch (Using unprotected /batch endpoint in user-service)
+        List<Map<String, Object>> users = userServiceClient.getUsersBatch(new ArrayList<>(userIds), token);
+        Map<Long, Map<String, Object>> globalUserCache = new HashMap<>();
+        if (users != null) {
+            for (Map<String, Object> u : users) {
+                if (u.get("id") != null) {
+                    globalUserCache.put(Long.valueOf(u.get("id").toString()), u);
+                }
+            }
+        }
+
+        List<Map<String, Object>> response = new ArrayList<>();
         for (Post post : posts) {
-            response.add(mapPost(post, token));
+            response.add(mapPost(post, token, globalUserCache));
         }
 
         return response;
@@ -194,9 +214,9 @@ public class ApiController {
 
         postRepository.save(post);
 
-        String token = extractToken(request); // Fixed: pass the actual request
+        String token = extractToken(request);
         return ResponseEntity.ok(
-                mapPost(post, token)
+                mapPost(post, token, null)
         );
     }
 
@@ -224,7 +244,7 @@ public class ApiController {
                     postRepository.save(post);
 
                     String token = extractToken(request);
-                    return ResponseEntity.ok(mapPost(post, token));
+                    return ResponseEntity.ok(mapPost(post, token, null));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -323,7 +343,7 @@ public class ApiController {
     // ================================
     // 🔹 HELPER (DTO MAP)
     // ================================
-    private Map<String, Object> mapPost(Post post, String token) {
+    private Map<String, Object> mapPost(Post post, String token, Map<Long, Map<String, Object>> preFetchedUsers) {
         Map<String, Object> map = new HashMap<>();
 
         map.put("id", post.getId());
@@ -333,20 +353,23 @@ public class ApiController {
         map.put("createdAt", post.getCreatedAt());
         map.put("userId", post.getUserId());
 
-        // 🔥 Fetch Real User from UserServiceClient
-        Map<String, Object> realUser = userServiceClient.getUserById(post.getUserId(), token);
+        // 🔥 Fetch Real User
+        Map<String, Object> realUser = null;
+        if (preFetchedUsers != null && preFetchedUsers.containsKey(post.getUserId())) {
+            realUser = preFetchedUsers.get(post.getUserId());
+        } else {
+            realUser = userServiceClient.getUserById(post.getUserId(), token);
+        }
         
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("id", post.getUserId());
 
         if (realUser != null) {
-            // Map backend fields (firstName/lastName) to frontend fields (prenom/nom)
             userMap.put("nom", realUser.getOrDefault("lastName", ""));
             userMap.put("prenom", realUser.getOrDefault("firstName", ""));
             userMap.put("email", realUser.getOrDefault("email", ""));
             userMap.put("photo", realUser.getOrDefault("profileImageUrl", null));
         } else {
-            // Fallback if user service is down or user not found
             userMap.put("nom", "Utilisateur");
             userMap.put("prenom", "User #" + post.getUserId());
             userMap.put("email", "unknown@certifypro.com");
@@ -361,11 +384,6 @@ public class ApiController {
         List<Comment> commentList = commentRepository.findByPostId(post.getId());
         List<Map<String, Object>> comments = new ArrayList<>();
         
-        // Cache to avoid fetching the same user multiple times for different comments
-        Map<Long, Map<String, Object>> userCache = new HashMap<>();
-        // Seed cache with post owner
-        userCache.put(post.getUserId(), realUser != null ? realUser : null);
-
         for (Comment c : commentList) {
             Map<String, Object> cm = new HashMap<>();
             cm.put("id", c.getId());
@@ -375,13 +393,12 @@ public class ApiController {
 
             // 🔥 Fetch Real User for comment
             Long cUserId = c.getUserId();
-            Map<String, Object> cRealUser;
+            Map<String, Object> cRealUser = null;
             
-            if (userCache.containsKey(cUserId)) {
-                cRealUser = userCache.get(cUserId);
+            if (preFetchedUsers != null && preFetchedUsers.containsKey(cUserId)) {
+                cRealUser = preFetchedUsers.get(cUserId);
             } else {
                 cRealUser = userServiceClient.getUserById(cUserId, token);
-                userCache.put(cUserId, cRealUser);
             }
 
             Map<String, Object> commentUser = new HashMap<>();
