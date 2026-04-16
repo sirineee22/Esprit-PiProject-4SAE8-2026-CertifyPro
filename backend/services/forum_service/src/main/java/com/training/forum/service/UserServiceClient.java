@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -105,10 +107,11 @@ public class UserServiceClient {
             logger.error("Erreur lors de la récupération de l'utilisateur {}: {}", userId, e.getMessage());
             return null;
         }
+        }
     }
 
     public List<Map<String, Object>> getUsersBatch(List<Long> userIds, String token) {
-        if (userIds == null || userIds.isEmpty()) return List.of();
+        if (userIds == null || userIds.isEmpty()) return new ArrayList<>();
         try {
             // Utilise l'endpoint /batch qui n'a pas la restriction 403
             String ids = userIds.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get();
@@ -130,7 +133,7 @@ public class UserServiceClient {
             return response.getBody();
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération du batch d'utilisateurs: {}", e.getMessage());
-            return List.of();
+            return new ArrayList<>();
         }
     }
 }

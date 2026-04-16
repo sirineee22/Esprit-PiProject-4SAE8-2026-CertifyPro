@@ -13,6 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -214,9 +218,9 @@ public class ApiController {
 
         postRepository.save(post);
 
-        String token = extractToken(request);
+        String token = extractToken(request); // Fixed: pass the actual request
         return ResponseEntity.ok(
-                mapPost(post, token, null)
+                mapPost(post, token)
         );
     }
 
@@ -244,7 +248,7 @@ public class ApiController {
                     postRepository.save(post);
 
                     String token = extractToken(request);
-                    return ResponseEntity.ok(mapPost(post, token, null));
+                    return ResponseEntity.ok(mapPost(post, token));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
