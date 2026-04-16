@@ -217,9 +217,9 @@ public class ApiController {
 
         postRepository.save(post);
 
-        String token = extractToken(request); // Fixed: pass the actual request
+        String token = extractToken(request);
         return ResponseEntity.ok(
-                mapPost(post, token)
+                mapPost(post, token, null)
         );
     }
 
@@ -247,7 +247,7 @@ public class ApiController {
                     postRepository.save(post);
 
                     String token = extractToken(request);
-                    return ResponseEntity.ok(mapPost(post, token));
+                    return ResponseEntity.ok(mapPost(post, token, null));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
