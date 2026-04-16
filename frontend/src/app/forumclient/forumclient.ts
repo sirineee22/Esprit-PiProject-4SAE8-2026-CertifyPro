@@ -111,7 +111,7 @@ export class Forumclient implements OnInit {
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     if (user) {
-      this.currentUserId = user.id;
+      this.currentUserId = user.id ?? null;
       this.adminName = (user.firstName || '') + ' ' + (user.lastName || '');
     } else {
       this.currentUserId = 0;
