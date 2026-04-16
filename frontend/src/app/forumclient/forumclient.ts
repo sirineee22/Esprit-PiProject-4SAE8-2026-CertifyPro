@@ -14,6 +14,7 @@ import {
   ForumPost,
   ForumService
 } from '../forum/services/forum.service';
+import { AuthService } from '../core/auth/auth.service';
 
 type ForumPostVM = ForumPost & {
   comments: ForumComment[];
@@ -38,6 +39,7 @@ type ForumPostVM = ForumPost & {
 })
 export class Forumclient implements OnInit {
   private readonly forumService = inject(ForumService);
+  private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   posts: ForumPostVM[] = [];
@@ -107,7 +109,13 @@ export class Forumclient implements OnInit {
 
 
   ngOnInit(): void {
-    this.currentUserId = Number(localStorage.getItem('userId') || 0);
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      this.currentUserId = user.id;
+      this.adminName = (user.firstName || '') + ' ' + (user.lastName || '');
+    } else {
+      this.currentUserId = 0;
+    }
     this.initializePage();
   }
   
