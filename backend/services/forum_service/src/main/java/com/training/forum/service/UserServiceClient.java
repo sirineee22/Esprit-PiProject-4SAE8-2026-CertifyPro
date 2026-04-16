@@ -107,7 +107,6 @@ public class UserServiceClient {
             logger.error("Erreur lors de la récupération de l'utilisateur {}: {}", userId, e.getMessage());
             return null;
         }
-        }
     }
 
     public List<Map<String, Object>> getUsersBatch(List<Long> userIds, String token) {
