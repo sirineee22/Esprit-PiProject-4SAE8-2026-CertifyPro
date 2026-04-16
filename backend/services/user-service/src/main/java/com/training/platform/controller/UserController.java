@@ -98,9 +98,7 @@ public class UserController {
         if (currentId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        if (!currentId.get().equals(id) && !isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        // Simplified security to allow forum authors to be visible to all logged-in users
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
