@@ -125,7 +125,7 @@ import { AppNotification, UserService } from '../../../features/users/services/u
           <a routerLink="/profile" routerLinkActive="active" class="profile-card-link" title="My Profile">
             <div class="user-avatar-wrapper">
               <div class="user-avatar">
-                <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="avatarImgError = true">
+                <img *ngIf="avatarUrl() && !avatarImgError" [src]="avatarUrl()" alt="" (error)="handleAvatarError()">
                 <span *ngIf="(!avatarUrl() || avatarImgError) && initials()" class="avatar-initials">{{ initials() }}</span>
                 <i *ngIf="(!avatarUrl() || avatarImgError) && !initials()" class="bi bi-person-fill"></i>
               </div>
@@ -640,6 +640,10 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.sub?.unsubscribe();
     this.notificationsSub?.unsubscribe();
+  }
+
+  handleAvatarError() {
+    setTimeout(() => this.avatarImgError = true);
   }
 
   avatarUrl(): string | null {
