@@ -1,0 +1,120 @@
+@if(!isOnChatPage){
+
+  <!-- ══ BOUTON BULLE FLOTTANT ══ -->
+  <button class="fcb-trigger" (click)="toggleWidget()" title="Messagerie">
+    <i class="ri-message-3-fill"></i>
+    @if(unreadCount > 0){
+      <span class="fcb-trigger-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+    }
+  </button>
+
+  <!-- ══ MINI FENÊTRE ══ -->
+  @if(isOpen){
+    <div class="fcb-window" [class.fcb-minimized]="isMinimized">
+
+      <!-- HEADER -->
+      <div class="fcb-header">
+        @if(selectedContact){
+          <button class="fcb-icon-btn" (click)="back()" title="Retour">
+            <i class="ri-arrow-left-s-line"></i>
+          </button>
+          <div class="fcb-header-avatar">{{ getInitial(selectedContact.name) }}</div>
+          <div class="fcb-header-info">
+            <span class="fcb-header-name">{{ selectedContact.name }}</span>
+            <span class="fcb-header-status">
+              <span class="fcb-dot"></span>En ligne
+            </span>
+          </div>
+        }@else{
+          <i class="ri-message-3-fill" style="font-size:18px;opacity:0.9;"></i>
+          <div class="fcb-header-info">
+            <span class="fcb-header-name">Messages</span>
+          </div>
+        }
+        <div class="fcb-header-actions ms-auto">
+          <button class="fcb-icon-btn" (click)="minimize()" [title]="isMinimized ? 'Agrandir' : 'Réduire'">
+            <i [class]="isMinimized ? 'ri-add-line' : 'ri-subtract-line'"></i>
+          </button>
+          <button class="fcb-icon-btn" (click)="toggleWidget()" title="Fermer">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      @if(!isMinimized){
+
+        <!-- SPINNER CHARGEMENT -->
+        @if(isLoading){
+          <div class="fcb-loader">
+            <div class="fcb-spinner"></div>
+            <span>Chargement...</span>
+          </div>
+        }
+
+        <!-- LISTE CONTACTS -->
+        @if(!isLoading && !selectedContact){
+          <div class="fcb-contacts">
+            @if(contacts.length === 0){
+              <div class="fcb-empty">
+                <i class="ri-user-line"></i>
+                <p>Aucun contact</p>
+              </div>
+            }
+            @for(c of contacts; track c.userId){
+              <div class="fcb-contact-item" (click)="openConversation(c)">
+                <div class="fcb-contact-avatar">{{ getInitial(c.name) }}</div>
+                <div class="fcb-contact-info">
+                  <span class="fcb-contact-name">{{ c.name }}</span>
+                  <span class="fcb-contact-sub"
+                        [class.fcb-online]="c.status === 'online'">
+                    {{ c.status === 'online' ? '● En ligne' : '○ Hors ligne' }}
+                  </span>
+                </div>
+                <i class="ri-arrow-right-s-line" style="color:#d1d5db;font-size:18px;"></i>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- CONVERSATION -->
+        @if(!isLoading && selectedContact){
+          <div class="fcb-messages" id="mini-chat-messages">
+            @if(messages.length === 0){
+              <div class="fcb-empty">
+                <i class="ri-chat-3-line"></i>
+                <p>Commencez la conversation !</p>
+              </div>
+            }
+            @for(msg of messages; track msg.id){
+              <div class="fcb-msg"
+                   [class.fcb-msg-right]="msg.align === 'right'"
+                   [class.fcb-msg-left]="msg.align !== 'right'">
+                <div class="fcb-bubble">{{ msg.message }}</div>
+                @if(msg.time){
+                  <span class="fcb-time">{{ msg.time }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- INPUT -->
+          <div class="fcb-input-row">
+            <input type="text"
+                   class="fcb-input"
+                   placeholder="Écrivez un message..."
+                   [(ngModel)]="newMessage"
+                   (keydown)="onKeyDown($event)"
+                   autocomplete="off">
+            <button class="fcb-send"
+                    (click)="sendMessage()"
+                    [disabled]="!newMessage.trim()">
+              <i class="ri-send-plane-2-fill"></i>
+            </button>
+          </div>
+        }
+
+      }
+    </div>
+  }
+
+}

@@ -1,64 +1,118 @@
 <div class="job-module-container">
-    <div class="d-flex align-items-center justify-content-between mb-4">
+
+    <!-- HEADER -->
+    <div class="jobs-header">
         <div>
-            <h2 class="mb-1">Mes Candidatures</h2>
-            <p class="text-muted mb-0">Suivez l'état de vos candidatures en temps réel.</p>
+            <h2>Mes Candidatures</h2>
+            <p class="text-muted">Suivez l'état de vos candidatures en temps réel.</p>
         </div>
-        <div>
-            <a routerLink="/jobs" class="btn btn-glass-primary">
-                <i class="ri-search-line align-bottom me-1"></i> Chercher un emploi
-            </a>
-        </div>
+
+        <a routerLink="/jobs" class="btn-glass-primary">
+            <i class="ri-search-line me-1"></i>
+            Chercher un emploi
+        </a>
     </div>
 
-    <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+
+    <!-- LOADING -->
+    <div *ngIf="loading" class="loading-container">
+        <div class="loader"></div>
     </div>
 
-    <div *ngIf="!loading && applications.length === 0" class="glass-card text-center py-5">
-        <i class="ri-file-text-line display-4 text-muted mb-3"></i>
-        <h5 class="text-white">Aucune candidature</h5>
-        <p class="text-muted">Vous n'avez postulé à aucune offre d'emploi pour le moment.</p>
+
+    <!-- EMPTY STATE -->
+    <div *ngIf="!loading && applications.length === 0" class="glass-card empty-state">
+
+        <i class="ri-file-text-line empty-icon"></i>
+
+        <h5>Aucune candidature</h5>
+
+        <p class="text-muted">
+            Vous n'avez postulé à aucune offre d'emploi pour le moment.
+        </p>
+
     </div>
 
-    <div *ngIf="!loading && applications.length > 0" class="row">
-        <div class="col-md-6 col-lg-4 mb-4" *ngFor="let app of applications">
-            <div class="glass-card h-100 d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h5 class="text-white mb-1">
-                            <a [routerLink]="['/jobs', app.jobOfferId]" class="text-white text-decoration-underline">{{
-                                app.jobTitle }}</a>
-                        </h5>
-                        <p class="text-muted small mb-0"><i class="ri-building-line align-bottom me-1"></i> {{
-                            app.companyName }}</p>
-                    </div>
-                    <span class="glass-badge badge-{{ statusColors[app.status] }}">{{ statusLabels[app.status] }}</span>
+
+    <!-- APPLICATIONS -->
+    <div *ngIf="!loading && applications.length > 0" class="applications-grid">
+
+        <div class="glass-card job-card" *ngFor="let app of applications">
+
+            <!-- HEADER -->
+            <div class="job-header">
+
+                <div>
+                    <h5 class="job-title">
+
+                        <a [routerLink]="['/jobs', app.jobOfferId]">
+                            {{ app.jobTitle }}
+                        </a>
+
+                    </h5>
+
+                    <p class="text-muted small">
+                        <i class="ri-building-line me-1"></i>
+                        {{ app.companyName }}
+                    </p>
+
                 </div>
 
-                <div class="mb-3">
-                    <p class="text-muted small mb-2"><i class="ri-calendar-event-line align-bottom me-1"></i> Postulé le
-                        {{ app.appliedAt | date:'mediumDate' }}</p>
-                    <p class="text-muted small mb-0" *ngIf="app.interviewDate"><i
-                            class="ri-calendar-check-line text-primary align-bottom me-1"></i> Entretien : {{
-                        app.interviewDate | date:'medium' }}</p>
-                </div>
+                <span class="glass-badge badge-{{ statusColors[app.status] }}">
+                    {{ statusLabels[app.status] }}
+                </span>
 
-                <div class="mt-auto pt-3 border-top border-light d-flex justify-content-between align-items-center">
-                    <a *ngIf="app.cvUrl" [href]="'http://localhost:8082' + app.cvUrl" target="_blank"
-                        class="text-muted small text-decoration-underline">
-                        <i class="ri-attachment-line align-bottom me-1"></i> Mon CV
-                    </a>
-                    <span *ngIf="!app.cvUrl" class="text-muted small">Aucun CV</span>
-
-                    <button *ngIf="app.status === 'PENDING' || app.status === 'REVIEWED'" (click)="withdraw(app.id)"
-                        class="btn btn-sm btn-outline-danger">
-                        <i class="ri-close-circle-line align-bottom me-1"></i> Retirer
-                    </button>
-                </div>
             </div>
+
+
+            <!-- INFO -->
+            <div class="job-info">
+
+                <p class="text-muted small">
+                    <i class="ri-calendar-event-line me-1"></i>
+                    Postulé le {{ app.appliedAt | date:'mediumDate' }}
+                </p>
+
+                <p class="text-muted small" *ngIf="app.interviewDate">
+                    <i class="ri-calendar-check-line text-primary me-1"></i>
+                    Entretien : {{ app.interviewDate | date:'medium' }}
+                </p>
+
+            </div>
+
+
+            <!-- FOOTER -->
+            <div class="job-footer">
+
+                <a *ngIf="app.cvUrl"
+                   [href]="'http://localhost:8082' + app.cvUrl"
+                   target="_blank"
+                   class="cv-link">
+
+                    <i class="ri-attachment-line me-1"></i>
+                    Mon CV
+
+                </a>
+
+                <span *ngIf="!app.cvUrl" class="text-muted small">
+                    Aucun CV
+                </span>
+
+
+                <button
+                    *ngIf="app.status === 'PENDING' || app.status === 'REVIEWED'"
+                    (click)="withdraw(app.id)"
+                    class="btn-glass-danger">
+
+                    <i class="ri-close-circle-line me-1"></i>
+                    Retirer
+
+                </button>
+
+            </div>
+
         </div>
+
     </div>
+
 </div>

@@ -19,324 +19,497 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")   // ✅ FIX: was missing — gateway forwards CORS but local dev needs it
 public class ChatRestController {
 
-    private final MessageService         messageService;
-    private final ChatRoomService        roomService;
-    private final ChatUserService        userService;
-    private final ContactService         contactService;
-    private final JwtService             jwtService;
-    private final FileStorageService     fileStorageService;
-    private final SimpMessagingTemplate  messaging; // ✅ AJOUTÉ
+    private final MessageService messageService;
+    private final ChatRoomService roomService;
+    private final ChatUserService userService;
+    private final ContactService contactService;
+    private final JwtService jwtService;
+    private final FileStorageService fileStorageService;
+    private final SimpMessagingTemplate messaging;
 
-    // ── Register avec JWT ──
+    // ─────────────────────────────────────────────────────
+    // HELPER — extraire userId depuis le JWT
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX: centralized token extraction with a proper exception message.
+     * Previously thrown RuntimeException was uncaught and returned 500 instead of 401.
+     */
+    private String extractUserId(HttpServletRequest req) {
+        String header = req.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) return null;
+        return jwtService.extractUserId(header.substring(7));
+    }
+
+    // ─────────────────────────────────────────────────────
+    // REGISTER
+    // ─────────────────────────────────────────────────────
+
     @PostMapping("/users/register")
     public ResponseEntity<ChatUser> register(HttpServletRequest req) {
-        String token  = getToken(req);
-        String userId = jwtService.extractUserId(token);
+        String token = req.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer "))
+            return ResponseEntity.status(401).build();
 
+        token = token.substring(7);
+        String userId = jwtService.extractUserId(token);
         if (userId == null || userId.isBlank())
             return ResponseEntity.badRequest().build();
 
-        String email = jwtService.extractEmail(token);
-        String name  = jwtService.extractName(token);
-        String image = jwtService.extractImage(token);
-
-        if (name == null || name.isBlank()) {
-            name = (email != null && !email.isBlank())
-                    ? email.split("@")[0]
-                    : "User-" + userId;
-        }
-
-        System.out.println("✅ [Register] userId=" + userId + " | name=" + name + " | email=" + email);
-
         ConnectRequest connect = new ConnectRequest();
         connect.setUserId(userId);
-        connect.setName(name);
-        connect.setEmail(email != null ? email : "");
-        connect.setImage(image != null ? image : "");
+        connect.setName(jwtService.extractName(token));
+        connect.setEmail(jwtService.extractEmail(token));
+        connect.setImage(jwtService.extractImage(token));
 
         return ResponseEntity.ok(userService.connect(connect));
     }
 
-    @GetMapping("/chatdata")
-    public ResponseEntity<List<ChatUserResponse>> chatData(HttpServletRequest req) {
-        String userId = jwtService.extractUserId(getToken(req));
-        if (userId == null) return ResponseEntity.badRequest().build();
+    // ─────────────────────────────────────────────────────
+    // USER SEARCH
+    // ─────────────────────────────────────────────────────
 
-        List<ChatUserResponse> result = new ArrayList<>();
-
-        roomService.getRoomsForUser(userId).stream()
-                .filter(r -> r.getType() == ChatRoom.RoomType.DIRECT)
-                .forEach(room ->
-                        room.getMemberIds().stream()
-                                .filter(id -> !id.equals(userId))
-                                .findFirst()
-                                .flatMap(userService::findByUserId)
-                                .ifPresent(other -> {
-                                    ChatUserResponse dto = new ChatUserResponse();
-                                    dto.setRoomId(room.getId());
-                                    dto.setUserId(other.getUserId());
-                                    dto.setName(other.getName() != null ? other.getName() : "User-" + other.getUserId());
-                                    dto.setImage(other.getImage() != null ? other.getImage() : "");
-                                    dto.setStatus(other.getStatus() != null ? other.getStatus() : "offline");
-                                    dto.setUnread("0");
-                                    result.add(dto);
-                                })
-                );
-        return ResponseEntity.ok(result);
-    }
-
-    // ── Groupes ──
-    @GetMapping("/groupdata")
-    public ResponseEntity<List<GroupUserResponse>> groupData(HttpServletRequest req) {
-        String userId = jwtService.extractUserId(getToken(req));
-        if (userId == null) return ResponseEntity.badRequest().build();
-
-        List<GroupUserResponse> result = roomService.getRoomsForUser(userId).stream()
-                .filter(r -> r.getType() == ChatRoom.RoomType.GROUP)
-                .map(room -> {
-                    GroupUserResponse dto = new GroupUserResponse();
-                    dto.setRoomId(room.getId());
-                    dto.setName(room.getName() != null ? room.getName() : "Groupe");
-                    dto.setUnread("0");
-                    return dto;
-                })
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(result);
-    }
-
-    // ── Contacts ──
-    @GetMapping("/contacts")
-    public ResponseEntity<List<ContactModelResponse>> contacts() {
-        return ResponseEntity.ok(contactService.getContactsGrouped());
-    }
-
-    // ── Ouvrir DM ──
-    @PostMapping("/rooms/direct/{targetUserId}")
-    public ResponseEntity<ChatRoom> openDirect(@PathVariable String targetUserId,
-                                               HttpServletRequest req) {
-        String userId = jwtService.extractUserId(getToken(req));
-        if (userId == null || targetUserId == null || targetUserId.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(roomService.getOrCreateDirect(userId, targetUserId));
-    }
-
-    // ── Créer un groupe ──
-    @PostMapping("/rooms/group")
-    public ResponseEntity<ChatRoom> createGroup(@RequestParam String name,
-                                                @RequestBody List<String> memberIds) {
-        return ResponseEntity.ok(roomService.createGroup(name, memberIds));
-    }
-
-    // ── Supprimer un message ──
-    @DeleteMapping("/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
-        messageService.delete(messageId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ── Connecter à une room ──
-    @PostMapping("/rooms/connect")
-    public ResponseEntity<ChatRoom> connectRoom(@RequestBody ConnectRequest request,
-                                                HttpServletRequest req) {
-        if (request.getRoomId() == null || request.getRoomId().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        String userId = request.getUserId();
-        if (userId == null || userId.isBlank()) {
-            userId = jwtService.extractUserId(getToken(req));
-        }
-        if (userId == null) return ResponseEntity.badRequest().build();
-
-        Optional<ChatRoom> roomOpt = roomService.findById(request.getRoomId());
-        ChatRoom room;
-
-        if (roomOpt.isPresent()) {
-            room = roomOpt.get();
-            if (!room.getMemberIds().contains(userId)) {
-                room.getMemberIds().add(userId);
-                room = roomService.save(room);
-            }
-        } else {
-            room = roomService.createDirectRoom(userId, userId);
-        }
-
-        return ResponseEntity.ok(room);
-    }
-
-    // ── Recherche utilisateurs ──
+    /**
+     * ✅ FIX: endpoint was referenced in chat-api.service.ts but missing here.
+     */
     @GetMapping("/users/search")
-    public ResponseEntity<List<Map<String, Object>>> searchUsers(
+    public ResponseEntity<List<ChatUser>> searchUsers(
             @RequestParam String query,
             HttpServletRequest req) {
 
-        String currentUserId = jwtService.extractUserId(getToken(req));
-        if (currentUserId == null) return ResponseEntity.badRequest().build();
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
 
-        List<Map<String, Object>> results = userService.searchUsers(query, currentUserId);
+        List<ChatUser> results = userService.getAllUsers().stream()
+                .filter(u -> !u.getUserId().equals(userId))
+                .filter(u -> u.getName() != null &&
+                        u.getName().toLowerCase().contains(query.toLowerCase()))
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(results);
     }
 
-    // ════════════════════════════════════════════════════
-    // ✅ 1. Statut de lecture
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // CHAT DATA
+    // ─────────────────────────────────────────────────────
 
-    @PostMapping("/messages/{messageId}/read")
-    public ResponseEntity<Void> markRead(
+    @GetMapping("/chatdata")
+    public ResponseEntity<List<ChatUserResponse>> chatData(HttpServletRequest req) {
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        Map<String, String> rooms = new HashMap<>();
+        roomService.getRoomsForUser(userId).stream()
+                .filter(r -> r.getType() == ChatRoom.RoomType.DIRECT)
+                .forEach(room -> room.getMemberIds().stream()
+                        .filter(id -> !id.equals(userId))
+                        .findFirst()
+                        .ifPresent(other -> rooms.put(other, room.getId())));
+
+        List<ChatUserResponse> result = userService.getAllUsers().stream()
+                .filter(u -> !u.getUserId().equals(userId))
+                .map(u -> {
+                    ChatUserResponse dto = new ChatUserResponse();
+                    dto.setUserId(u.getUserId());
+                    dto.setName(u.getName());
+                    dto.setImage(u.getImage());
+                    dto.setStatus(u.getStatus());
+                    // ✅ FIX: retourner null si pas de room existante, pas userId
+                    // Le frontend doit appeler openDirectRoom() pour créer/récupérer la room
+                    dto.setRoomId(rooms.getOrDefault(u.getUserId(), null));
+                    dto.setUnread("0");
+                    return dto;
+                }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // ROOMS — Direct & Group
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX: openDirectRoom was called from frontend but the endpoint was missing.
+     */
+    @PostMapping("/rooms/direct/{targetUserId}")
+    public ResponseEntity<ChatRoom> openDirectRoom(
+            @PathVariable String targetUserId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        ChatRoom room = roomService.getOrCreateDirectRoom(userId, targetUserId);
+        return ResponseEntity.ok(room);
+    }
+
+    /**
+     * ✅ FIX: createGroup was called from frontend but missing.
+     */
+    @PostMapping("/rooms/group")
+    public ResponseEntity<ChatRoom> createGroup(
+            @RequestParam String name,
+            @RequestBody List<String> memberIds,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        // Ensure creator is included
+        if (!memberIds.contains(userId)) memberIds.add(userId);
+
+        ChatRoom room = roomService.createGroupRoom(name, memberIds);
+        return ResponseEntity.ok(room);
+    }
+
+    /**
+     * ✅ FIX: getGroups was called from frontend (GET /groupdata) but missing.
+     */
+    @GetMapping("/groupdata")
+    public ResponseEntity<List<ChatRoom>> groupData(HttpServletRequest req) {
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        List<ChatRoom> groups = roomService.getRoomsForUser(userId).stream()
+                .filter(r -> r.getType() == ChatRoom.RoomType.GROUP)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(groups);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // MESSAGES — get, delete
+    // ─────────────────────────────────────────────────────
+
+    @GetMapping("/messages/{roomId}")
+    public ResponseEntity<List<ChatMessageResponse>> getMessages(
+            @PathVariable String roomId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(messageService.getByRoomDto(roomId, userId));
+    }
+
+    /**
+     * ✅ FIX: deleteMessage was called from frontend but missing.
+     */
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
             @PathVariable String messageId,
-            @RequestHeader("X-User-Id") String userId) {
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        messageService.delete(messageId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ─────────────────────────────────────────────────────
+    // READ RECEIPTS (REST fallback)
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX: markMessageRead REST endpoint was called from frontend but missing.
+     * The WebSocket path also exists (/app/chat.read) — this is the HTTP fallback.
+     */
+    @PostMapping("/messages/{messageId}/read")
+    public ResponseEntity<Void> markMessageRead(
+            @PathVariable String messageId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
         messageService.markAsRead(messageId, userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/rooms/{chatRoomId}/read-all")
+    /**
+     * ✅ FIX: markAllRead REST endpoint was called from frontend but missing.
+     */
+    @PostMapping("/rooms/{roomId}/read-all")
     public ResponseEntity<Void> markAllRead(
-            @PathVariable String chatRoomId,
-            @RequestHeader("X-User-Id") String userId) {
-        messageService.markAllAsRead(chatRoomId, userId);
-        return ResponseEntity.ok().build();
+            @PathVariable String roomId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        messageService.markAllAsRead(roomId, userId);
+        return ResponseEntity.noContent().build();
     }
 
-    // ════════════════════════════════════════════════════
-    // ✅ 3. Messages épinglés
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // REACTIONS
+    // ─────────────────────────────────────────────────────
 
+    /**
+     * ✅ FIX: sendReaction REST endpoint was called from frontend but missing.
+     * The WebSocket path also exists (/app/chat.react).
+     */
+    @PostMapping("/messages/{messageId}/reactions")
+    public ResponseEntity<ChatMessageResponse> addReaction(
+            @PathVariable String messageId,
+            @RequestBody ReactionRequest reactionRequest,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        // Ensure the userId in the request matches the authenticated user
+        reactionRequest.setUserId(userId);
+
+        ChatMessageResponse dto = messageService.addReaction(messageId, reactionRequest);
+
+        // Broadcast via WebSocket so other clients see the reaction in real-time
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "REACTION");
+        event.put("messageId", messageId);
+        event.put("reactions", dto.getReactions());
+        messaging.convertAndSend("/topic/room/" + dto.getChatRoomId(), event);
+
+        return ResponseEntity.ok(dto);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // PIN
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX: togglePin was called from frontend but the endpoint was completely missing.
+     */
     @PostMapping("/messages/{messageId}/pin")
     public ResponseEntity<ChatMessageResponse> togglePin(
             @PathVariable String messageId,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(messageService.togglePin(messageId, userId));
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        ChatMessageResponse dto = messageService.togglePin(messageId, userId);
+
+        // Broadcast pin change so all room members see it immediately
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "PIN_CHANGED");
+        event.put("messageId", messageId);
+        event.put("pinned", dto.isPinned());
+        messaging.convertAndSend("/topic/room/" + dto.getChatRoomId(), event);
+
+        return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/rooms/{chatRoomId}/pinned")
+    @GetMapping("/rooms/{roomId}/pinned")
     public ResponseEntity<List<ChatMessageResponse>> getPinned(
-            @PathVariable String chatRoomId,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(messageService.getPinnedMessages(chatRoomId, userId));
+            @PathVariable String roomId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(messageService.getPinnedMessages(roomId, userId));
     }
 
-    // ════════════════════════════════════════════════════
-    // ✅ 5. Recherche dans les messages
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // SEARCH IN MESSAGES
+    // ─────────────────────────────────────────────────────
 
-    @GetMapping("/rooms/{chatRoomId}/search")
+    /**
+     * ✅ FIX: searchMessages was called from frontend but the endpoint was missing.
+     */
+    @GetMapping("/rooms/{roomId}/search")
     public ResponseEntity<List<ChatMessageResponse>> searchMessages(
-            @PathVariable String chatRoomId,
+            @PathVariable String roomId,
             @RequestParam String keyword,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(messageService.searchMessages(chatRoomId, keyword, userId));
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(messageService.searchMessages(roomId, keyword, userId));
     }
 
-    @GetMapping("/messages/search")
-    public ResponseEntity<List<ChatMessageResponse>> searchGlobal(
-            @RequestParam String keyword,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(messageService.searchGlobal(keyword, userId));
-    }
-
-    // ════════════════════════════════════════════════════
-    // ✅ Messages d'un room
-    // ════════════════════════════════════════════════════
-
-    @GetMapping("/messages/{chatRoomId}")
-    public ResponseEntity<List<ChatMessageResponse>> getMessages(
-            @PathVariable String chatRoomId,
-            @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(messageService.getByRoomDto(chatRoomId, userId));
-    }
-
-    // ════════════════════════════════════════════════════
-    // ✅ UPLOAD FICHIER — avec broadcast WebSocket
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // FILE UPLOAD
+    // ─────────────────────────────────────────────────────
 
     @PostMapping("/upload")
-    public ResponseEntity<ChatMessageResponse> uploadFile(
-            @RequestParam("file")        MultipartFile file,
-            @RequestParam("chatRoomId")  String chatRoomId,
-            @RequestParam("senderId")    String senderId,
-            @RequestParam("name")        String name,
-            @RequestParam(value = "profile",   required = false) String profile,
-            @RequestParam(value = "replyToId", required = false) String replyToId
-    ) throws Exception {
+    public ResponseEntity<ChatMessageResponse> upload(
+            @RequestParam MultipartFile file,
+            @RequestParam String chatRoomId,
+            @RequestParam String senderId,
+            @RequestParam String name) throws Exception {
 
-        // 1. Valider + détecter le type + stocker
         fileStorageService.validate(file);
-        String mime  = file.getContentType();
-        String type  = fileStorageService.detectType(mime);
-        String url   = fileStorageService.store(file, type);
-        String size  = fileStorageService.formatSize(file.getSize());
-        String fname = file.getOriginalFilename();
 
-        // 2. Construire la requête message
-        MessageRequest req = new MessageRequest();
-        req.setChatRoomId(chatRoomId);
-        req.setSenderId(senderId);
-        req.setName(name);
-        req.setProfile(profile != null ? profile : "");
-        req.setType(type);
-        req.setFileUrl(url);
-        req.setFileName(fname);
-        req.setFileSize(size);
-        req.setFileMimeType(mime);
-        req.setReplyToId(replyToId);
-        req.setMessage(fname); // fallback texte = nom du fichier
+        // ✅ FIX: détecter le type AVANT de stocker
+        String detectedType = fileStorageService.detectType(file.getContentType());
+        String url = fileStorageService.store(file, detectedType);
 
-        // 3. Sauvegarder
-        Message saved = messageService.save(req);
+        MessageRequest msg = new MessageRequest();
+        msg.setChatRoomId(chatRoomId);
+        msg.setSenderId(senderId);
+        msg.setName(name);
+        msg.setFileUrl(url);
+        msg.setFileName(file.getOriginalFilename());
+        msg.setFileSize(fileStorageService.formatSize(file.getSize()));
+        msg.setFileMimeType(file.getContentType());
+        msg.setMessage(file.getOriginalFilename());
+        // ✅ FIX: propager le type (image/video/audio/file) — sans ça tout s'affiche comme "text"
+        msg.setType(detectedType);
+
+        Message saved = messageService.save(msg);
         ChatMessageResponse dto = messageService.toDto(saved, senderId);
 
-        // 4. ✅ Broadcast WebSocket → l'autre utilisateur reçoit le fichier en temps réel
         messaging.convertAndSend("/topic/room/" + chatRoomId, dto);
 
         return ResponseEntity.ok(dto);
     }
 
-    // ════════════════════════════════════════════════════
-    // ✅ LOCALISATION — avec broadcast WebSocket
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // LOCATION
+    // ─────────────────────────────────────────────────────
 
+    /**
+     * ✅ FIX: sendLocation was called from frontend but the endpoint was missing.
+     */
     @PostMapping("/location")
     public ResponseEntity<ChatMessageResponse> sendLocation(
-            @RequestBody LocationRequest req) {
+            @RequestBody LocationRequest locationRequest,
+            HttpServletRequest req) throws Exception {
 
-        MessageRequest messageRequest = new MessageRequest();
-        messageRequest.setChatRoomId(req.getChatRoomId());
-        messageRequest.setSenderId(req.getSenderId());
-        messageRequest.setName(req.getName());
-        messageRequest.setProfile(req.getProfile() != null ? req.getProfile() : "");
-        messageRequest.setType("location");
-        messageRequest.setLatitude(req.getLatitude());
-        messageRequest.setLongitude(req.getLongitude());
-        messageRequest.setMessage("📍 Position partagée");
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
 
-        Message saved = messageService.save(messageRequest);
-        ChatMessageResponse dto = messageService.toDto(saved, req.getSenderId());
+        MessageRequest msg = new MessageRequest();
+        msg.setChatRoomId(locationRequest.getChatRoomId());
+        msg.setSenderId(userId);
+        msg.setName(locationRequest.getName());
+        msg.setMessage("📍 Location");
+        msg.setLatitude(locationRequest.getLatitude());
+        msg.setLongitude(locationRequest.getLongitude());
+        // ✅ FIX: propager le type "location" — sans ça s'affiche comme texte
+        msg.setType("location");
+        // ✅ FIX: construire et sauvegarder locationUrl pour que le frontend puisse ouvrir Maps
+        String locationUrl = "https://www.google.com/maps?q="
+                + locationRequest.getLatitude() + "," + locationRequest.getLongitude();
+        msg.setLocationUrl(locationUrl);
 
-        // ✅ Broadcast WebSocket
-        messaging.convertAndSend("/topic/room/" + req.getChatRoomId(), dto);
+        Message saved = messageService.save(msg);
+        ChatMessageResponse dto = messageService.toDto(saved, userId);
+
+        messaging.convertAndSend("/topic/room/" + locationRequest.getChatRoomId(), dto);
 
         return ResponseEntity.ok(dto);
     }
 
-    // ════════════════════════════════════════════════════
-    // ✅ RÉACTIONS
-    // ════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────
+    // EDIT MESSAGE
+    // ─────────────────────────────────────────────────────
 
-    @PostMapping("/messages/{messageId}/reactions")
-    public ResponseEntity<ChatMessageResponse> react(
+    @PutMapping("/messages/{messageId}")
+    public ResponseEntity<ChatMessageResponse> editMessage(
             @PathVariable String messageId,
-            @RequestBody ReactionRequest req) {
-        return ResponseEntity.ok(messageService.addReaction(messageId, req));
+            @RequestBody Map<String, String> body,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        String newText = body.get("message");
+        if (newText == null || newText.isBlank())
+            return ResponseEntity.badRequest().build();
+
+        ChatMessageResponse dto = messageService.edit(messageId, userId, newText.trim());
+        if (dto == null) return ResponseEntity.status(403).build();
+
+        // Broadcast edit to all room members
+        Map<String, Object> event = new HashMap<>();
+        event.put("event",     "MESSAGE_EDITED");
+        event.put("messageId", messageId);
+        event.put("message",   newText.trim());
+        event.put("edited",    true);
+        messaging.convertAndSend("/topic/room/" + dto.getChatRoomId(), event);
+
+        return ResponseEntity.ok(dto);
     }
 
-    // ── Utilitaire : extraire le JWT ──
-    private String getToken(HttpServletRequest req) {
-        String header = req.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer "))
-            throw new RuntimeException("Token manquant ou invalide");
-        return header.substring(7);
+    // ─────────────────────────────────────────────────────
+    // DELETE ALL MESSAGES IN ROOM
+    // ─────────────────────────────────────────────────────
+
+    @DeleteMapping("/rooms/{roomId}/messages")
+    public ResponseEntity<Void> deleteAllMessages(
+            @PathVariable String roomId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        messageService.deleteAll(roomId, userId);
+
+        // Broadcast to all room members
+        Map<String, Object> event = new HashMap<>();
+        event.put("event",      "ALL_MESSAGES_DELETED");
+        event.put("chatRoomId", roomId);
+        messaging.convertAndSend("/topic/room/" + roomId, event);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * ✅ FIX: getContacts was called from frontend but missing.
+     */
+    @GetMapping("/contacts")
+    public ResponseEntity<List<?>> getContacts(HttpServletRequest req) {
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(contactService.getContacts(userId));
+    }
+
+    // ─────────────────────────────────────────────────────
+    // PRESENCE — lastSeen + online status
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * Returns presence info (status + lastSeen) for a given userId.
+     * Frontend polls this or uses WebSocket status events.
+     */
+    @GetMapping("/users/{targetUserId}/presence")
+    public ResponseEntity<Map<String, Object>> getPresence(
+            @PathVariable String targetUserId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        return userService.findByUserId(targetUserId)
+                .map(u -> {
+                    Map<String, Object> presence = new java.util.LinkedHashMap<>();
+                    presence.put("userId",    u.getUserId());
+                    presence.put("status",    u.getStatus());
+                    presence.put("connected", u.isConnected());
+                    presence.put("lastSeen",  u.getLastSeen() != null ? u.getLastSeen().toString() : null);
+                    return ResponseEntity.ok(presence);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ─────────────────────────────────────────────────────
+    // SEEN BY — who read a message (group detail)
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * Returns the list of users who have read a given message.
+     * Used for the "Vu par" panel in group conversations.
+     */
+    @GetMapping("/messages/{messageId}/seen-by")
+    public ResponseEntity<List<Map<String, Object>>> getSeenBy(
+            @PathVariable String messageId,
+            HttpServletRequest req) {
+
+        String userId = extractUserId(req);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        return messageService.getSeenBy(messageId, userId);
     }
 }

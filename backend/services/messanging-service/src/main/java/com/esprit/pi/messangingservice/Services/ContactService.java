@@ -52,4 +52,9 @@ public class ContactService {
 
         return response;
     }
+    // Add inside ContactService class
+
+    public List<ContactModelResponse> getContacts(String userId) {
+        return getContactsGrouped();   // userId ignored — returns all contacts grouped
+    }
 }

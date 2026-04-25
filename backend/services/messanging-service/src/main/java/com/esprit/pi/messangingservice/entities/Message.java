@@ -24,7 +24,6 @@ public class Message {
 
     // ── Contenu texte ───────────────────────────────────────
     private String message;
-    private String align;
     private String time;
 
     // ── Reply ───────────────────────────────────────────────
@@ -58,6 +57,9 @@ public class Message {
     // ── Statut ──────────────────────────────────────────────
     @Builder.Default
     private boolean deleted = false;
+
+    @Builder.Default
+    private boolean edited = false;   // ✅ true si le message a été modifié
 
     // ════════════════════════════════════════════════════════
     // ✅ NOUVEAUX CHAMPS pour les 5 fonctionnalités

@@ -42,12 +42,19 @@ export class AuthService {
     const firstName = p?.firstName || '';
     const lastName  = p?.lastName  || '';
     const fullName  = (firstName + ' ' + lastName).trim();
-    return fullName || p?.name || p?.preferred_username || p?.username || 'Utilisateur Inconnu';
+    if (fullName) return fullName;
+    if (p?.name && p.name !== 'Utilisateur Inconnu') return p.name;
+    if (p?.preferred_username) return p.preferred_username;
+    if (p?.username) return p.username;
+    // ✅ FIX: utiliser la partie avant @ du sub (email) comme fallback
+    const sub = p?.sub || '';
+    if (sub) return sub.includes('@') ? sub.split('@')[0] : sub;
+    return 'Utilisateur';
   }
 
   getUserImage(): string {
     const p = this.decode();
-    return p?.image || p?.picture || p?.avatar || '/assets/images/users/user-dummy-img.jpg';
+    return p?.image || p?.picture || p?.avatar || '';
   }
 
   getToken(): string {

@@ -57,6 +57,22 @@ import { User } from '../../models/user.model';
             <span>Certifications</span>
           </a>
         </div>
+
+        <div class="nav-section">
+          <span class="section-label">JOBS MODULE</span>
+          <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-bar-chart-fill"></i>
+            <span>Jobs Statistics</span>
+          </a>
+          <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-people-fill"></i>
+            <span>All Applications</span>
+          </a>
+          <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link">
+            <i class="bi bi-briefcase-fill"></i>
+            <span>Job Offers</span>
+          </a>
+        </div>
       </nav>
 
       <div class="sidebar-footer">

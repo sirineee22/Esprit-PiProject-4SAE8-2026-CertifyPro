@@ -14,7 +14,6 @@ public class MessageRequest {
     private String name;
     private String profile;
     private String message;
-    private String align;
 
     // ── Reply ──────────────────────────────────────────────
     private String replyToId;

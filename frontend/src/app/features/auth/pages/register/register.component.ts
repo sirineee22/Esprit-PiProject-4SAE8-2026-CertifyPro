@@ -734,6 +734,12 @@ export class RegisterComponent {
     this.registerWithRole('employer');
   }
 
+  private normalizePhone(raw: string | null | undefined): string | undefined {
+    if (raw == null || typeof raw !== 'string') return undefined;
+    const t = raw.replace(/\s+/g, '').trim();
+    return t.length ? t : undefined;
+  }
+
   private registerWithRole(role: 'learner' | 'employer') {
     const form = this.registerForm.value;
     const phoneRaw = this.registerForm.get('phoneNumber')?.value;

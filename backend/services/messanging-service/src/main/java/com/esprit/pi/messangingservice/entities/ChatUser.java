@@ -6,6 +6,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
+
 @Document(collection = "chat_users")
 @Data
 @NoArgsConstructor
@@ -28,4 +30,8 @@ public class ChatUser {
 
     @Builder.Default
     private boolean connected = false;
+
+    // ── Présence avancée ─────────────────────────────────
+    /** Timestamp de la dernière activité (connexion ou message envoyé) */
+    private Instant lastSeen;
 }

@@ -4,12 +4,17 @@ server:
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
+
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins:
+            allowedOriginPatterns:
+              # ✅ FIX: use allowedOriginPatterns instead of allowedOrigins.
+              # allowedOrigins: "*" is rejected by Spring when allowCredentials: true,
+              # because the CORS spec forbids wildcard origin with credentials.
               - "http://localhost:4200"
             allowedMethods:
               - GET
@@ -17,33 +22,91 @@ spring:
               - PUT
               - DELETE
               - OPTIONS
+              - PATCH
             allowedHeaders:
               - "*"
             allowCredentials: true
+
       discovery:
         locator:
           enabled: true
+
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_LAST
+
       routes:
+
+        # ================= USER =================
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**,/api/roles/**
+
         - id: auth-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/auth/**
+
         - id: trainer-requests-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+
+        # ================= EVENTS =================
         - id: event-service
           uri: lb://EVENT-SERVICE
           predicates:
-            - Path=/api/events/**, /api/admin/events/**
+            - Path=/api/events/**,/api/admin/events/**
+
+        # ================= JOB =================
+        - id: job-careers-service
+          uri: lb://JOB-CAREERS-SERVICE
+          predicates:
+            - Path=/api/jobs/**,/api/companies/**,/api/files/**,/api/candidate/**,/api/admin/applications/**,/api/admin/statistics/**,/api/categories/**,/api/employer/**
+
+        # ================= MESSAGING — REST =================
+        - id: messaging-service-rest
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/api/chat/**
+
+        # ================= MESSAGING — FICHIERS STATIQUES =================
+        # ✅ FIX: router /uploads/** vers le messaging-service pour servir
+        # les images, vidéos, fichiers uploadés via le gateway
+        - id: messaging-service-uploads
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/uploads/**
+
+        # ================= MESSAGING — NOTIFICATIONS =================
+        - id: messaging-service-notifications
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/api/notifications/**
+
+        # ================= WEBSOCKET =================
+        # ✅ CRITICAL FIX: WebSocket routes MUST use lb:ws:// (not lb://) so that
+        # Spring Cloud Gateway performs the load-balancing upgrade correctly.
+        # Using lb:// causes the Upgrade: websocket header to be dropped and the
+        # connection falls back to HTTP, breaking all real-time features.
+        - id: messaging-service-ws
+          uri: lb:ws://MESSAGING-SERVICE
+          predicates:
+            - Path=/ws-chat/**
+          # ✅ FIX: Add the RemoveHopByHop filter ONLY for the WS route so that
+          # Upgrade, Connection headers pass through the gateway untouched.
+          filters:
+            - RewritePath=/ws-chat/(?<segment>.*), /ws-chat/${segment}
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    # ✅ Supprime "Connection reset by peer" — déconnexion WebSocket normale côté client
+    reactor.core.publisher.Operators: OFF
+    reactor.netty: WARN
+    io.netty: WARN
+    org.springframework.cloud.gateway: INFO

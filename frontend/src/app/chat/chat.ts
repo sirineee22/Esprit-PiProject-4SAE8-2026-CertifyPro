@@ -32,13 +32,15 @@ import { ChatWsService }  from '../core/services/chat-ws.service';
 import { AuthService }    from '../core/services/auth.service';
 import { NotificationService }        from '../core/services/notification.service';
 import { NotificationBellComponent }  from '../shared/components/notification-bell.component';
+import { WebRtcService, CallType }    from '../core/services/webrtc.service';
+import { CallComponent }              from '../shared/components/call.component';
 
 interface EmojiCategory { id: string; label: string; icon: string; emojis: string[]; }
 
 const EMOJI_CATEGORIES: EmojiCategory[] = [
-  { id: 'recent', label: 'Récents', icon: '🕐', emojis: [] },
+  { id: 'recent', label: 'Recent', icon: '🕐', emojis: [] },
   {
-    id: 'smileys', label: 'Smileys & Personnes', icon: '😀',
+    id: 'smileys', label: 'Smileys & People', icon: '😀',
     emojis: [
       '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍',
       '🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭',
@@ -51,7 +53,7 @@ const EMOJI_CATEGORIES: EmojiCategory[] = [
     ]
   },
   {
-    id: 'nature', label: 'Animaux & Nature', icon: '🐶',
+    id: 'nature', label: 'Animals & Nature', icon: '🐶',
     emojis: [
       '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵',
       '🙈','🙉','🙊','🐒','🦆','🐧','🐦','🐤','🦅','🦉','🦇','🐺','🐗','🐴','🦄',
@@ -61,7 +63,7 @@ const EMOJI_CATEGORIES: EmojiCategory[] = [
     ]
   },
   {
-    id: 'food', label: 'Nourriture & Boissons', icon: '🍔',
+    id: 'food', label: 'Food & Drinks', icon: '🍔',
     emojis: [
       '🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍒','🍑','🥭','🍍','🥥','🥝','🍅',
       '🍆','🥑','🥦','🥒','🌶️','🌽','🍕','🍔','🍟','🌭','🥪','🥙','🌮','🌯','🍝',
@@ -70,7 +72,7 @@ const EMOJI_CATEGORIES: EmojiCategory[] = [
     ]
   },
   {
-    id: 'symbols', label: 'Symboles', icon: '❤️',
+    id: 'symbols', label: 'Symbols', icon: '❤️',
     emojis: [
       '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗',
       '💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','☯️','🛐','💯','💢','♨️',
@@ -90,7 +92,7 @@ const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🔥','👏','�
   imports: [
     CommonModule, SimplebarAngularModule, TitleCasePipe,
     ReactiveFormsModule, FormsModule, NgbModule, LightboxModule,
-     NotificationBellComponent
+    NotificationBellComponent, CallComponent
   ],
   providers: [DatePipe]
 })
@@ -106,14 +108,16 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   isStatus        = 'online';
   isProfile       = '';
   username        = '';
+  // ── Reply state ──────────────────────────────────────
   isreplyMessage  = false;
+  replyToMsg: { id: string; name: string; message: string; type?: string } | null = null;
   showEmojiPicker = false;
   isFlag          = false;
   private _emojiJustOpened  = false;
 
   emojiCategories:    EmojiCategory[] = EMOJI_CATEGORIES;
   activeCategoryId    = 'smileys';
-  activeCategoryLabel = 'Smileys & Personnes';
+  activeCategoryLabel = 'Smileys & People';
   displayedEmojis:    string[] = [];
   emojiSearch         = '';
   recentEmojis:       string[] = [];
@@ -161,7 +165,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   contactSubmitted = false;
   msgSubmitted     = false;
   groupSubmitted   = false;
-  selectedMembers: string[] = [];
+  selectedMembers: string[] = [];   // stocke les userId (pas les noms)
   isLoadingContact = false;
   isLoadingMsg     = false;
   isLoadingGroup   = false;
@@ -199,6 +203,213 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get someoneIsTyping(): boolean { return this.typingUsers.size > 0; }
 
+  // ── Presence avancée ──────────────────────────────────
+  /** lastSeen timestamp string for the current open conversation */
+  currentUserLastSeen: string | null = null;
+  private presenceSub?: Subscription;
+  /** Map userId → lastSeen ISO string (for all users we've seen) */
+  private presenceMap = new Map<string, { status: string; lastSeen: string | null }>();
+
+  /** Subscribe to global presence events once */
+  private subscribeToPresence(): void {
+    this.presenceSub?.unsubscribe();
+    this.presenceSub = this.chatWs.subscribeToPresence().subscribe(ev => {
+      this.ngZone.run(() => {
+        if (!ev?.userId) return;
+        this.presenceMap.set(ev.userId, { status: ev.status, lastSeen: ev.lastSeen ?? null });
+
+        // Update sidebar status in real-time
+        const idx = this.chatData.findIndex(u => u.userId === ev.userId);
+        if (idx !== -1) {
+          this.chatData[idx] = { ...this.chatData[idx], status: ev.status };
+        }
+
+        // Update topbar if this is the open conversation
+        const openUser = this.chatData.find(u => u.name === this.username);
+        if (openUser?.userId === ev.userId) {
+          this.isStatus = ev.status;
+          this.currentUserLastSeen = ev.lastSeen ?? null;
+        }
+        this.cdr.markForCheck();
+      });
+    });
+  }
+
+  /**
+   * Returns a human-readable "last seen" string.
+   * e.g. "Online", "Seen 5 min ago", "Seen yesterday at 14:30"
+   */
+  getPresenceLabel(userId?: string): string {
+    if (!userId) return '';
+    const p = this.presenceMap.get(userId);
+    if (!p) return '';
+    if (p.status === 'online') return 'Online';
+    if (!p.lastSeen) return 'Offline';
+    return 'Seen ' + this._timeAgo(p.lastSeen);
+  }
+
+  _timeAgo(isoString: string): string {
+    const now  = Date.now();
+    const then = new Date(isoString).getTime();
+    const diff = Math.floor((now - then) / 1000); // seconds
+
+    if (diff < 60)           return 'just now';
+    if (diff < 3600)         return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400)        return `today at ${new Date(isoString).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
+    if (diff < 172800)       return `yesterday at ${new Date(isoString).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
+    return new Date(isoString).toLocaleDateString('en', { day: 'numeric', month: 'short' });
+  }
+
+  /** Fetch presence for the currently open user (REST fallback on open) */
+  private fetchPresence(userId: string): void {
+    this.chatApi.getPresence(userId).subscribe({
+      next: p => this.ngZone.run(() => {
+        this.presenceMap.set(p.userId, { status: p.status, lastSeen: p.lastSeen ?? null });
+        this.currentUserLastSeen = p.lastSeen ?? null;
+        if (p.status) this.isStatus = p.status;
+        this.cdr.markForCheck();
+      })
+    });
+  }
+
+  // ── Seen By (group read receipts) ─────────────────────
+  showSeenByPanel    = false;
+  seenByList: any[]  = [];
+  seenByMsgId: string | null = null;
+  isLoadingSeenBy    = false;
+  seenByPanelPos: { top: number; right: number } = { top: 0, right: 0 };
+
+  openSeenByPanel(msg: any, event: Event): void {
+    event.stopPropagation();
+    if (!msg.id || msg.id.startsWith('local_') || msg.id.startsWith('call_')) return;
+
+    // Toggle off if same message clicked again
+    if (this.seenByMsgId === msg.id) {
+      this.showSeenByPanel = !this.showSeenByPanel;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Calculate fixed position from the click target
+    const target = (event.target as HTMLElement).closest('.seen-by-trigger') as HTMLElement;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      this.seenByPanelPos = {
+        top:   rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      };
+    }
+
+    this.seenByMsgId     = msg.id;
+    this.showSeenByPanel = true;
+    this.isLoadingSeenBy = true;
+    this.seenByList      = [];
+    // detectChanges() force le rendu immédiat (OnPush)
+    this.cdr.detectChanges();
+
+    this.chatApi.getSeenBy(msg.id).subscribe({
+      next: list => this.ngZone.run(() => {
+        this.seenByList      = list;
+        this.isLoadingSeenBy = false;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.ngZone.run(() => {
+        this.isLoadingSeenBy = false;
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  closeSeenByPanel(): void {
+    this.showSeenByPanel = false;
+    this.seenByMsgId     = null;
+    this.cdr.detectChanges();
+  }
+
+  // ── GIF Picker ────────────────────────────────────────
+  showGifPicker      = false;
+  gifSearchQuery     = '';
+  gifResults: any[]  = [];
+  gifTrending: any[] = [];
+  isLoadingGifs      = false;
+  private _gifJustOpened = false;
+  private gifSearchTimeout?: ReturnType<typeof setTimeout>;
+
+  toggleGifPicker(): void {
+    this.showGifPicker = !this.showGifPicker;
+    if (this.showGifPicker) {
+      this._gifJustOpened = true;
+      this.showEmojiPicker = false;
+      this.showAttachMenu  = false;
+      if (!this.gifTrending.length) this._loadTrendingGifs();
+    }
+    this.cdr.markForCheck();
+  }
+
+  private _loadTrendingGifs(): void {
+    this.isLoadingGifs = true;
+    this.chatApi.trendingGifs(20).subscribe({
+      next: res => this.ngZone.run(() => {
+        // Tenor v2 → res.results[]
+        this.gifTrending   = res.results || [];
+        this.gifResults    = this.gifTrending;
+        this.isLoadingGifs = false;
+        this.cdr.markForCheck();
+      }),
+      error: () => this.ngZone.run(() => { this.isLoadingGifs = false; this.cdr.markForCheck(); })
+    });
+  }
+
+  onGifSearch(query: string): void {
+    this.gifSearchQuery = query;
+    clearTimeout(this.gifSearchTimeout);
+    if (!query.trim()) { this.gifResults = this.gifTrending; this.cdr.markForCheck(); return; }
+    this.gifSearchTimeout = setTimeout(() => {
+      this.isLoadingGifs = true;
+      this.chatApi.searchGifs(query).subscribe({
+        next: res => this.ngZone.run(() => {
+          // Tenor v2 → res.results[]
+          this.gifResults    = res.results || [];
+          this.isLoadingGifs = false;
+          this.cdr.markForCheck();
+        }),
+        error: () => this.ngZone.run(() => { this.isLoadingGifs = false; this.cdr.markForCheck(); })
+      });
+    }, 400);
+  }
+
+  sendGif(gif: any): void {
+    this.showGifPicker = false;
+    if (!this.currentChatRoomId) return;
+    // Tenor v2 format: gif.media_formats.gif.url  (fallback: tinygif)
+    const gifUrl = gif?.media_formats?.gif?.url
+                || gif?.media_formats?.tinygif?.url
+                || gif?.media_formats?.nanogif?.url
+                || '';
+    if (!gifUrl) return;
+
+    this.chatWs.sendMessage({
+      chatRoomId:   this.currentChatRoomId,
+      senderId:     this.currentUserId,
+      name:         this.currentUserName,
+      profile:      this.currentUserProfile,
+      message:      gif.content_description || gif.title || 'GIF',
+      type:         'image',
+      fileUrl:      gifUrl,
+      fileName:     (gif.content_description || 'gif').replace(/\s+/g, '_').slice(0, 40) + '.gif',
+      align:        'right',
+    });
+    this.cdr.markForCheck();
+  }
+
+  getGifPreviewUrl(gif: any): string {
+    // Tenor v2: prefer tinygif (small) for the grid preview, fallback to gif
+    return gif?.media_formats?.tinygif?.url
+        || gif?.media_formats?.nanogif?.url
+        || gif?.media_formats?.gif?.url
+        || '';
+  }
+
   onMessageInput(): void {
     if (!this.currentChatRoomId) return;
     if (!this.isTyping) {
@@ -223,9 +434,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         else                { this.typingUsers.delete(event.userId); }
         const names = Array.from(this.typingUsers.values());
         if      (names.length === 0) this.typingText = '';
-        else if (names.length === 1) this.typingText = `${names[0]} est en train d'écrire...`;
-        else if (names.length === 2) this.typingText = `${names[0]} et ${names[1]} écrivent...`;
-        else                         this.typingText = `${names.length} personnes écrivent...`;
+        else if (names.length === 1) this.typingText = `${names[0]} is typing...`;
+        else if (names.length === 2) this.typingText = `${names[0]} and ${names[1]} are typing...`;
+        else                         this.typingText = `${names.length} people are typing...`;
         this.cdr.markForCheck();
       });
     });
@@ -386,8 +597,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     private chatApi:      ChatApiService,
     private chatWs:       ChatWsService,
     private auth:         AuthService,
-    private notifSvc:     NotificationService,   // ← AJOUTER
-
+    private notifSvc:     NotificationService,
+    public  webrtc:       WebRtcService,
   ) {
     for (let i = 1; i <= 24; i++) {
       this.images.push({
@@ -405,7 +616,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.currentUserId      = this.auth.getUserId();
     this.currentUserName    = this.auth.getUserName();
-    this.currentUserProfile = this.auth.getUserImage();
+    this.currentUserProfile = this.resolveImageUrl(this.auth.getUserImage()) ?? '';
 
     this.formData = this.formBuilder.group({ message: ['', [Validators.required]] });
     this._initModalForms();
@@ -428,9 +639,23 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadUsers();
     this.loadGroups();
     this.loadContacts();
-    this.notifSvc.init();                          // ← AJOUTER
-
+    this.notifSvc.init();
+    // ✅ Initialiser WebRTC avec ChatWsService directement (plus fiable)
+    setTimeout(() => {
+      this.webrtc.init(this.chatWs);
+    }, 200);
+    // ✅ FIX OnPush: s'abonner aux changements d'état WebRTC — detectChanges pour forcer immédiatement
+    this.webrtc.stateChange$.subscribe(() => this.ngZone.run(() => this.cdr.detectChanges()));
+    // ✅ Enregistrer un message dans le chat à chaque fin/refus d'appel
+    this.webrtc.callEvent$.subscribe(ev => this.ngZone.run(() => {
+      this.cdr.detectChanges();
+      if (ev.type === 'ended' || ev.type === 'rejected') {
+        this._saveCallMessage(ev);
+      }
+    }));
     setTimeout(() => this.subscribeToNotifications(), 1200);
+    // ✅ Présence avancée — écouter les events connect/disconnect en temps réel
+    setTimeout(() => this.subscribeToPresence(), 800);
   }
 
   ngAfterViewInit(): void { this.onListScroll(); }
@@ -442,9 +667,11 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.typingSub?.unsubscribe();
     this.readSub?.unsubscribe();
     this.notifSub?.unsubscribe();
+    this.presenceSub?.unsubscribe();
     this.searchDestroy$.next();
     this.searchDestroy$.complete();
     clearTimeout(this.typingTimeout);
+    clearTimeout(this.gifSearchTimeout);
     this.chatWs.disconnect();
     if (this.isRecording) this._stopMediaRecorder();
   }
@@ -469,8 +696,23 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isFlag    = true;
     this.username  = user.name;
     this.isStatus  = user.status;
-    this.isProfile = this.isValidImageUrl(user.image) ? user.image! : '';
-    this._openConversation(user.roomId);
+    this.isProfile = this.resolveImageUrl(user.image) ?? '';
+    this.currentUserLastSeen = null;
+    this.showSeenByPanel = false;
+    // Fetch fresh presence info
+    this.fetchPresence(user.userId);
+    // ✅ FIX: toujours passer par openDirectRoom pour garantir que la room
+    // DIRECT existe avant d'ouvrir la conversation. user.roomId peut être
+    // un userId (fallback du backend) si la room n'a pas encore été créée.
+    this.chatApi.openDirectRoom(user.userId).subscribe({
+      next: room => {
+        // Mettre à jour le roomId dans chatData pour les prochains clics
+        const idx = this.chatData.findIndex(u => u.userId === user.userId);
+        if (idx !== -1) this.chatData[idx] = { ...this.chatData[idx], roomId: room.id };
+        this._openConversation(room.id);
+      },
+      error: e => console.error('openDirectRoom error:', e)
+    });
     document.querySelector('.user-chat')?.classList.add('user-chat-show');
   }
 
@@ -479,7 +721,10 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isFlag    = true;
     this.username  = name;
     this.isStatus  = 'online';
-    this.isProfile = this.isValidImageUrl(profile) ? profile! : '';
+    this.isProfile = this.resolveImageUrl(profile) ?? '';
+    this.currentUserLastSeen = null;
+    this.showSeenByPanel = false;
+    this.fetchPresence(userId);
     this.chatApi.openDirectRoom(userId).subscribe({
       next: room => this._openConversation(room.id),
       error: e   => console.error(e)
@@ -492,6 +737,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.username  = group.name;
     this.isStatus  = 'group';
     this.isProfile = '';
+    this.currentUserLastSeen = null;
+    this.showSeenByPanel = false;
     this._openConversation(group.roomId);
     document.querySelector('.user-chat')?.classList.add('user-chat-show');
   }
@@ -513,15 +760,30 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (msgs: any[]) => this.ngZone.run(() => {
         this.chatMessagesData = msgs.map(msg => {
           const isMyMsg = String(msg.senderId).trim() === String(myId).trim();
+          let type = msg.type ?? 'text';
+          if ((type === 'text' || !type) && msg.fileUrl) {
+            type = this._detectTypeFromUrl(msg.fileUrl, msg.fileMimeType);
+          }
           return {
             ...msg,
+            // ✅ FIX: fallback sur le nom si null/vide
+            name:      msg.name && msg.name.trim() && msg.name !== 'Unknown User'
+                         ? msg.name
+                         : (isMyMsg ? (this.currentUserName || 'Me') : (msg.senderId ? 'User-' + msg.senderId.slice(-4) : '?')),
             align:     isMyMsg ? 'right' : 'left',
-            profile:   this.isValidImageUrl(msg.profile) ? msg.profile : null,
-            type:      msg.type ?? 'text',
+            profile:   this.resolveImageUrl(msg.profile),
+            type,
             reactions: msg.reactions || [],
             readBy:    new Set<string>(msg.readBy || []),
           };
         });
+
+        // ✅ Mettre à jour le preview du dernier message dans la sidebar
+        if (msgs.length > 0) {
+          const last = msgs[msgs.length - 1];
+          this._updateSidebarPreview(chatRoomId, last);
+        }
+
         this.cdr.markForCheck();
         this.onListScroll();
       }),
@@ -538,6 +800,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.wsSub = this.chatWs.subscribeToRoom(chatRoomId).subscribe({
       next: (msg: any) => this.ngZone.run(() => {
         if (!msg) return;
+
+        // ✅ SIGNAUX WebRTC — interceptés depuis le canal de room
+        if (['CALL_OFFER','CALL_ANSWER','CALL_ICE','CALL_END'].includes(msg.event)) {
+          this.webrtc.handleRoomSignal(msg);
+          return;
+        }
 
         // READ_RECEIPT
         if (msg.event === 'READ_RECEIPT') {
@@ -579,6 +847,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
 
+        // SUPPRESSION TOTALE
+        if (msg.event === 'ALL_MESSAGES_DELETED') {
+          this.chatMessagesData = [];
+          this.cdr.markForCheck();
+          return;
+        }
+
+        // ÉDITION
+        if (msg.event === 'MESSAGE_EDITED') {
+          this.chatMessagesData = this.chatMessagesData.map((m: any) =>
+            m.id === msg.messageId ? { ...m, message: msg.message, edited: true } : m
+          );
+          this.cdr.markForCheck();
+          return;
+        }
+
         // ✅ RÉACTION reçue d'un autre utilisateur
         if (msg.event === 'REACTION') {
           this.chatMessagesData = this.chatMessagesData.map((m: any) =>
@@ -594,10 +878,19 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const enriched: any = {
           ...msg,
-          // ✅ FIX : align toujours recalculé APRÈS le spread pour écraser la valeur du backend
+          // ✅ FIX: fallback nom si null
+          name:      msg.name && msg.name.trim() && msg.name !== 'Unknown User'
+                       ? msg.name
+                       : (String(msg.senderId).trim() === String(this.currentUserId).trim()
+                           ? (this.currentUserName || 'Me')
+                           : (msg.senderId ? 'User-' + msg.senderId.slice(-4) : '?')),
           align:     String(msg.senderId).trim() === String(this.currentUserId).trim() ? 'right' : 'left',
-          profile:   this.isValidImageUrl(msg.profile) ? msg.profile : null,
-          type:      msg.type ?? 'text',
+          profile:   this.resolveImageUrl(msg.profile),
+          type:      (() => {
+            let t = msg.type ?? 'text';
+            if ((t === 'text' || !t) && msg.fileUrl) t = this._detectTypeFromUrl(msg.fileUrl, msg.fileMimeType);
+            return t;
+          })(),
           reactions: msg.reactions || [],
           readBy:    new Set<string>(msg.readBy || []),
         };
@@ -633,6 +926,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
         this.onListScroll();
 
+        // ✅ Mettre à jour le preview sidebar en temps réel
+        this._updateSidebarPreview(chatRoomId, enriched);
+
         // Accuser réception
         if (msg.senderId !== this.currentUserId && msg.id) {
           setTimeout(() => this.chatWs.sendReadReceipt(msg.id, this.currentUserId, chatRoomId), 300);
@@ -655,19 +951,28 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       this.chatWs.sendTyping(this.currentChatRoomId, this.currentUserId, this.currentUserName, false);
     }
 
-    this.chatWs.sendMessage({
+    const payload: any = {
       chatRoomId: this.currentChatRoomId,
       senderId:   this.currentUserId,
       name:       this.currentUserName,
       profile:    this.currentUserProfile,
       message,
       align:      'right',
-    });
+    };
+
+    // ✅ Attach reply info if replying
+    if (this.isreplyMessage && this.replyToMsg) {
+      payload.replyToId   = this.replyToMsg.id;
+      payload.replayName  = this.replyToMsg.name;
+      payload.replaymsg   = this.replyToMsg.message;
+    }
+
+    this.chatWs.sendMessage(payload);
 
     this.formData.reset();
     this.showMentionList    = false;
     this.mentionSuggestions = [];
-    document.querySelector('.replyCard')?.classList.remove('show');
+    this.closeReplay();
     this.cdr.markForCheck();
   }
 
@@ -679,6 +984,23 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
 
+    // ✅ Skip the first click after startEdit (the dropdown item click itself)
+    if (this._editJustOpened) {
+      this._editJustOpened = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // ✅ Don't close anything if user is clicking inside the edit inline block
+    if (this.editingMsgId && target.closest('.edit-inline')) {
+      return;
+    }
+
+    // Cancel edit if clicking outside the edit inline block
+    if (this.editingMsgId && !target.closest('.edit-inline')) {
+      this.cancelEdit();
+    }
+
     if (this._emojiJustOpened) { this._emojiJustOpened = false; }
     else if (this.showEmojiPicker && !target.closest('#emoji-btn') && !target.closest('.custom-emoji-picker-wrapper')) {
       this.showEmojiPicker = false;
@@ -689,12 +1011,21 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       this.showAttachMenu = false;
     }
 
+    if (this._gifJustOpened) { this._gifJustOpened = false; }
+    else if (this.showGifPicker && !target.closest('#gif-btn') && !target.closest('.gif-picker-wrapper')) {
+      this.showGifPicker = false;
+    }
+
     if (this.showReactionPickerForMsgId && !target.closest('.reaction-picker') && !target.closest('.reaction-trigger')) {
       this.showReactionPickerForMsgId = null;
     }
 
     if (this.showMentionList && !target.closest('.mention-list') && !target.closest('#chat-input')) {
       this.showMentionList = false;
+    }
+
+    if (this.showSeenByPanel && !target.closest('.seen-by-panel') && !target.closest('.seen-by-trigger')) {
+      this.showSeenByPanel = false;
     }
 
     this.cdr.markForCheck();
@@ -736,7 +1067,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       const all: string[] = [];
       EMOJI_CATEGORIES.slice(1).forEach(c => all.push(...c.emojis));
       this.displayedEmojis     = all.filter(e => e.includes(q)).slice(0, 100);
-      this.activeCategoryLabel = 'Résultats';
+      this.activeCategoryLabel = 'Results';
     } else {
       const cat = this.emojiCategories.find(c => c.id === this.activeCategoryId);
       this.displayedEmojis     = cat?.emojis ?? [];
@@ -777,6 +1108,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'file';
   }
 
+  /** Détecte le type depuis l'URL ou le MIME type (pour les anciens messages en base) */
+  private _detectTypeFromUrl(url: string, mime?: string): string {
+    if (mime) {
+      if (mime.startsWith('image/')) return 'image';
+      if (mime.startsWith('video/')) return 'video';
+      if (mime.startsWith('audio/')) return 'audio';
+      return 'file';
+    }
+    const lower = url.toLowerCase().split('?')[0];
+    if (/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/.test(lower)) return 'image';
+    if (/\.(mp4|mov|avi|mkv|webm|ogv)$/.test(lower))           return 'video';
+    if (/\.(mp3|wav|ogg|m4a|aac|flac|webm)$/.test(lower))      return 'audio';
+    if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|txt|csv)$/.test(lower)) return 'file';
+    return 'file';
+  }
+
   private _uploadFile(file: File, type: MessageType): void {
     if (!this.currentChatRoomId) return;
 
@@ -792,7 +1139,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         name:       this.currentUserName,
         profile:    this.currentUserProfile,
         message:    file.name,
-        time:       new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' }),
+        time:       new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
         align:      'right',
         type,
         fileUrl:    e.target?.result as string,  // ✅ base64 pour preview immédiate
@@ -880,9 +1227,26 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   downloadFile(url: string, name: string): void {
-    const a = document.createElement('a');
-    a.href = url; a.download = name; a.target = '_blank';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // ✅ FIX: fetch + blob pour forcer le téléchargement même cross-origin
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error('Network error');
+        return res.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      })
+      .catch(() => {
+        // Fallback : ouvrir dans un nouvel onglet
+        window.open(url, '_blank');
+      });
   }
 
   // ══════════════════════════════════════════════════════
@@ -909,7 +1273,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
       });
       this.cdr.markForCheck();
-    } catch { alert('Microphone non accessible. Vérifiez les permissions.'); }
+    } catch { alert('Microphone not accessible. Please check permissions.'); }
   }
 
   cancelRecording(): void {
@@ -935,8 +1299,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     const localMsg: any = {
       id: localId, chatRoomId: this.currentChatRoomId,
       senderId: this.currentUserId, name: this.currentUserName,
-      profile: this.currentUserProfile, message: 'Message vocal',
-      time: new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' }),
+      profile: this.currentUserProfile, message: 'Voice message',
+      time: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
       align: 'right', type: 'audio',
       fileUrl: URL.createObjectURL(blob), fileName: 'voice_message.webm', reactions: [],
       _isLocal: true,
@@ -986,23 +1350,24 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   sendLocation(): void {
     this.showAttachMenu = false;
-    if (!navigator.geolocation) { alert('Géolocalisation non supportée.'); return; }
+    if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
     this.isSendingLocation = true; this.cdr.markForCheck();
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         this.ngZone.run(() => {
           this.isSendingLocation = false;
-          const mapsUrl  = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          const mapThumb = `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=15&size=300x150&markers=${latitude},${longitude},red`;
+          const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          // ✅ FIX: suppression de staticmap.openstreetmap.de (domaine hors service → ERR_NAME_NOT_RESOLVED)
+          // La carte est maintenant affichée via une iframe OpenStreetMap côté HTML, sans image externe
           const localMsg: any = {
             id: 'local_' + Date.now(), chatRoomId: this.currentChatRoomId,
             senderId: this.currentUserId, name: this.currentUserName,
             profile: this.currentUserProfile,
-            message: `📍 Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-            time: new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' }),
+            message: `📍 My location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            time: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
             align: 'right', type: 'location', latitude, longitude,
-            locationUrl: mapsUrl, mapThumb, reactions: []
+            locationUrl: mapsUrl, reactions: []
           };
           this.chatMessagesData = [...this.chatMessagesData, localMsg];
           this.cdr.markForCheck(); this.onListScroll();
@@ -1012,12 +1377,112 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           }).subscribe();
         });
       },
-      () => this.ngZone.run(() => { this.isSendingLocation = false; this.cdr.markForCheck(); alert('Position non disponible.'); }),
+      () => this.ngZone.run(() => { this.isSendingLocation = false; this.cdr.markForCheck(); alert('Location not available.'); }),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
-  openInMaps(url?: string): void { if (url) window.open(url, '_blank'); }
+  // ══════════════════════════════════════════════════════
+  // APPELS VIDÉO / AUDIO WebRTC
+  // ══════════════════════════════════════════════════════
+
+  startVideoCall(): void {
+    if (!this.username || !this.currentChatRoomId) return;
+    const peer   = this.chatData.find(u => u.name === this.username);
+    const peerId = peer?.userId || this.username;
+    // ✅ passer chatRoomId pour que le message soit enregistré dans la bonne room
+    this.webrtc.startCall(peerId, this.username, 'video', this.currentChatRoomId).catch(err => {
+      console.error('startVideoCall error:', err);
+      alert('Unable to start video call. Please check camera/microphone permissions.');
+    });
+    this.cdr.markForCheck();
+  }
+
+  startAudioCall(): void {
+    if (!this.username || !this.currentChatRoomId) return;
+    const peer   = this.chatData.find(u => u.name === this.username);
+    const peerId = peer?.userId || this.username;
+    // ✅ passer chatRoomId pour que le message soit enregistré dans la bonne room
+    this.webrtc.startCall(peerId, this.username, 'audio', this.currentChatRoomId).catch(err => {
+      console.error('startAudioCall error:', err);
+      alert('Unable to start audio call. Please check microphone permissions.');
+    });
+    this.cdr.markForCheck();
+  }
+
+  // ══════════════════════════════════════════════════════
+  // ENREGISTRER UN MESSAGE D'APPEL DANS LE CHAT
+  // ══════════════════════════════════════════════════════
+
+  private _saveCallMessage(ev: import('../core/services/webrtc.service').CallEvent): void {
+    const roomId = ev.chatRoomId || this.currentChatRoomId;
+    if (!roomId || !this.currentUserId) return;
+
+    // ✅ FIX: s'assurer que currentUserName est bien chargé
+    const senderName = this.currentUserName
+      || this.auth.getUserName()
+      || 'Moi';
+
+    const isVideo     = this.webrtc.callType === 'video';
+    const rejected    = ev.type === 'rejected';
+    const duration    = ev.duration ?? 0;
+    const durationTxt = duration > 0 ? ` · ${this.webrtc.formatDuration(duration)}` : '';
+
+    let msgText: string;
+    if (rejected) {
+      msgText = isVideo ? '📹 Missed video call' : '📞 Missed audio call';
+    } else if (duration === 0) {
+      msgText = isVideo ? '📹 Video call (no answer)' : '📞 Audio call (no answer)';
+    } else {
+      msgText = isVideo
+        ? `📹 Video call${durationTxt}`
+        : `📞 Audio call${durationTxt}`;
+    }
+
+    // ✅ FIX: message local avec tous les champs requis pour l'affichage
+    const localMsg: any = {
+      id:           'call_' + Date.now(),
+      chatRoomId:   roomId,
+      senderId:     this.currentUserId,
+      name:         senderName,          // ← nom correct
+      profile:      this.currentUserProfile || null,
+      message:      msgText,
+      type:         'call',
+      callType:     this.webrtc.callType,
+      callStatus:   rejected ? 'missed' : (duration > 0 ? 'ended' : 'no-answer'),
+      callDuration: duration,
+      align:        'right',
+      time:         new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+      reactions:    [],
+      readBy:       new Set<string>(),
+    };
+
+    if (roomId === this.currentChatRoomId) {
+      this.chatMessagesData = [...this.chatMessagesData, localMsg];
+      this.cdr.markForCheck();
+      this.onListScroll();
+    }
+    // ✅ PAS d'envoi WebSocket — le message d'appel est local uniquement
+    // (le backend ne gère pas type="call", ça créerait une bulle vide corrompue)
+  }
+
+  openInMaps(url?: string, lat?: number, lng?: number): void {
+    // ✅ FIX: créer un vrai <a> et le cliquer — window.open peut être bloqué
+    // par le navigateur si appelé depuis un handler sur une div non-interactive
+    const href = url
+      ? url
+      : (lat != null && lng != null)
+        ? `https://www.google.com/maps?q=${lat},${lng}`
+        : null;
+    if (!href) return;
+    const a = document.createElement('a');
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   // ══════════════════════════════════════════════════════
   // RÉACTIONS
@@ -1060,8 +1525,69 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   // DONNÉES
   // ══════════════════════════════════════════════════════
 
-  loadUsers():    void { this.chatApi.getUsers().subscribe({ next: u => this.ngZone.run(() => { this.chatData = u; this.cdr.markForCheck(); }) }); }
-  loadGroups():   void { this.chatApi.getGroups().subscribe({ next: g => this.ngZone.run(() => { this.groupData = g; this.cdr.markForCheck(); }) }); }
+  loadUsers():    void {
+    this.chatApi.getUsers().subscribe({
+      next: u => this.ngZone.run(() => {
+        this.chatData = u.map((user: any) => ({
+          ...user,
+          image: this.resolveImageUrl(user.image) ?? undefined,
+        }));
+        this.cdr.markForCheck();
+      })
+    });
+  }
+
+  /** Updates the last message preview in the sidebar */
+  private _updateSidebarPreview(chatRoomId: string, msg: any): void {
+    const idx = this.chatData.findIndex(u => u.roomId === chatRoomId);
+    if (idx !== -1) {
+      this.chatData[idx] = {
+        ...this.chatData[idx],
+        lastMessage: this._getPreviewText(msg),
+        lastTime:    msg.time || '',
+        lastType:    msg.type || 'text',
+      };
+      this.cdr.markForCheck();
+    }
+    // Aussi pour les groupes
+    const gIdx = this.groupData.findIndex(g => g.roomId === chatRoomId);
+    if (gIdx !== -1) {
+      (this.groupData[gIdx] as any).lastMessage = this._getPreviewText(msg);
+      (this.groupData[gIdx] as any).lastTime    = msg.time || '';
+      this.cdr.markForCheck();
+    }
+  }
+
+  /** Generates preview text based on message type */
+  private _getPreviewText(msg: any): string {
+    const isMe = String(msg.senderId).trim() === String(this.currentUserId).trim();
+    const prefix = isMe ? 'You: ' : '';
+    switch (msg.type) {
+      case 'image':    return prefix + '📷 Photo';
+      case 'video':    return prefix + '🎥 Video';
+      case 'audio':    return prefix + '🎤 Voice message';
+      case 'file':     return prefix + '📎 ' + (msg.fileName || 'File');
+      case 'location': return prefix + '📍 Location';
+      case 'call':     return msg.callStatus === 'missed' || msg.callStatus === 'no-answer'
+                              ? '📵 Missed call'
+                              : '📞 ' + (msg.callType === 'video' ? 'Video' : 'Audio') + ' call';
+      default:         return prefix + (msg.message || '');
+    }
+  }
+  loadGroups():   void {
+    this.chatApi.getGroups().subscribe({
+      next: (raw: any[]) => this.ngZone.run(() => {
+        // ✅ FIX: le backend retourne ChatRoom {id, name, type, memberIds}
+        // mais GroupUser attend {roomId, name, unread}
+        this.groupData = raw.map((r: any) => ({
+          roomId: r.roomId || r.id || r._id || '',
+          name:   r.name  || 'Group',
+          unread: r.unread || '0',
+        }));
+        this.cdr.markForCheck();
+      })
+    });
+  }
   loadContacts(): void { this.chatApi.getContacts().subscribe({ next: c => this.ngZone.run(() => { this.contactData = c; this.cdr.markForCheck(); }) }); }
 
   // ══════════════════════════════════════════════════════
@@ -1092,10 +1618,49 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isValidImageUrl(url?: string | null): boolean {
-    if (!url || typeof url !== 'string') return false;
-    return url.startsWith('http://') || url.startsWith('https://') ||
-           url.startsWith('/assets/') || url.startsWith('assets/') ||
-           url.startsWith('data:image/') || url.startsWith('blob:');
+    if (!url || typeof url !== 'string' || url.trim() === '' || url === 'null') return false;
+    const u = url.trim();
+    return u.startsWith('http://') || u.startsWith('https://') ||
+           u.startsWith('/assets/') || u.startsWith('assets/') ||
+           u.startsWith('/uploads/') || u.startsWith('uploads/') ||
+           u.startsWith('data:image/') || u.startsWith('blob:') ||
+           u.startsWith('/api/') || u.startsWith('/');
+  }
+
+  /** Résout une URL d'image — préfixe les URLs relatives du backend, rejette les fallbacks vides */
+  resolveImageUrl(url?: string | null): string | null {
+    if (!url || typeof url !== 'string') return null;
+    const u = url.trim();
+    if (!u || u === 'null' || u === 'undefined' || u === '') return null;
+    // Rejeter le dummy placeholder — pas de vraie image
+    if (u.includes('user-dummy-img') || u.includes('dummy')) return null;
+    // Déjà absolue
+    if (u.startsWith('http://') || u.startsWith('https://') ||
+        u.startsWith('data:image/') || u.startsWith('blob:')) return u;
+    // URL relative du backend → préfixer avec le gateway
+    if (u.startsWith('/uploads/') || u.startsWith('uploads/')) {
+      return 'http://localhost:8080' + (u.startsWith('/') ? u : '/' + u);
+    }
+    // Assets Angular locaux (seulement si le fichier existe vraiment)
+    if (u.startsWith('/assets/') || u.startsWith('assets/')) return u;
+    // Autre URL relative backend
+    if (u.startsWith('/api/')) {
+      return 'http://localhost:8080' + u;
+    }
+    return null;
+  }
+
+  /**
+   * Gère l'erreur de chargement d'un avatar de message.
+   * L'initiale est déjà visible en dessous (z-index 1) — on cache juste l'img.
+   */
+  onAvatarError(event: Event, data: any): void {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.setAttribute('data-error', 'true');
+      img.style.display = 'none';
+    }
+    data.profile = null;
   }
 
   openAddContactModal(): void {
@@ -1103,12 +1668,13 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.searchResults = []; this.selectedUser = null; this.selectedUserId = '';
     this.searchControl.setValue('', { emitEvent: false });
     this.addContactForm = this.formBuilder.group({ targetUserId: [''] });
-    this.modalService.open(this.addContactModal, { centered: true, backdrop: 'static', size: 'md' });
+    // ✅ FIX aria-hidden: container:'body' rend la modale hors de <app-root>
+    this.modalService.open(this.addContactModal, { centered: true, backdrop: 'static', size: 'md', container: 'body', windowClass: 'modal-fit-content' });
   }
 
   selectUser(user: any): void {
     const id   = (user.id || user._id || user.userId || '').toString().trim();
-    const name = user.name?.trim() || user.username?.trim() || user.email || 'Utilisateur';
+    const name = user.name?.trim() || user.username?.trim() || user.email || 'User';
     if (!id) return;
     this.selectedUser = {
       id, name, email: user.email || '',
@@ -1139,7 +1705,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         document.querySelector('.user-chat')?.classList.add('user-chat-show');
         this.cdr.markForCheck();
       },
-      error: (e) => { this.isLoadingContact = false; this.contactError = e?.error?.message || 'Utilisateur introuvable.'; this.cdr.markForCheck(); }
+      error: (e) => { this.isLoadingContact = false; this.contactError = e?.error?.message || 'User not found.'; this.cdr.markForCheck(); }
     });
   }
 
@@ -1147,7 +1713,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   openNewMessageModal(): void {
     this.msgSubmitted = false; this.msgError = ''; this.newMessageForm.reset();
-    this.modalService.open(this.newMessageModal, { centered: true, backdrop: 'static', size: 'md' });
+    // ✅ FIX aria-hidden: container:'body'
+    this.modalService.open(this.newMessageModal, { centered: true, backdrop: 'static', size: 'md', container: 'body', windowClass: 'modal-fit-content' });
   }
 
   submitNewMessage(): void {
@@ -1156,7 +1723,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     const recipientRoomId = this.newMessageForm.value.recipientRoomId;
     const messageText     = this.newMessageForm.value.message.trim();
     const recipient       = this.chatData.find(u => u.roomId === recipientRoomId);
-    if (!recipient?.userId) { this.msgError = 'Destinataire introuvable.'; return; }
+    if (!recipient?.userId) { this.msgError = 'Recipient not found.'; return; }
     this.isLoadingMsg = true;
     this.chatApi.openDirectRoomById(recipient.userId).subscribe({
       next: (room) => {
@@ -1172,7 +1739,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         });
         this.newMessageForm.reset();
       },
-      error: (e) => { this.isLoadingMsg = false; this.msgError = e?.error?.message || 'Erreur.'; this.cdr.markForCheck(); }
+      error: (e) => { this.isLoadingMsg = false; this.msgError = e?.error?.message || 'Error.'; this.cdr.markForCheck(); }
     });
   }
 
@@ -1181,14 +1748,16 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   openCreateGroupModal(): void {
     this.groupSubmitted = false; this.groupError = ''; this.selectedMembers = [];
     this.createGroupForm.reset();
-    this.modalService.open(this.createGroupModal, { centered: true, backdrop: 'static', size: 'lg' });
+    // ✅ FIX aria-hidden: container:'body'
+    this.modalService.open(this.createGroupModal, { centered: true, backdrop: 'static', size: 'md', container: 'body', windowClass: 'modal-fit-content' });
   }
 
   toggleMember(user: ChatUser): void {
-    const idx = this.selectedMembers.indexOf(user.name);
-    idx === -1 ? this.selectedMembers.push(user.name) : this.selectedMembers.splice(idx, 1);
+    // ✅ FIX: stocker userId (pas user.name) — le backend attend des IDs
+    const idx = this.selectedMembers.indexOf(user.userId);
+    idx === -1 ? this.selectedMembers.push(user.userId) : this.selectedMembers.splice(idx, 1);
   }
-  isMemberSelected(user: ChatUser): boolean { return this.selectedMembers.includes(user.name); }
+  isMemberSelected(user: ChatUser): boolean { return this.selectedMembers.includes(user.userId); }
 
   submitCreateGroup(): void {
     this.groupSubmitted = true; this.groupError = '';
@@ -1196,14 +1765,20 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     const groupName = this.createGroupForm.value.groupName.trim();
     this.isLoadingGroup = true;
     this.chatApi.createGroup(groupName, this.selectedMembers).subscribe({
-      next: (room) => this.ngZone.run(() => {
+      next: (room: any) => this.ngZone.run(() => {
         this.isLoadingGroup = false;
-        const newGroup: GroupUser = { roomId: room.id, name: room.name || groupName, unread: '0' };
+        const roomId = room.id || room.roomId || room._id || '';
+        const newGroup: GroupUser = { roomId, name: room.name || groupName, unread: '0' };
         this.groupData = [...this.groupData, newGroup];
-        this.modalService.dismissAll(); this.selectedMembers = []; this.createGroupForm.reset();
-        this.cdr.markForCheck(); this.openGroup(newGroup);
+        this.modalService.dismissAll();
+        this.selectedMembers = []; this.createGroupForm.reset();
+        // ✅ FIX aria-hidden: remettre le focus sur le body après fermeture modale
+        // pour éviter que le focus reste sur un élément dans aria-hidden
+        setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 50);
+        this.cdr.markForCheck();
+        this.openGroup(newGroup);
       }),
-      error: (e) => this.ngZone.run(() => { this.isLoadingGroup = false; this.groupError = e?.error?.message || 'Erreur.'; this.cdr.markForCheck(); })
+      error: (e) => this.ngZone.run(() => { this.isLoadingGroup = false; this.groupError = e?.error?.message || 'Error.'; this.cdr.markForCheck(); })
     });
   }
 
@@ -1240,17 +1815,37 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   replyMessage(event: any, align: any): void {
+    const li = (event.target as HTMLElement).closest('.chat-list');
+    if (!li) return;
+
+    const msgId   = li.id?.replace('msg-', '') || '';
+    const msgData = this.chatMessagesData.find((m: any) => m.id === msgId);
+    if (!msgData) return;
+
     this.isreplyMessage = true;
-    document.querySelector('.replyCard')?.classList.add('show');
-    const copyText = event.target.closest('.chat-list')?.querySelector('.ctext-content')?.innerHTML || '';
-    const msgEl    = document.querySelector('.replyCard .replymessage-block .flex-grow-1 .mb-0') as HTMLElement;
-    const nameEl   = document.querySelector('.replyCard .replymessage-block .flex-grow-1 .conversation-name') as HTMLElement;
-    if (msgEl)  msgEl.innerHTML  = copyText;
-    if (nameEl) nameEl.innerHTML = event.target.closest('.chat-list')?.classList.contains('right')
-      ? 'You' : (document.querySelector('.username') as HTMLElement)?.innerHTML || '';
+    this.replyToMsg = {
+      id:      msgData.id!,
+      name:    msgData.name || (msgData.align === 'right' ? 'You' : this.username),
+      message: msgData.type === 'image'    ? '📷 Photo'
+             : msgData.type === 'audio'    ? '🎤 Voice message'
+             : msgData.type === 'video'    ? '🎥 Video'
+             : msgData.type === 'file'     ? '📎 ' + (msgData.fileName || 'File')
+             : msgData.type === 'location' ? '📍 Location'
+             : (msgData.message || ''),
+      type: msgData.type,
+    };
+    this.cdr.markForCheck();
+
+    setTimeout(() => {
+      document.querySelector<HTMLInputElement>('#chat-input')?.focus();
+    }, 50);
   }
 
-  closeReplay(): void { document.querySelector('.replyCard')?.classList.remove('show'); this.isreplyMessage = false; }
+  closeReplay(): void {
+    this.isreplyMessage = false;
+    this.replyToMsg     = null;
+    this.cdr.markForCheck();
+  }
 
   copyMessage(event: any): void {
     navigator.clipboard.writeText(event.target.closest('.chat-list')?.querySelector('.ctext-content')?.innerHTML || '');
@@ -1258,10 +1853,106 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     if (alertEl) { alertEl.style.display = 'block'; setTimeout(() => alertEl.style.display = 'none', 1000); }
   }
 
-  deleteMessage(event: any): void { event.target.closest('.chat-list')?.remove(); }
-  deleteAllMessage(event: any): void {
-    document.getElementById('users-conversation')?.querySelectorAll('.chat-list').forEach((el: any) => el.remove());
+  // ── Supprimer UN message (appel API + broadcast WS) ──
+  deleteMessage(event: any): void {
+    const li = event.target.closest('.chat-list');
+    const msgId = li?.id?.replace('msg-', '');
+    if (!msgId || msgId.startsWith('local_')) { li?.remove(); return; }
+
+    this.chatApi.deleteMessage(msgId).subscribe({
+      next: () => this.ngZone.run(() => {
+        this.chatMessagesData = this.chatMessagesData.filter((m: any) => m.id !== msgId);
+        this.cdr.markForCheck();
+      }),
+      error: e => console.error('deleteMessage error:', e)
+    });
   }
+
+  // ── Supprimer TOUS les messages de la room ──
+  deleteAllMessage(event: any): void {
+    if (!this.currentChatRoomId) return;
+    if (!confirm('Supprimer tous les messages de cette conversation ?')) return;
+
+    this.chatApi.deleteAllMessages(this.currentChatRoomId).subscribe({
+      next: () => this.ngZone.run(() => {
+        this.chatMessagesData = [];
+        this.cdr.markForCheck();
+      }),
+      error: e => console.error('deleteAllMessages error:', e)
+    });
+  }
+
+  // ── État d'édition ──
+  editingMsgId: string | null = null;
+  editingText   = '';
+  private _editJustOpened = false;
+
+  startEdit(msg: any): void {
+    if (!msg.id || msg.id.startsWith('local_') || msg.id.startsWith('call_')) return;
+    if (String(msg.senderId).trim() !== String(this.currentUserId).trim()) return;
+    this.editingMsgId = msg.id;
+    this.editingText  = msg.message || '';
+    this._editJustOpened = true; // prevent immediate cancelEdit from onDocumentClick
+    this.cdr.markForCheck();
+    // Focus after render — use requestAnimationFrame for reliability with OnPush
+    requestAnimationFrame(() => {
+      const input = document.querySelector<HTMLInputElement>('.edit-input');
+      if (input) {
+        input.focus();
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      }
+    });
+  }
+
+  cancelEdit(): void {
+    this.editingMsgId = null;
+    this.editingText  = '';
+    this.cdr.markForCheck();
+  }
+
+  saveEdit(msg: any): void {
+    const newText = this.editingText.trim();
+    // Nothing changed or empty → just cancel
+    if (!newText || newText === (msg.message || '').trim()) {
+      this.cancelEdit();
+      return;
+    }
+
+    const msgId = msg.id;
+
+    // ✅ Optimistic update — update UI immediately before API call
+    this.chatMessagesData = this.chatMessagesData.map((m: any) =>
+      m.id === msgId ? { ...m, message: newText, edited: true } : m
+    );
+    this.editingMsgId = null;
+    this.editingText  = '';
+    this.cdr.markForCheck();
+
+    // Persist to backend
+    this.chatApi.editMessage(msgId, newText).subscribe({
+      next: (updated: any) => this.ngZone.run(() => {
+        // Confirm with server response (in case backend transforms the text)
+        if (updated?.message) {
+          this.chatMessagesData = this.chatMessagesData.map((m: any) =>
+            m.id === msgId ? { ...m, message: updated.message, edited: true } : m
+          );
+          this.cdr.markForCheck();
+        }
+      }),
+      error: (e: any) => {
+        console.error('editMessage error:', e);
+        // Rollback on error
+        this.ngZone.run(() => {
+          this.chatMessagesData = this.chatMessagesData.map((m: any) =>
+            m.id === msgId ? { ...m, message: msg.message, edited: msg.edited ?? false } : m
+          );
+          this.cdr.markForCheck();
+        });
+      }
+    });
+  }
+
   delete(event: any): void { event.target.closest('li')?.remove(); }
   open(index: number): void { this.lightbox.open(this.images, index, {}); }
   onFocus(): void {}

@@ -1,26 +1,32 @@
-import { Component, OnInit, ChangeDetectionStrategy, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { JobApplicationService } from '../../../core/services/job-application.service';
-import { JobOfferService } from '../../../core/services/job-offer.service';
-import { JobApplication, APPLICATION_STATUS_COLORS, APPLICATION_STATUS_LABELS } from '../../../core/models/job-application.model';
 import { JobOffer } from '../../../core/models/job-offer.model';
+import {
+    JobApplication,
+    APPLICATION_STATUS_COLORS,
+    APPLICATION_STATUS_LABELS,
+    UpdateApplicationStatusRequest
+} from '../../../core/models/job-application.model';
+import { JobOfferService } from '../../../core/services/job-offer.service';
 import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-offer-applications',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, NgbDropdownModule],
     templateUrl: './offer-applications.component.html',
     styleUrls: ['./offer-applications.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OfferApplicationsComponent implements OnInit {
 
-    offerId: string | null = null;
+    offerId!: string;
     offer: JobOffer | null = null;
     applications: JobApplication[] = [];
-    loading: boolean = false;
+    loading = false;
 
     statusColors = APPLICATION_STATUS_COLORS;
     statusLabels = APPLICATION_STATUS_LABELS;
@@ -29,52 +35,60 @@ export class OfferApplicationsComponent implements OnInit {
         private route: ActivatedRoute,
         private jobApplicationService: JobApplicationService,
         private jobOfferService: JobOfferService,
-        private ngZone: NgZone
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
-        this.offerId = this.route.snapshot.paramMap.get('id');
+        this.offerId = this.route.snapshot.paramMap.get('id') as string;
         if (this.offerId) {
-            this.loadData();
+            this.loadOffer();
+            this.loadApplications();
         }
     }
 
-    loadData(): void {
-        this.loading = true;
-
-        // Load Offer details
-        this.jobOfferService.getEmployerOffer(this.offerId!).subscribe({
+    loadOffer(): void {
+        this.jobOfferService.getEmployerOffer(this.offerId).subscribe({
             next: (res) => {
-                this.ngZone.run(() => {
-                    this.offer = res.data;
-                });
-            }
-        });
-
-        // Load Applications
-        this.jobApplicationService.getApplicationsForOffer(this.offerId!).subscribe({
-            next: (res) => {
-                this.ngZone.run(() => {
-                    this.applications = res.data;
-                    this.loading = false;
-                });
+                this.offer = res.data;
+                this.cdr.markForCheck();
             },
-            error: (err) => {
-                this.ngZone.run(() => {
-                    console.error(err);
-                    this.loading = false;
-                });
+            error: () => {
+                this.offer = null;
+                this.cdr.markForCheck();
             }
         });
     }
 
-    updateStatus(appId: string, status: string): void {
-        this.jobApplicationService.updateApplicationStatus(appId, { status }).subscribe({
+    loadApplications(): void {
+        this.loading = true;
+        this.cdr.markForCheck();
+
+        this.jobApplicationService.getApplicationsForOffer(this.offerId).subscribe({
+            next: (res) => {
+                this.applications = res.data;
+                this.loading = false;
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                console.error(err);
+                this.loading = false;
+                Swal.fire('Erreur', 'Impossible de charger les candidatures.', 'error');
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    updateStatus(applicationId: string, status: string): void {
+        const request: UpdateApplicationStatusRequest = { status };
+
+        this.jobApplicationService.updateApplicationStatus(applicationId, request).subscribe({
             next: () => {
-                this.ngZone.run(() => {
-                    Swal.fire('Succès', 'Statut mis à jour', 'success');
-                    this.loadData();
-                });
+                Swal.fire('Succès', 'Statut de la candidature mis à jour.', 'success');
+                this.loadApplications();
+            },
+            error: (err) => {
+                console.error(err);
+                Swal.fire('Erreur', err.error?.message || 'Impossible de mettre à jour le statut.', 'error');
             }
         });
     }

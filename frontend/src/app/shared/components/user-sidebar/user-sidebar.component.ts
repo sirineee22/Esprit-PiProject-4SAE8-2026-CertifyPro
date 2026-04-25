@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
@@ -66,10 +66,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <i class="bi bi-graph-up"></i>
             <span>Progress</span>
           </div>
-          <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Événements' : ''">
+          <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Ã‰vÃ©nements' : ''">
             <i class="bi bi-calendar-event"></i>
             <span>Event</span>
-          </div>
+          </a>
          <a routerLink="/chat" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Messagerie' : ''">
   <i class="bi bi-chat-dots"></i>
   <span>Messagerie</span>
@@ -78,6 +78,57 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
           </div>
+        </div>
+
+        <!-- Jobs Section -->
+        <div class="nav-section">
+          <span class="section-label" *ngIf="!isCollapsed">JOBS</span>
+          <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" [title]="isCollapsed ? 'Job Search' : ''">
+            <i class="bi bi-search"></i>
+            <span>Job Search</span>
+          </a>
+
+          <!-- CANDIDATE links -->
+          <a routerLink="/jobs/candidate/applications" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'My Applications' : ''">
+            <i class="bi bi-file-earmark-check"></i>
+            <span>My Applications</span>
+          </a>
+          <a routerLink="/jobs/candidate/saved" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Saved Jobs' : ''">
+            <i class="bi bi-bookmark-heart"></i>
+            <span>Saved Jobs</span>
+          </a>
+          <a routerLink="/jobs/candidate/recommendations" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Recommendations' : ''">
+            <i class="bi bi-stars"></i>
+            <span>Recommendations</span>
+          </a>
+          <a routerLink="/jobs/candidate/profile" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Candidate Profile' : ''">
+            <i class="bi bi-person-badge"></i>
+            <span>Candidate Profile</span>
+          </a>
+
+          <!-- EMPLOYER links -->
+          <a routerLink="/jobs/employer/my-company" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'My Company' : ''">
+            <i class="bi bi-building"></i>
+            <span>My Company</span>
+          </a>
+          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'My Job Offers' : ''">
+            <i class="bi bi-briefcase"></i>
+            <span>My Job Offers</span>
+          </a>
+          <a routerLink="/jobs/employer/jobs/new" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'Create Job Offer' : ''">
+            <i class="bi bi-plus-circle"></i>
+            <span>Create Job Offer</span>
+          </a>
+          <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'Offer Applications' : ''">
+            <i class="bi bi-people-fill"></i>
+            <span>Offer Applications</span>
+          </a>
+
+          <!-- ADMIN links -->
+          <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link" *ngIf="isAdmin" [title]="isCollapsed ? 'Jobs Stats' : ''">
+            <i class="bi bi-bar-chart"></i>
+            <span>Jobs Stats</span>
+          </a>
         </div>
         
         <!-- Trainer Section (only for trainers) -->
@@ -91,15 +142,6 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <i class="bi bi-people"></i>
             <span>My Students</span>
           </div>
-        </div>
-
-        <!-- Employer Section (only for employers) -->
-        <div class="nav-section" *ngIf="isEmployer">
-          <span class="section-label" *ngIf="!isCollapsed">EMPLOYER</span>
-          <a routerLink="/jobs/offers" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Job Offers' : ''">
-            <i class="bi bi-briefcase"></i>
-            <span>My Job Offers</span>
-          </a>
         </div>
 
         </nav>
@@ -133,19 +175,48 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <a routerLink="/profile" class="action-btn" title="Settings"><i class="bi bi-gear"></i></a>
             <button type="button" class="action-btn logout-btn" (click)="logout()" title="Logout"><i class="bi bi-box-arrow-right"></i></button>
           </div>
+          <div class="nav-item">
+ 
+</div>
         </div>
       </div>
     </aside>
   `,
   styles: [`
+  .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  color: #6c7a9c;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.nav-link.active {
+  color: #4f8ef7;
+  background: rgba(79, 142, 247, 0.1);
+  border-radius: 8px;
+}
+
+.badge-new {
+  background: linear-gradient(135deg, #4f8ef7, #00d4b4);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+  font-weight: bold;
+  text-transform: uppercase;
+}
     :host {
-      --sidebar-bg: #ffffff;
-      --sidebar-border: #f0f0f0;
-      --primary: hsl(222, 47%, 20%);
-      --primary-light: hsla(222, 47%, 20%, 0.1);
-      --text-main: #1a1c1e;
-      --text-muted: #64748b;
-      --accent: hsl(38, 92%, 50%);
+      --sidebar-bg: #0f172a;
+      --sidebar-border: rgba(255,255,255,0.05);
+      --primary: #f59e0b;
+      --primary-light: rgba(245,158,11,0.15);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b;
       --transition-speed: 0.35s;
       --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -163,7 +234,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       padding: 0;
       z-index: 1000;
       transition: width var(--transition-speed) var(--transition-ease);
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
     }
 
     .user-sidebar-content.collapsed {
@@ -203,13 +274,14 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .sidebar-logo-icon {
       width: 40px;
       height: 40px;
-      background: #0b1120;
+      background: linear-gradient(135deg, #4a3427, #8b6e4e);
       border-radius: 10px;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      border: 1px solid rgba(245,158,11,0.3);
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 4px 15px rgba(74,52,39,0.2);
     }
 
     .sidebar-logo-glow {
@@ -234,7 +306,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .sidebar-brand-name {
       font-size: 1.25rem;
       font-weight: 800;
-      color: #0b1f3b;
+      color: #ffffff;
       letter-spacing: 0.02em;
       line-height: 1;
     }
@@ -247,7 +319,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       font-size: 0.6rem;
       letter-spacing: 0.25em;
       font-weight: 800;
-      color: #94a3b8;
+      color: #475569;
       margin: 3px 0 0 0;
       text-transform: uppercase;
     }
@@ -255,8 +327,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .sidebar-toggle-btn {
       width: 32px;
       height: 32px;
-      border: 1px solid var(--sidebar-border);
-      background: white;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -267,9 +339,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .sidebar-toggle-btn:hover {
-      background: #f8fafc;
-      color: var(--primary);
-      border-color: #e2e8f0;
+      background: rgba(255,255,255,0.1);
+      color: #f59e0b;
+      border-color: rgba(245,158,11,0.3);
     }
 
     /* Search Bar */
@@ -279,16 +351,16 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     .search-input-wrapper {
       position: relative;
-      background: #f8fafc;
+      background: rgba(255,255,255,0.05);
       border-radius: 10px;
-      border: 1px solid transparent;
+      border: 1px solid rgba(255,255,255,0.08);
       transition: all 0.2s;
     }
 
     .search-input-wrapper:focus-within {
-      background: white;
-      border-color: #cbd5e1;
-      box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(245,158,11,0.4);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
     }
 
     .search-input-wrapper i {
@@ -310,6 +382,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       outline: none;
     }
 
+    .search-input-wrapper input::placeholder {
+      color: #475569;
+    }
+
     /* Nav Section */
     .sidebar-nav {
       flex: 1;
@@ -326,7 +402,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .sidebar-nav::-webkit-scrollbar-thumb {
-      background: #e2e8f0;
+      background: rgba(255,255,255,0.1);
       border-radius: 10px;
     }
 
@@ -338,9 +414,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     .section-label {
       font-size: 0.65rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
+      font-weight: 800;
+      color: #475569;
+      letter-spacing: 0.15em;
       padding: 0 0.75rem;
       margin-bottom: 0.5rem;
     }
@@ -349,11 +425,11 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 0.75rem;
+      padding: 0.875rem 1rem;
       text-decoration: none;
       color: var(--text-muted);
-      border-radius: 10px;
-      transition: all 0.2s;
+      border-radius: 12px;
+      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
       font-weight: 500;
       font-size: 0.9rem;
       position: relative;
@@ -367,8 +443,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .nav-link:hover:not(.disabled) {
-      background: #F0F4F8;
-      color: #27324B;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      transform: translateX(4px);
     }
 
     .nav-link:hover i {
@@ -376,14 +453,14 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .nav-link.active {
-      background: #F0F4F8;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #27324B;
       font-weight: 700;
       box-shadow: 0 2px 8px rgba(39, 50, 75, 0.08);
     }
 
     .nav-link.disabled {
-      opacity: 0.4;
+      opacity: 0.3;
       cursor: not-allowed;
     }
 
@@ -399,29 +476,29 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     /* Single user panel */
     .user-profile-section {
       padding: 1rem 0.75rem 1.5rem;
-      border-top: 1px solid var(--sidebar-border);
+      border-top: 1px solid rgba(255,255,255,0.05);
     }
 
     .profile-card {
-      background: #F2F5F9;
+      background: rgba(255,255,255,0.03);
       border-radius: 12px;
       padding: 0.65rem 0.75rem;
       display: flex;
       align-items: center;
       gap: 0.75rem;
       transition: all 0.2s;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       min-height: 52px;
     }
 
     .profile-card:hover {
-      background: #EBEFF5;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
 
     .profile-card:has(.profile-card-link.active) {
-      background: #EBEFF5;
+      background: rgba(255,255,255,0.06);
       border-color: rgba(39, 50, 75, 0.08);
     }
 
@@ -453,22 +530,22 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       width: 36px;
       height: 36px;
       border: none;
-      background: white;
-      color: #64748b;
+      background: rgba(255,255,255,0.05);
+      color: #94a3b8;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      
       text-decoration: none;
       font-size: 1.1rem;
     }
 
     .action-btn:hover {
-      background: #e2e8f0;
-      color: var(--primary);
+      background: rgba(255,255,255,0.1);
+      color: #f59e0b;
     }
 
     .action-btn.logout-btn {
@@ -476,8 +553,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .action-btn.logout-btn:hover {
-      background: #fee2e2;
-      color: #dc2626;
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
     }
 
     .collapsed-card {
@@ -502,13 +579,13 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .user-avatar {
       width: 40px;
       height: 40px;
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: linear-gradient(135deg, #334155, #1e293b);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #1e3a5f;
+      color: #f59e0b;
       font-size: 1.15rem;
       overflow: hidden;
     }
@@ -529,7 +606,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      border: 2px solid #F2F5F9;
+      border: 2px solid #0f172a;
       background: #22c55e;
     }
 
@@ -545,7 +622,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .user-name {
       font-size: 0.9rem;
       font-weight: 700;
-      color: #27324B;
+      color: #f8fafc;
       margin: 0;
       white-space: nowrap;
       overflow: hidden;
@@ -555,9 +632,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     .user-role {
       font-size: 0.7rem;
-      color: #64748b;
+      color: #f59e0b;
       margin: 0.25rem 0 0;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.02em;
     }
@@ -627,6 +704,14 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role?.name === 'EMPLOYER';
   }
 
+  get isCandidate(): boolean {
+    return this.currentUser?.role?.name === 'LEARNER';
+  }
+
+  get isAdmin(): boolean {
+    return this.currentUser?.role?.name === 'ADMIN';
+  }
+
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     this.sidebarToggled.emit(this.isCollapsed);
@@ -637,3 +722,4 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 }
+

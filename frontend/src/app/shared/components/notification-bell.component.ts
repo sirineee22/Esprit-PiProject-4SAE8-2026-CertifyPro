@@ -464,13 +464,12 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.push(
+      // ✅ FIX: écouter incoming$ pour les toasts — plus fiable que comparer les longueurs
+      this.svc.incoming$.subscribe(notif => this.ngZone.run(() => {
+        this._toast(notif);
+        this.cdr.markForCheck();
+      })),
       this.svc.notifs$.subscribe(list => this.ngZone.run(() => {
-        const isNew = list.length > this.notifs.length && this.notifs.length > 0;
-        if (isNew) {
-          // Afficher un toast pour chaque nouvelle notif
-          const newOnes = list.slice(0, list.length - this.notifs.length);
-          newOnes.forEach(n => this._toast(n));
-        }
         this.notifs = list;
         this.cdr.markForCheck();
       })),

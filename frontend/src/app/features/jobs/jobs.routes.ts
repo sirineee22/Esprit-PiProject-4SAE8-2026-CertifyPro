@@ -1,50 +1,36 @@
 import { Routes } from '@angular/router';
-import { JobSearchComponent } from '../../pages/jobs/pages/job-search/job-search.component';
-import { EmployerOffersComponent } from '../../pages/jobs/pages/employer/employer-offers/employer-offers.component';
-import { OfferFormComponent } from '../../pages/jobs/pages/employer/offer-form/offer-form.component';
-import { OfferApplicationsComponent } from '../../pages/jobs/pages/employer/offer-applications/offer-applications.component';
-import { MyApplicationsComponent } from '../../pages/jobs/pages/candidate/my-applications/my-applications.component';
-import { AdminStatsComponent } from '../../pages/jobs/pages/admin/admin-stats/admin-stats.component';
-import { JobRoleGuard } from '../../pages/jobs/core/guards/job-role.guard';
+import { JobSearchComponent } from './pages/job-search/job-search.component';
+import { JobDetailComponent } from './pages/job-detail/job-detail.component';
+import { EmployerOffersComponent } from './pages/employer/employer-offers/employer-offers.component';
+import { OfferFormComponent } from './pages/employer/offer-form/offer-form.component';
+import { OfferApplicationsComponent } from './pages/employer/offer-applications/offer-applications.component';
+import { MyCompanyComponent } from './pages/employer/my-company/my-company.component';
+import { MyApplicationsComponent } from './pages/candidate/my-applications/my-applications.component';
+import { JobRecommendationsComponent } from './pages/candidate/my-applications/job-recommendations.component';
+import { CandidateProfileComponent } from './pages/candidate/candidate-profile/candidate-profile.component';
+import { SavedJobsComponent } from './pages/candidate/saved-jobs/saved-jobs.component';
+import { AdminStatsComponent } from './pages/admin/admin-stats/admin-stats.component';
+import { authGuard } from '../../core/guards/auth.guard';
 
-// Exported feature routes for Jobs Module
 export const jobsRoutes: Routes = [
-    // Public
-    { path: '', component: JobSearchComponent },
+  // ── Public ──────────────────────────────────────────────
+  { path: '',           component: JobSearchComponent },
+  { path: 'detail/:id', component: JobDetailComponent },
 
-    // Employer
-    {
-        path: 'employer/jobs',
-        component: EmployerOffersComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }  // Commented out to ease manual testing or use actual auth
-    },
-    {
-        path: 'employer/jobs/new',
-        component: OfferFormComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
-    {
-        path: 'employer/jobs/edit/:id',
-        component: OfferFormComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
-    {
-        path: 'employer/jobs/:id/applications',
-        component: OfferApplicationsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'EMPLOYER' }
-    },
+  // ── Candidate ───────────────────────────────────────────
+  { path: 'candidate/profile',         component: CandidateProfileComponent,    canActivate: [authGuard] },
+  { path: 'candidate/applications',    component: MyApplicationsComponent,       canActivate: [authGuard] },
+  { path: 'candidate/saved',           component: SavedJobsComponent,            canActivate: [authGuard] },
+  { path: 'candidate/recommendations', component: JobRecommendationsComponent,   canActivate: [authGuard] },
 
-    // Candidate
-    {
-        path: 'candidate/applications',
-        component: MyApplicationsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'LEARNER' }
-    },
+  // ── Employer ────────────────────────────────────────────
+  { path: 'employer/my-company',              component: MyCompanyComponent,        canActivate: [authGuard] },
+  { path: 'employer/jobs',                    component: EmployerOffersComponent,   canActivate: [authGuard] },
+  { path: 'employer/jobs/new',                component: OfferFormComponent,        canActivate: [authGuard] },
+  { path: 'employer/jobs/edit/:id',           component: OfferFormComponent,        canActivate: [authGuard] },
+  { path: 'employer/jobs/:id/applications',   component: OfferApplicationsComponent, canActivate: [authGuard] },
+  { path: 'employer/applications',            component: OfferApplicationsComponent, canActivate: [authGuard] },
 
-    // Admin
-    {
-        path: 'admin/stats',
-        component: AdminStatsComponent,
-        // canActivate: [JobRoleGuard], data: { role: 'ADMIN' }
-    }
+  // ── Admin ────────────────────────────────────────────────
+  { path: 'admin/stats', component: AdminStatsComponent, canActivate: [authGuard] },
 ];

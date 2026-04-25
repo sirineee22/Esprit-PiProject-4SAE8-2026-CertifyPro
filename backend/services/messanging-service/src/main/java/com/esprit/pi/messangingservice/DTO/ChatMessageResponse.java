@@ -20,7 +20,6 @@ public class ChatMessageResponse {
 
     // ── Contenu ─────────────────────────────────────────────
     private String message;
-    private String align;
     private String time;
 
     // ── Reply ───────────────────────────────────────────────
@@ -65,4 +64,7 @@ public class ChatMessageResponse {
 
     // ── Timestamp brut ──────────────────────────────────────
     private Instant createdAt;
+
+    // ── Édition ─────────────────────────────────────────────
+    private boolean edited;   // ✅ true si le message a été modifié après envoi
 }

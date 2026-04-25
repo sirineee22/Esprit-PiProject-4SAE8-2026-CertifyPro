@@ -3,7 +3,7 @@ server:
 
 eureka:
   client:
-    register-with-eureka: false
-    fetch-registry: false
+    register-with-eureka: false   # ✅ correct for the server itself
+    fetch-registry: false         # ✅ correct
   server:
-    wait-time-in-ms-when-sync-empty: 0
+    wait-time-in-ms-when-sync-empty: 0  # ✅ good for dev

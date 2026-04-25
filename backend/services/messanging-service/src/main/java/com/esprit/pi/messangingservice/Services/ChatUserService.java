@@ -43,6 +43,7 @@ public class ChatUserService {
         user.setEmail(req.getEmail() != null ? req.getEmail() : "");
         user.setStatus("online");
         user.setConnected(true);
+        user.setLastSeen(java.time.Instant.now());
 
         return userRepository.save(user);
     }
@@ -53,6 +54,7 @@ public class ChatUserService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         user.setStatus("offline");
         user.setConnected(false);
+        user.setLastSeen(java.time.Instant.now());
         return userRepository.save(user);
     }
 

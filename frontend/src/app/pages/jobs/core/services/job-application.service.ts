@@ -9,7 +9,7 @@ import { ApiResponse } from '../models/api-response.model';
 })
 export class JobApplicationService {
 
-    private apiUrl = 'http://localhost:8082/api/jobs';
+    private apiUrl = 'http://localhost:8089/api/jobs';
 
     constructor(private http: HttpClient) { }
 

@@ -54,7 +54,6 @@ public class MessageService {
                 .profile(req.getProfile() != null ? req.getProfile() : "")
                 .message(req.getMessage() != null ? req.getMessage() : "")
                 // ✅ FIX : align toujours "left" en base — le frontend recalcule selon senderId
-                .align("left")
                 .time(time)
                 .type(req.getType() != null ? req.getType() : "text")
                 .fileUrl(req.getFileUrl())
@@ -299,7 +298,6 @@ public class MessageService {
                 .chatRoomId(chatRoomId).senderId(senderId).name(senderName)
                 .profile(profile != null ? profile : "").message(fname)
                 // ✅ FIX : align toujours "left" en base
-                .align("left")
                 .time(time).type(type).fileUrl(url)
                 .fileName(fname).fileSize(size).fileMimeType(mime)
                 .deleted(false).createdAt(Instant.now()).build();
@@ -326,27 +324,23 @@ public class MessageService {
         String senderName = resolveSenderName(req.getSenderId(), req.getName());
         String time       = TIME_FMT.format(Instant.now());
         String mapsUrl    = "https://www.google.com/maps?q=" + req.getLatitude() + "," + req.getLongitude();
-        String mapThumb   = "https://staticmap.openstreetmap.de/staticmap.php?center="
-                + req.getLatitude() + "," + req.getLongitude()
-                + "&zoom=15&size=300x150&markers=" + req.getLatitude() + "," + req.getLongitude() + ",red";
+        // ✅ FIX: utiliser l'API de tuiles OpenStreetMap standard (pas staticmap.openstreetmap.de qui est hors service)
+        // On passe les coordonnées dans le DTO — le frontend génère la miniature via une iframe ou un lien
         String msgText    = String.format("📍 Ma position (%.4f, %.4f)", req.getLatitude(), req.getLongitude());
 
         Message msg = Message.builder()
                 .chatRoomId(req.getChatRoomId()).senderId(req.getSenderId()).name(senderName)
                 .profile(req.getProfile() != null ? req.getProfile() : "").message(msgText)
-                // ✅ FIX : align toujours "left" en base
-                .align("left")
                 .time(time).type("location")
                 .latitude(req.getLatitude()).longitude(req.getLongitude()).locationUrl(mapsUrl)
                 .deleted(false).createdAt(Instant.now()).build();
 
         Message saved = messageRepository.save(msg);
         ChatMessageResponse dto = toDto(saved, req.getSenderId());
-        dto.setMapThumb(mapThumb);
+        // ✅ FIX: ne plus mettre mapThumb — le frontend génère l'aperçu sans appel externe
         messaging.convertAndSend("/topic/room/" + req.getChatRoomId(), dto);
         updateRoomLastMessage(req.getChatRoomId(), "📍 Localisation", senderName);
 
-        // 🔔 Notifier les autres membres du room
         getRoomMembersExcept(req.getChatRoomId(), req.getSenderId()).forEach(memberId ->
                 notificationService.notifyLocation(memberId, req.getSenderId(), senderName,
                         resolveAvatarById(req.getSenderId()), req.getChatRoomId(), saved.getId()));
@@ -422,8 +416,33 @@ public class MessageService {
     }
 
     // ══════════════════════════════════════════════════════
-    // DELETE
+    // EDIT MESSAGE
     // ══════════════════════════════════════════════════════
+
+    /** Modifie le texte d'un message. Seul l'expéditeur peut modifier. */
+    public ChatMessageResponse edit(String messageId, String userId, String newText) {
+        return messageRepository.findById(messageId).map(msg -> {
+            if (!msg.getSenderId().equals(userId)) return null; // 403
+            msg.setMessage(newText);
+            msg.setEdited(true);
+            Message saved = messageRepository.save(msg);
+            log.info("✏️ Message {} modifié par {}", messageId, userId);
+            return toDto(saved, userId);
+        }).orElse(null);
+    }
+
+    // ══════════════════════════════════════════════════════
+    // DELETE ALL MESSAGES IN ROOM
+    // ══════════════════════════════════════════════════════
+
+    /** Supprime (soft-delete) tous les messages d'une room. */
+    public void deleteAll(String chatRoomId, String userId) {
+        List<Message> messages = messageRepository
+                .findByChatRoomIdAndDeletedFalseOrderByCreatedAtAsc(chatRoomId);
+        messages.forEach(m -> m.setDeleted(true));
+        messageRepository.saveAll(messages);
+        log.info("🗑️ Tous les messages du room {} supprimés par {}", chatRoomId, userId);
+    }
 
     public void delete(String messageId) {
         messageRepository.findById(messageId).ifPresent(msg -> {
@@ -452,7 +471,6 @@ public class MessageService {
         // ✅ FIX PRINCIPAL : ne jamais retourner align depuis la base
         // Le frontend calcule : senderId === currentUserId ? 'right' : 'left'
         // On met null pour forcer le frontend à recalculer
-        dto.setAlign(null);
 
         dto.setTime(m.getTime());
         dto.setReplayName(m.getReplayName());
@@ -467,13 +485,6 @@ public class MessageService {
         dto.setLatitude(m.getLatitude());
         dto.setLongitude(m.getLongitude());
         dto.setLocationUrl(m.getLocationUrl());
-
-        if ("location".equals(m.getType()) && m.getLatitude() != null) {
-            dto.setMapThumb("https://staticmap.openstreetmap.de/staticmap.php?center="
-                    + m.getLatitude() + "," + m.getLongitude()
-                    + "&zoom=15&size=300x150&markers="
-                    + m.getLatitude() + "," + m.getLongitude() + ",red");
-        }
 
         dto.setReactions(m.getReactions() != null ? m.getReactions() : new ArrayList<>());
         dto.setCreatedAt(m.getCreatedAt());
@@ -491,6 +502,9 @@ public class MessageService {
         // Mentions
         dto.setMentionedUserIds(m.getMentionedUserIds() != null ? m.getMentionedUserIds() : new ArrayList<>());
 
+        // Édition
+        dto.setEdited(m.isEdited());
+
         return dto;
     }
 
@@ -504,11 +518,18 @@ public class MessageService {
 
     private String resolveSenderName(String senderId, String fallback) {
         if (senderId == null || senderId.isBlank())
-            return fallback != null ? fallback : "Inconnu";
+            return fallback != null && !fallback.isBlank() ? fallback : "Utilisateur";
         return chatUserRepository.findByUserId(senderId)
                 .map(ChatUser::getName)
                 .filter(n -> n != null && !n.isBlank() && !n.equals("Utilisateur Inconnu"))
-                .orElse(fallback != null ? fallback : "User-" + senderId);
+                .orElseGet(() -> {
+                    // Fallback : utiliser le nom fourni par le client, sinon un nom générique
+                    if (fallback != null && !fallback.isBlank()
+                            && !fallback.equals("Utilisateur Inconnu")) {
+                        return fallback;
+                    }
+                    return "User-" + senderId.substring(Math.max(0, senderId.length() - 4));
+                });
     }
 
     private void enrichReply(Message msg, String replyToId) {
@@ -525,5 +546,48 @@ public class MessageService {
             room.setLastMessageAt(Instant.now());
             chatRoomRepository.save(room);
         });
+    }
+    // Add inside MessageService class
+
+    public void delete(String messageId, String userId) {
+        delete(messageId);   // delegates to existing single-arg delete
+    }
+
+    // ══════════════════════════════════════════════════════
+    // SEEN BY — liste des utilisateurs qui ont lu un message
+    // ══════════════════════════════════════════════════════
+
+    /**
+     * Retourne la liste enrichie des utilisateurs qui ont lu le message.
+     * Chaque entrée contient : userId, name, image, lastSeen.
+     */
+    public org.springframework.http.ResponseEntity<java.util.List<java.util.Map<String, Object>>> getSeenBy(
+            String messageId, String currentUserId) {
+
+        return messageRepository.findById(messageId)
+                .map(msg -> {
+                    java.util.Set<String> readBy = msg.getReadBy() != null ? msg.getReadBy() : new java.util.HashSet<>();
+                    java.util.List<java.util.Map<String, Object>> result = readBy.stream()
+                            .filter(uid -> !uid.equals(msg.getSenderId())) // exclure l'expéditeur
+                            .map(uid -> {
+                                java.util.Map<String, Object> entry = new java.util.LinkedHashMap<>();
+                                entry.put("userId", uid);
+                                chatUserRepository.findByUserId(uid).ifPresentOrElse(u -> {
+                                    entry.put("name",     u.getName() != null ? u.getName() : "User-" + uid.substring(Math.max(0, uid.length()-4)));
+                                    entry.put("image",    u.getImage() != null ? u.getImage() : "");
+                                    entry.put("lastSeen", u.getLastSeen() != null ? u.getLastSeen().toString() : null);
+                                    entry.put("status",   u.getStatus());
+                                }, () -> {
+                                    entry.put("name",     "User-" + uid.substring(Math.max(0, uid.length()-4)));
+                                    entry.put("image",    "");
+                                    entry.put("lastSeen", null);
+                                    entry.put("status",   "offline");
+                                });
+                                return entry;
+                            })
+                            .toList();
+                    return org.springframework.http.ResponseEntity.ok(result);
+                })
+                .orElse(org.springframework.http.ResponseEntity.notFound().build());
     }
 }

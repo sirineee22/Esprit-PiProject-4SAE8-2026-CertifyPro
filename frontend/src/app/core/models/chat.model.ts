@@ -9,16 +9,19 @@ export interface GroupUser {
 }
 
 export interface ChatUser {
-  roomId: string;
+  roomId: string | null;
   userId: string;
   image:  string;
   name:   string;
   status: string;
   unread: string;
+  lastMessage?: string;
+  lastTime?:    string;
+  lastType?:    string;
 }
 
 // ── NOUVEAUX : Type de message & Réaction ─────────────────
-export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'location';
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'location' | 'call';
 
 export interface Reaction {
   emoji:   string;
@@ -52,8 +55,18 @@ export interface ChatMessage {
   locationUrl?:  string;
   mapThumb?:     string;
   reactions?:    Reaction[];
-    pinned?: boolean;
-
+  pinned?:       boolean;
+  edited?:       boolean;
+  readBy?:       Set<string> | string[];
+  isRead?:       boolean;
+  pinnedBy?:     string;
+  pinnedAt?:     string;
+  mentionedUserIds?: string[];
+  createdAt?:    string;
+  // ── Appel ──────────────────────────────────────────
+  callType?:     'video' | 'audio';
+  callStatus?:   'ended' | 'missed' | 'no-answer';
+  callDuration?: number;
 }
 
 // ── MessageRequest — vos champs existants + champs avancés
@@ -63,7 +76,6 @@ export interface MessageRequest {
   name:         string;
   profile:      string;
   message:      string;
-  align:        string;
   image?:       string[];
   replyToId?:   string;
   type?:        MessageType;

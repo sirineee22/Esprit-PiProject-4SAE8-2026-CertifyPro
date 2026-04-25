@@ -7,11 +7,22 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const token = authService.getToken();
 
   if (token) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    // Décoder le JWT pour extraire userId
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.userId; // ← ton JWT a "userId": 28
+
+      req = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+          ...(userId ? { 'X-User-Id': userId.toString() } : {})
+        }
+      });
+    } catch {
+      req = req.clone({
+        setHeaders: { Authorization: `Bearer ${token}` }
+      });
+    }
   }
 
   return next(req);

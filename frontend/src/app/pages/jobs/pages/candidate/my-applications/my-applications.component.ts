@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { JobApplicationService } from '../../../core/services/job-application.service';
@@ -16,14 +16,14 @@ import Swal from 'sweetalert2';
 export class MyApplicationsComponent implements OnInit {
 
     applications: JobApplication[] = [];
-    loading: boolean = false;
+    loading = false;
 
     statusColors = APPLICATION_STATUS_COLORS;
     statusLabels = APPLICATION_STATUS_LABELS;
 
     constructor(
         private jobApplicationService: JobApplicationService,
-        private ngZone: NgZone
+        private cdr: ChangeDetectorRef   // ✅ NgZone remplacé par ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -32,18 +32,18 @@ export class MyApplicationsComponent implements OnInit {
 
     loadApplications(): void {
         this.loading = true;
+        this.cdr.markForCheck();
+
         this.jobApplicationService.getMyApplications().subscribe({
             next: (res) => {
-                this.ngZone.run(() => {
-                    this.applications = res.data;
-                    this.loading = false;
-                });
+                this.applications = res.data;
+                this.loading = false;
+                this.cdr.markForCheck(); // ✅ Déclenche la détection de changements
             },
             error: (err) => {
-                this.ngZone.run(() => {
-                    console.error(err);
-                    this.loading = false;
-                });
+                console.error(err);
+                this.loading = false;
+                this.cdr.markForCheck();
             }
         });
     }
@@ -51,25 +51,35 @@ export class MyApplicationsComponent implements OnInit {
     withdraw(id: string): void {
         Swal.fire({
             title: 'Êtes-vous sûr ?',
-            text: "Voulez-vous vraiment retirer cette candidature ?",
+            text: 'Voulez-vous vraiment retirer cette candidature ?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
             confirmButtonText: 'Oui, retirer',
-            cancelButtonText: 'Annuler'
-        }).then((result: any) => {
+            cancelButtonText: 'Annuler',
+            background: '#1a1a2e',
+            color: '#f8fafc'
+        }).then((result) => {
             if (result.isConfirmed) {
                 this.jobApplicationService.withdrawApplication(id).subscribe({
                     next: () => {
-                        this.ngZone.run(() => {
-                            Swal.fire('Retiré !', 'Votre candidature a été retirée.', 'success');
-                            this.loadApplications();
+                        Swal.fire({
+                            title: 'Retiré !',
+                            text: 'Votre candidature a été retirée.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#f8fafc'
                         });
+                        this.loadApplications();
                     },
                     error: (err) => {
-                        this.ngZone.run(() => {
-                            Swal.fire('Erreur', err.error?.message || 'Impossible de retirer la candidature', 'error');
+                        Swal.fire({
+                            title: 'Erreur',
+                            text: err.error?.message || 'Impossible de retirer la candidature',
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#f8fafc'
                         });
                     }
                 });
@@ -80,6 +90,6 @@ export class MyApplicationsComponent implements OnInit {
     getScoreColor(score: number): string {
         if (score >= 80) return 'text-success';
         if (score >= 50) return 'text-warning';
-        return 'bg-danger'; // For progress bars if needed, but text color logic works.
+        return 'text-danger';
     }
 }

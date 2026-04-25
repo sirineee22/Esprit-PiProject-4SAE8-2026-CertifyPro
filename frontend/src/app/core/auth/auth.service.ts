@@ -51,6 +51,15 @@ export class AuthService {
     return localStorage.getItem(this.loginKey) === 'true';
   }
 
+  isEmployer(): boolean {
+    return this.getCurrentUser()?.role?.name === 'EMPLOYER';
+  }
+
+  isCandidate(): boolean {
+    const role = this.getCurrentUser()?.role?.name;
+    return role === 'LEARNER' || role === 'USER';
+  }
+
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }

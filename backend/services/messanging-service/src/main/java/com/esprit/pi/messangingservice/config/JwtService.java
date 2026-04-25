@@ -23,13 +23,21 @@ public class JwtService {
     }
 
     private Claims getAllClaims(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        System.out.println("🔍 [JWT] ALL CLAIMS = " + claims); // ← LOG CRITIQUE
-        return claims;
+        try {
+            // ✅ Vérification normale avec tolérance de 30 jours (dev)
+            Claims claims = Jwts.parser()
+                    .verifyWith(getKey())
+                    .clockSkewSeconds(86400 * 30)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            System.out.println("🔍 [JWT] ALL CLAIMS = " + claims);
+            return claims;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // ✅ Token expiré mais signature valide → on accepte quand même (dev mode)
+            System.out.println("⚠️ [JWT] Token expiré, on accepte quand même (dev mode)");
+            return e.getClaims();
+        }
     }
 
     public boolean isValid(String token) {

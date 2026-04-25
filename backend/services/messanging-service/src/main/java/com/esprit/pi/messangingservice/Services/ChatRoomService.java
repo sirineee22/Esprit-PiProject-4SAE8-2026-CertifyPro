@@ -83,7 +83,15 @@ public class ChatRoomService {
             roomRepository.save(room);
         });
     }
+// Add inside ChatRoomService class
 
+    public ChatRoom getOrCreateDirectRoom(String userId1, String userId2) {
+        return getOrCreateDirect(userId1, userId2);
+    }
+
+    public ChatRoom createGroupRoom(String name, List<String> memberIds) {
+        return createGroup(name, memberIds);
+    }
     // ─────────────────────────────────────────────
     // Récupérer tous les groupes
     // ─────────────────────────────────────────────
