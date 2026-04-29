@@ -1,5 +1,9 @@
 services:
 
+  # ══════════════════════════════════════════════════════
+  # DATABASES
+  # ══════════════════════════════════════════════════════
+
   postgres:
     image: postgres:15
     container_name: postgres
@@ -30,6 +34,10 @@ services:
       timeout: 5s
       retries: 5
 
+  # ══════════════════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ══════════════════════════════════════════════════════
+
   discovery-server:
     build: ./backend/discovery-server
     container_name: discovery-server
@@ -52,6 +60,10 @@ services:
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: dev
+
+  # ══════════════════════════════════════════════════════
+  # TES SERVICES (job-careers + messaging)
+  # ══════════════════════════════════════════════════════
 
   job-careers-service:
     build: ./backend/services/job-careers-service
@@ -86,6 +98,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       JWT_SECRET: dev-secret-min-32-chars-for-local-only
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      APP_BASE_URL: http://localhost:8080
 
 volumes:
   postgres-data:
