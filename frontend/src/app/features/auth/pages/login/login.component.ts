@@ -5,6 +5,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, LoginResponse } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { User } from '../../../../shared/models/user.model';
 
 @Component({
   selector: 'app-login',
