@@ -96,6 +96,31 @@ import { AppNotification, UserService } from '../../../features/users/services/u
             <span>Groups</span>
           </a>
         </div>
+
+        <!-- Jobs Section -->
+        <div class="nav-section">
+          <span class="section-label" *ngIf="!isCollapsed">JOBS</span>
+          <a routerLink="/jobs" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Job Search' : ''">
+            <i class="bi bi-search"></i>
+            <span>Job Search</span>
+          </a>
+          <a routerLink="/jobs/candidate/applications" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Applications' : ''">
+            <i class="bi bi-file-earmark-text"></i>
+            <span>My Applications</span>
+          </a>
+          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Offers' : ''" *ngIf="isEmployerOrAdmin">
+            <i class="bi bi-briefcase"></i>
+            <span>My Offers</span>
+          </a>
+          <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Applications' : ''" *ngIf="isEmployerOrAdmin">
+            <i class="bi bi-people"></i>
+            <span>Applications</span>
+          </a>
+          <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Job Stats' : ''" *ngIf="isAdmin">
+            <i class="bi bi-bar-chart"></i>
+            <span>Job Stats</span>
+          </a>
+        </div>
         
         <!-- Trainer/Admin Section -->
         <div class="nav-section" *ngIf="isTrainer || isAdmin">
@@ -667,6 +692,11 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
 
   get isAdmin(): boolean {
     return this.currentUser?.role?.name === 'ADMIN';
+  }
+
+  get isEmployerOrAdmin(): boolean {
+    const role = this.currentUser?.role?.name;
+    return role === 'EMPLOYER' || role === 'ADMIN';
   }
 
   toggleSidebar() {
