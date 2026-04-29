@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8093
 
 spring:
   application:
@@ -37,12 +37,10 @@ eureka:
     hostname: localhost
     instance-id: ${spring.application.name}:${server.port}
 
-# JWT Configuration (MUST MATCH USER-SERVICE)
 jwt:
   secret: ${JWT_SECRET:dev-secret-min-32-chars-for-local-only}
   expiration: 86400000
 
-# Enable logging for debugging
 logging:
   level:
     org.springframework.web: DEBUG
