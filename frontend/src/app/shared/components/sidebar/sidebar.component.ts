@@ -84,17 +84,55 @@ import { User } from '../../models/user.model';
 
         <div class="nav-section">
           <span class="section-label">JOBS MODULE</span>
+          <!-- Statistics -->
           <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link">
             <i class="bi bi-bar-chart-fill"></i>
             <span>Jobs Statistics</span>
           </a>
+          <!-- All Applications -->
           <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link">
             <i class="bi bi-people-fill"></i>
             <span>All Applications</span>
           </a>
+          <!-- Job Offers list -->
           <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link">
             <i class="bi bi-briefcase-fill"></i>
             <span>Job Offers</span>
+          </a>
+          <!-- Companies -->
+          <a routerLink="/jobs/employer/my-company" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-building"></i>
+            <span>Companies</span>
+          </a>
+          <!-- Employer Offers -->
+          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-list-task"></i>
+            <span>Manage Offers</span>
+          </a>
+          <!-- Create Offer -->
+          <a routerLink="/jobs/employer/jobs/new" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Create Offer</span>
+          </a>
+          <!-- Candidate Profile -->
+          <a routerLink="/jobs/candidate/profile" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-person-badge-fill"></i>
+            <span>Candidate Profiles</span>
+          </a>
+          <!-- Candidate Applications -->
+          <a routerLink="/jobs/candidate/applications" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-file-earmark-text-fill"></i>
+            <span>My Applications</span>
+          </a>
+          <!-- Saved Jobs -->
+          <a routerLink="/jobs/candidate/saved" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-bookmark-heart-fill"></i>
+            <span>Saved Jobs</span>
+          </a>
+          <!-- AI Recommendations -->
+          <a routerLink="/jobs/candidate/recommendations" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-stars"></i>
+            <span>AI Recommendations</span>
           </a>
         </div>
       </nav>
