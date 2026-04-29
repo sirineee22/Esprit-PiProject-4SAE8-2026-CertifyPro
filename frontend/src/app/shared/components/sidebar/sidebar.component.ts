@@ -137,14 +137,15 @@ import { User } from '../../models/user.model';
       background: var(--sidebar-bg);
       color: var(--text-main);
       box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     }
 
     .logo-section {
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding-bottom: 2rem;
-      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.25rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
@@ -182,9 +183,17 @@ import { User } from '../../models/user.model';
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1rem;
       overflow-y: auto;
+      padding-bottom: 0.5rem;
+      /* Custom scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
     }
+
+    .nav::-webkit-scrollbar { width: 4px; }
+    .nav::-webkit-scrollbar-track { background: transparent; }
+    .nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 
     .nav-section {
       display: flex;
