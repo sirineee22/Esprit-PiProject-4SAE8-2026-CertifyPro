@@ -1,11 +1,12 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.RegisterRequest;
 import com.training.platform.entity.Role;
 import com.training.platform.entity.User;
+import com.training.platform.service.AuthService;
 import com.training.platform.repository.UserRepository;
 import com.training.platform.security.JwtUtil;
-import com.training.platform.service.TwoFactorService;
-import jakarta.validation.Valid;
+import com.training.platform.service.TwoFactorService;import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -30,12 +31,15 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final TwoFactorService twoFactorService;
+    private final AuthService authService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, TwoFactorService twoFactorService) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                          JwtUtil jwtUtil, TwoFactorService twoFactorService, AuthService authService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.twoFactorService = twoFactorService;
+        this.authService = authService;
     }
 
     @PostMapping("/login")
@@ -112,9 +116,6 @@ public class AuthController {
     }
 
     static class LoginRequest {
-        @NotBlank
-        @Email
-        public String email;
 
         @NotBlank
         public String password;

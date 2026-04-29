@@ -1,0 +1,1247 @@
+﻿<div class="chat-wrapper d-lg-flex gap-1 mx-n4 mt-n4 p-1">
+
+  <!-- ══════════ LEFT SIDEBAR ══════════ -->
+  <div class="chat-leftsidebar">
+    <div class="px-4 pt-4 mb-4">
+      <div class="d-flex align-items-start">
+        <div class="flex-grow-1"><h5 class="mb-4">Chats</h5></div>
+        <div class="flex-shrink-0">
+          @if(showMentionBadge){
+            <button type="button" class="btn btn-soft-danger btn-sm me-1 position-relative"
+                    (click)="clearMentionBadge()" ngbTooltip="Mentions">
+              <i class="ri-at-line align-bottom"></i>
+              <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size:9px;">
+                {{ mentionNotifications.length }}
+              </span>
+            </button>
+          }
+          <button type="button" class="btn btn-soft-success btn-sm shadow-none"
+                  ngbTooltip="Add Contact" placement="bottom"
+                  (click)="openAddContactModal()">
+            <i class="ri-add-line align-bottom"></i>
+          </button>
+        </div>
+      </div>
+      <div class="search-box">
+        <input type="text" class="form-control bg-light border-light"
+               placeholder="Search here..." (keyup)="ContactSearch()"
+               id="searchContact" autocomplete="off">
+        <i class="ri-search-2-line search-icon"></i>
+      </div>
+    </div>
+
+    <ul ngbNav #nav="ngbNav" [activeId]="1"
+        class="nav nav-tabs nav-tabs-custom nav-success nav-justified" role="tablist">
+
+      <li class="nav-item" [ngbNavItem]="1">
+        <a ngbNavLink class="nav-link" role="tab">Chats</a>
+        <ng-template ngbNavContent>
+          <div class="chat-room-list pt-3" style="overflow-y:auto;height:calc(100vh - 220px)">
+            <div class="d-flex align-items-center px-4 mb-2">
+              <div class="flex-grow-1">
+                <h4 class="mb-0 fs-12 text-muted text-uppercase">Direct Messages</h4>
+              </div>
+              <div class="flex-shrink-0">
+                <button type="button" class="btn btn-soft-success btn-sm shadow-none"
+                        ngbTooltip="New Message" placement="bottom"
+                        (click)="openNewMessageModal()">
+                  <i class="ri-add-line align-bottom"></i>
+                </button>
+              </div>
+            </div>
+            <div class="chat-message-list">
+              <ul class="list-unstyled chat-list chat-user-list" id="userList">
+                @for(data of chatData; track $index){
+                  <li [ngClass]="{'active': data.name == username}">
+                    <a href="javascript:void(0);" (click)="chatUsername(data)">
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="flex-shrink-0 chat-user-img {{data.status}} align-self-center">
+                          @if(data.image && data.image !== 'null' && data.image !== ''){
+                            <div class="avatar-xxs">
+                              <img [src]="data.image" class="rounded-circle img-fluid userprofile" alt=""
+                                   (error)="data.image=''">
+                            </div>
+                          }@else{
+                            <div class="avatar-xxs">
+                              <span class="avatar-title rounded-circle chat-avatar-navy userprofile">
+                                {{ data.name ? data.name.charAt(0).toUpperCase() : '?' }}
+                              </span>
+                            </div>
+                          }
+                          <span class="user-status"></span>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                          <div class="d-flex align-items-center justify-content-between">
+                            <p class="sidebar-contact-name mb-0">{{data.name}}</p>
+                            @if(data.lastTime){
+                              <small class="sidebar-last-time">{{data.lastTime}}</small>
+                            }
+                          </div>
+                          @if(data.lastMessage){
+                            <p class="sidebar-last-msg mb-0">{{data.lastMessage}}</p>
+                          }
+                        </div>
+                        @if(data.unread && data.unread !== '0'){
+                          <div class="flex-shrink-0">
+                            <span class="sidebar-unread-badge">{{data.unread}}</span>
+                          </div>
+                        }
+                      </div>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <div class="d-flex align-items-center px-4 mt-4 pt-2 mb-2">
+              <div class="flex-grow-1">
+                <h4 class="mb-0 fs-12 text-muted text-uppercase">Channels</h4>
+              </div>
+              <div class="flex-shrink-0">
+                <button type="button" class="btn btn-soft-success btn-sm shadow-none"
+                        ngbTooltip="Create group" placement="bottom"
+                        (click)="openCreateGroupModal()">
+                  <i class="ri-add-line align-bottom"></i>
+                </button>
+              </div>
+            </div>
+            <div class="chat-message-list">
+              <ul class="list-unstyled chat-list chat-user-list mb-0" id="channelList">
+                @for(data of groupData; track $index){
+                  <li [ngClass]="{'active': data.name == username}">
+                    <a href="javascript:void(0);" (click)="openGroup(data)">
+                      <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 chat-user-img online align-self-center me-2 ms-0">
+                          <div class="avatar-xxs">
+                            <div class="avatar-title bg-light rounded-circle text-body">#</div>
+                          </div>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                          <p class="text-truncate mb-0">{{data.name}}</p>
+                        </div>
+                        @if(data.unread && data.unread !== '0'){
+                          <div class="flex-shrink-0">
+                            <span class="badge bg-dark-subtle text-body rounded p-1">{{data.unread}}</span>
+                          </div>
+                        }
+                      </div>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        </ng-template>
+      </li>
+
+      <li class="nav-item" [ngbNavItem]="2">
+        <a ngbNavLink class="nav-link" role="tab">Contacts</a>
+        <ng-template ngbNavContent>
+          <div class="chat-room-list pt-3" style="overflow-y:auto;height:calc(100vh - 220px)">
+            <div class="sort-contact">
+              @for(data of contactData; track $index){
+                <div class="mt-3">
+                  <div class="contact-list-title">{{data.title}}</div>
+                  <ul id="contact-sort-{{$index}}" class="list-unstyled contact-list">
+                    @for(contact of data.contacts; track $index){
+                      <li>
+                        <a href="javascript:void(0);"
+                           (click)="openContact(contact.userId, contact.name, contact.profile)">
+                          <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-2">
+                              @if(contact.profile){
+                                <div class="avatar-xxs">
+                                  <img src="{{contact.profile}}" class="rounded-circle img-fluid" alt="">
+                                </div>
+                              }@else{
+                                <div class="avatar-xxs">
+                                  <span class="avatar-title rounded-circle chat-avatar-navy">
+                                    {{ contact.name ? contact.name.charAt(0).toUpperCase() : '?' }}
+                                  </span>
+                                </div>
+                              }
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                              <p class="text-truncate mb-0">{{contact.name}}</p>
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div class="tab-content text-muted">
+      <div [ngbNavOutlet]="nav"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ ZONE CONVERSATION ══════════ -->
+  <div class="user-chat w-100 overflow-hidden" style="display:flex;flex-direction:column;height:100%;">
+    <div class="chat-content d-lg-flex" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="w-100 overflow-hidden position-relative" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div class="position-relative" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+          <!-- ══ TOPBAR ══ -->
+          @if(isFlag){
+          <div class="user-chat-topbar">
+            <div class="topbar-inner">
+
+              <!-- Left: avatar + name -->
+              <div class="topbar-left">
+                <div class="d-block d-lg-none me-2">
+                  <a href="javascript:void(0);" class="user-chat-remove" (click)="SidebarHide()">
+                    <i class="ri-arrow-left-s-line fs-20"></i>
+                  </a>
+                </div>
+                <div class="chat-user-img online user-own-img me-3">
+                  @if(isProfile && isProfile !== 'null' && isProfile !== ''){
+                    <img [src]="isProfile" alt="" class="topbar-avatar"
+                         (error)="isProfile=''">
+                  }@else{
+                    <span class="topbar-avatar-initials">
+                      {{ username ? username.charAt(0).toUpperCase() : '?' }}
+                    </span>
+                  }
+                  <span class="user-status"></span>
+                </div>
+                <div class="topbar-user-info">
+                  <h5 class="topbar-username">
+                    <a href="javascript:void(0);" (click)="onChatInfoClicked(userInfo)">{{username}}</a>
+                  </h5>
+                  <p class="topbar-status">
+                    @if(someoneIsTyping){
+                      <span class="typing-status">
+                        <span class="typing-dots-inline"><span></span><span></span><span></span></span>
+                        {{ typingText }}
+                      </span>
+                    }@else if(isStatus === 'online'){
+                      <span class="status-online">
+                        <i class="ri-checkbox-blank-circle-fill me-1" style="font-size:8px;color:#22c55e;vertical-align:middle;"></i>Online
+                      </span>
+                    }@else if(isStatus === 'group'){
+                      <span class="status-offline">Group</span>
+                    }@else{
+                      <!-- Advanced presence: "Seen 5 min ago" -->
+                      @if(currentUserLastSeen){
+                        <span class="status-offline presence-lastseen">
+                          <i class="ri-time-line me-1" style="font-size:11px;"></i>Seen {{ _timeAgo(currentUserLastSeen) }}
+                        </span>
+                      }@else{
+                        <span class="status-offline">{{ isStatus | titlecase }}</span>
+                      }
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <!-- Right: action buttons -->
+              <div class="topbar-right">
+
+                <!-- Cloche -->
+                <div class="topbar-btn-wrap">
+                  <app-notification-bell></app-notification-bell>
+                </div>
+
+                <!-- Search (if conversation open) -->
+                @if(isFlag){
+                  <button class="topbar-btn"
+                          (click)="toggleSearchPanel()"
+                          ngbTooltip="Search"
+                          [class.topbar-btn-active]="showSearchPanel">
+                    <i class="ri-search-eye-line"></i>
+                  </button>
+                }
+
+                <!-- Audio call (direct only) -->
+                @if(isFlag && isStatus !== 'group'){
+                  <button class="topbar-btn"
+                          (click)="startAudioCall()"
+                          ngbTooltip="Audio call">
+                    <i class="ri-phone-line"></i>
+                  </button>
+
+                  <!-- Video call -->
+                  <button class="topbar-btn"
+                          (click)="startVideoCall()"
+                          ngbTooltip="Video call">
+                    <i class="ri-vidicon-line"></i>
+                  </button>
+                }
+
+                <!-- Pinned (if any) -->
+                @if(isFlag && pinnedMessages.length > 0){
+                  <button class="topbar-btn position-relative"
+                          (click)="showPinnedPanel = !showPinnedPanel"
+                          ngbTooltip="Pinned messages">
+                    <i class="ri-pushpin-line"></i>
+                    <span class="topbar-badge">{{ pinnedMessages.length }}</span>
+                  </button>
+                }
+
+                <!-- Menu ⌄ -->
+                <div class="dropdown" ngbDropdown>
+                  <button class="topbar-btn arrow-none" type="button" ngbDropdownToggle>
+                    <i class="ri-arrow-down-s-line"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
+                    <a class="dropdown-item" href="javascript:void(0);" (click)="deleteAllMessage($event)">
+                      <i class="ri-delete-bin-5-line align-bottom text-muted me-2"></i>Delete all
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          } <!-- end @if(isFlag) topbar -->
+
+          <!-- PINNED MESSAGES PANEL -->
+          @if(showPinnedPanel && pinnedMessages.length > 0){
+            <div class="pinned-panel border-bottom px-3 py-2">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold text-warning-emphasis fs-13">
+                  <i class="ri-pushpin-fill me-1 text-warning"></i>
+                  {{ pinnedMessages.length }} pinned message(s)
+                </span>
+                <button class="btn btn-sm btn-link p-0 text-muted" (click)="showPinnedPanel = false">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
+              @for(pm of pinnedMessages; track pm['id']){
+                <div class="pinned-item d-flex align-items-center gap-2 p-2 rounded mb-1"
+                     (click)="scrollToPinnedMessage(pm)">
+                  <i class="ri-pushpin-fill text-warning flex-shrink-0" style="font-size:13px;"></i>
+                  <div class="flex-grow-1 overflow-hidden">
+                    <small class="fw-semibold text-dark d-block">{{ pm['name'] }}</small>
+                    <small class="text-muted text-truncate d-block">{{ pm['message'] }}</small>
+                  </div>
+                  <button class="btn btn-sm btn-link p-0 text-muted flex-shrink-0"
+                          (click)="$event.stopPropagation(); togglePinMessage(pm)" title="Unpin">
+                    <i class="ri-unpin-line"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- SEARCH PANEL -->
+          @if(showSearchPanel){
+            <div class="search-panel border-bottom px-3 py-2">
+              <div class="position-relative">
+                <i class="ri-search-line position-absolute text-muted"
+                   style="left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;"></i>
+                <input type="text" class="form-control form-control-sm ps-4 pe-4"
+                       placeholder="Search in conversation..."
+                       [(ngModel)]="messageSearchQuery"
+                       (ngModelChange)="onMessageSearch($event)"
+                       autofocus>
+                <button class="btn btn-sm btn-link p-0 position-absolute text-muted"
+                        style="right:8px;top:50%;transform:translateY(-50%);"
+                        (click)="toggleSearchPanel()">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
+              @if(isSearchingMessages){
+                <div class="text-center py-2">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <small class="text-muted ms-2">Searching...</small>
+                </div>
+              }
+              @if(messageSearchResults.length > 0){
+                <div class="mt-2" style="max-height:220px;overflow-y:auto;">
+                  <small class="text-muted fw-semibold d-block mb-1">{{ messageSearchResults.length }} result(s)</small>
+                  @for(result of messageSearchResults; track result['id']){
+                    <div class="search-result p-2 rounded mb-1 border"
+                         (click)="scrollToMessage(result)" style="cursor:pointer;">
+                      <div class="d-flex gap-2 align-items-center mb-1">
+                        <small class="fw-semibold text-primary">{{ result['name'] }}</small>
+                        <small class="text-muted">{{ result['time'] }}</small>
+                      </div>
+                      <p class="mb-0 text-dark" style="font-size:0.82rem;"
+                         [innerHTML]="highlightText(result['message'], messageSearchQuery)"></p>
+                    </div>
+                  }
+                </div>
+              }
+              @if(!isSearchingMessages && messageSearchQuery.length >= 2 && messageSearchResults.length === 0){
+                <div class="text-center py-2">
+                  <small class="text-muted">No results for "{{ messageSearchQuery }}"</small>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ══ MESSAGES ══ -->
+          <div class="position-relative" id="users-chat"
+               style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
+            <div class="chat-conversation p-3 p-lg-4" #scrollRef style="flex:1;overflow-y:auto;min-height:0;">
+              <ul class="list-unstyled chat-conversation-list" id="users-conversation"
+                  [style.height]="!isFlag ? '100%' : 'auto'"
+                  [style.display]="!isFlag ? 'flex' : 'block'">
+
+                @if(!isFlag){
+                  <li class="chat-list chat-empty-state">
+                    <div class="chat-welcome-box">
+                      <div class="chat-welcome-icon">
+                        <i class="ri-chat-3-line"></i>
+                      </div>
+                      <h5 class="chat-welcome-title">Click on a contact to start</h5>
+                      <p class="chat-welcome-hint">
+                        <i class="ri-arrow-left-line me-1"></i>
+                        Choose a contact on the left
+                      </p>
+                    </div>
+                  </li>
+                }
+                @if(isFlag && chatMessagesData.length === 0){
+                  <li class="chat-list d-flex justify-content-center align-items-center py-5 text-muted">
+                    <div class="text-center">
+                      <i class="ri-chat-3-line fs-1 text-muted opacity-50"></i>
+                      <p class="mt-2 mb-0 fs-13">No messages. Start the conversation!</p>
+                    </div>
+                  </li>
+                }
+
+                @for(data of chatMessagesData; track $index){
+                  <li [id]="'msg-' + data['id']"
+                      [ngClass]="{
+                        'chat-list':    true,
+                        'call-log-row': data['type'] === 'call',
+                        'right':        data['type'] !== 'call' && data.align === 'right',
+                        'left':         data['type'] !== 'call' && data.align !== 'right',
+                        'mb-3':         true,
+                        'pinned-msg':   data['pinned']
+                      }">
+                    <div class="conversation-list">
+
+                      @if(data.align !== 'right'){
+                        <div class="chat-avatar">
+                          @if(data.profile){
+                            <img [src]="data.profile" alt=""
+                                 class="msg-avatar-img"
+                                 onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')">
+                            <span class="msg-avatar-initials" style="display:none;">
+                              {{ data.name ? data.name.charAt(0).toUpperCase() : '?' }}
+                            </span>
+                          }@else{
+                            <span class="msg-avatar-initials">
+                              {{ data.name ? data.name.charAt(0).toUpperCase() : '?' }}
+                            </span>
+                          }
+                        </div>
+                      }
+
+                      <div class="user-chat-content">
+                        <div class="ctext-wrap">
+                          <div class="ctext-wrap-content"
+                               [class.msg-media-bubble]="data['type'] === 'image' || data['type'] === 'video' || data['type'] === 'audio' || data['type'] === 'file' || data['type'] === 'location'">
+
+                            @if(data.replayName){
+                              <div class="replymessage-block mb-2 d-flex align-items-start">
+                                <div class="flex-grow-1">
+                                  <h5 class="conversation-name">{{data.replayName}}</h5>
+                                  <p class="mb-0">{{data.replaymsg}}</p>
+                                </div>
+                              </div>
+                            }
+
+                            @if(data['pinned']){
+                              <span class="pin-indicator me-1" title="Pinned message">
+                                <i class="ri-pushpin-fill text-warning" style="font-size:0.75rem;"></i>
+                              </span>
+                            }
+
+                            <!-- ✅ CALL MESSAGE — Messenger style, centered -->
+                            @if(data['type'] === 'call'){
+                              <div class="call-log-pill"
+                                   [class.call-log-missed]="data['callStatus'] === 'missed' || data['callStatus'] === 'no-answer'">
+                                <span class="call-log-icon">
+                                  @if(data['callStatus'] === 'missed' || data['callStatus'] === 'no-answer'){
+                                    <i class="ri-phone-missed-fill"></i>
+                                  }@else if(data['callType'] === 'video'){
+                                    <i class="ri-vidicon-fill"></i>
+                                  }@else{
+                                    <i class="ri-phone-fill"></i>
+                                  }
+                                </span>
+                                <span class="call-log-text">{{ data.message }}</span>
+                              </div>
+                            }
+
+                            @if(!data['type'] || data['type'] === 'text'){
+                              <!-- Mode édition inline -->
+                              @if(editingMsgId === data['id']){
+                                <div class="edit-inline d-flex align-items-center gap-2"
+                                     (click)="$event.stopPropagation()">
+                                  <input type="text"
+                                         class="form-control form-control-sm edit-input"
+                                         [(ngModel)]="editingText"
+                                         (keydown.enter)="$event.preventDefault(); saveEdit(data)"
+                                         (keydown.escape)="$event.preventDefault(); cancelEdit()"
+                                         (click)="$event.stopPropagation()"
+                                         (mousedown)="$event.stopPropagation()">
+                                  <button type="button"
+                                          class="btn btn-sm btn-success px-2 py-1 flex-shrink-0"
+                                          (mousedown)="$event.preventDefault(); $event.stopPropagation(); saveEdit(data)"
+                                          title="Save">
+                                    <i class="ri-check-line"></i>
+                                  </button>
+                                  <button type="button"
+                                          class="btn btn-sm btn-light px-2 py-1 flex-shrink-0"
+                                          (mousedown)="$event.preventDefault(); $event.stopPropagation(); cancelEdit()"
+                                          title="Cancel">
+                                    <i class="ri-close-line"></i>
+                                  </button>
+                                </div>
+                              }@else{
+                                <p class="mb-0 ctext-content">{{data.message}}</p>
+                                @if(data['edited']){
+                                  <small class="edited-label">edited</small>
+                                }
+                              }
+                            }
+
+                            @if(data['type'] === 'image' && data['fileUrl']){
+                              <div>
+                                <img [src]="data['fileUrl']" [alt]="data['fileName'] || 'Image'"
+                                     class="rounded"
+                                     style="max-width:260px;max-height:200px;cursor:pointer;display:block;border-radius:10px!important;"
+                                     (click)="downloadFile(data['fileUrl'], data['fileName'] || 'image')"
+                                     (error)="$any(data)['imgError']=true">
+                                @if(data['fileName']){
+                                  <p class="mb-0 mt-1 fs-12 opacity-75">{{ data['fileName'] }}</p>
+                                }
+                              </div>
+                            }
+
+                            @if(data['type'] === 'video' && data['fileUrl']){
+                              <div>
+                                <video [src]="data['fileUrl']" controls preload="metadata"
+                                       style="max-width:280px;border-radius:8px;display:block;"></video>
+                                <p class="mb-0 mt-1 fs-12 opacity-75">
+                                  <i class="ri-video-line me-1"></i>{{ data['fileName'] }}
+                                </p>
+                              </div>
+                            }
+
+                            @if(data['type'] === 'audio' && data['fileUrl']){
+                              <div class="d-flex align-items-center gap-2 p-2 rounded"
+                                   style="background:rgba(0,0,0,.06);min-width:220px;">
+                                <i class="ri-mic-line fs-18 text-success flex-shrink-0"></i>
+                                <audio [src]="data['fileUrl']" controls style="height:32px;flex:1;"></audio>
+                              </div>
+                            }
+
+                            @if(data['type'] === 'file' && data['fileUrl']){
+                              <div class="file-download-card"
+                                   [class.file-download-card-right]="data.align === 'right'"
+                                   (click)="downloadFile(data['fileUrl'], data['fileName'] || 'file')">
+                                <div class="file-icon-wrap">
+                                  <i [class]="getFileIcon(data['fileName']) + ' fs-28'"></i>
+                                </div>
+                                <div class="file-info overflow-hidden flex-grow-1">
+                                  <p class="mb-0 fw-semibold text-truncate fs-13">{{ data['fileName'] || 'File' }}</p>
+                                  <small class="opacity-75">{{ data['fileSize'] || '' }}</small>
+                                </div>
+                                <div class="file-dl-btn">
+                                  <i class="ri-download-2-line fs-18"></i>
+                                </div>
+                              </div>
+                            }
+
+                            @if(data['type'] === 'location'){
+                              <div class="location-card-msg"
+                                   role="button"
+                                   tabindex="0"
+                                   (click)="openInMaps(data['locationUrl'], data['latitude'], data['longitude'])"
+                                   (keydown.enter)="openInMaps(data['locationUrl'], data['latitude'], data['longitude'])">
+                                <!-- CSS map preview — no external dependency -->
+                                <div class="location-map-preview">
+                                  <div class="location-map-bg">
+                                    <!-- CSS street grid -->
+                                    <div class="map-grid"></div>
+                                    <div class="map-pin">
+                                      <i class="ri-map-pin-2-fill"></i>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="location-card-info">
+                                  <div class="d-flex align-items-center gap-2">
+                                    <i class="ri-map-pin-line text-danger fs-16 flex-shrink-0"></i>
+                                    <div>
+                                      <p class="mb-0 fw-semibold fs-13">My location</p>
+                                      @if(data['latitude']){
+                                        <small class="opacity-75 fs-11">
+                                          {{ data['latitude']?.toFixed(5) }}, {{ data['longitude']?.toFixed(5) }}
+                                        </small>
+                                      }
+                                    </div>
+                                  </div>
+                                  <span class="location-open-btn">
+                                    <i class="ri-external-link-line me-1"></i>Open Maps
+                                  </span>
+                                </div>
+                              </div>
+                            }
+
+                          </div>
+
+                          <div class="dropdown align-self-start message-box-drop" ngbDropdown>
+                            <a class="dropdown-toggle" href="javascript:void(0);" role="button" ngbDropdownToggle>
+                              <i class="ri-more-2-fill"></i>
+                            </a>
+                            <div class="dropdown-menu" ngbDropdownMenu>
+                              <a class="dropdown-item" href="javascript:void(0);"
+                                 (click)="togglePinMessage(data)">
+                                <i [class]="(data['pinned'] ? 'ri-unpin-line' : 'ri-pushpin-line') + ' me-2 text-muted align-bottom'"></i>
+                                {{ data['pinned'] ? 'Unpin' : 'Pin' }}
+                              </a>
+                              <a class="dropdown-item reply-message" href="javascript:void(0);"
+                                 (click)="replyMessage($event, data.align)">
+                                <i class="ri-reply-line me-2 text-muted align-bottom"></i>Reply
+                              </a>
+                              @if(data.align === 'right' && data['type'] === 'text'){
+                                <a class="dropdown-item" href="javascript:void(0);"
+                                   (click)="startEdit(data)">
+                                  <i class="ri-edit-line me-2 text-muted align-bottom"></i>Edit
+                                </a>
+                              }
+                              <a class="dropdown-item" href="javascript:void(0);" (click)="copyMessage($event)">
+                                <i class="ri-file-copy-line me-2 text-muted align-bottom"></i>Copy
+                              </a>
+                              <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                 (click)="deleteMessage($event)">
+                                <i class="ri-delete-bin-5-line me-2 text-muted align-bottom"></i>Delete
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="reaction-btn-wrapper mt-1"
+                             [class.text-end]="data.align === 'right'">
+                          <button type="button"
+                                  class="btn btn-sm reaction-btn-hover py-0 px-1"
+                                  style="font-size:16px;border:none;background:transparent;opacity:0;transition:opacity 0.15s;"
+                                  (click)="toggleReactionPicker(data['id'] || $index.toString(), $event)"
+                                  title="React">
+                            😊
+                          </button>
+                          @if(showReactionPickerForMsgId === (data['id'] || $index.toString())){
+                            <div class="reaction-picker d-inline-flex gap-1 p-1 rounded shadow"
+                                 style="background:#fff;border:1px solid #e0e0e0;vertical-align:middle;">
+                              @for(r of quickReactions; track r){
+                                <button type="button"
+                                        class="btn p-1 lh-1"
+                                        [style.background]="hasReacted(data, r) ? '#e8f5e9' : 'transparent'"
+                                        style="font-size:20px;border-radius:6px;border:none;min-width:36px;"
+                                        (click)="addReaction(data, r)">{{ r }}</button>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        @if(data['reactions'] && data['reactions'].length > 0){
+                          <div class="d-flex flex-wrap gap-1 mt-1"
+                               [class.justify-content-end]="data.align === 'right'">
+                            @for(reaction of data['reactions']; track reaction.emoji){
+                              <button type="button" class="btn btn-sm py-0 px-2"
+                                      [style.background]="hasReacted(data, reaction.emoji) ? '#e8f5e9' : '#f3f4f6'"
+                                      [style.border]="hasReacted(data, reaction.emoji) ? '1px solid #4caf50' : '1px solid #e0e0e0'"
+                                      style="border-radius:20px;font-size:13px;"
+                                      (click)="addReaction(data, reaction.emoji)">
+                                {{ reaction.emoji }} <span class="ms-1">{{ reaction.count }}</span>
+                              </button>
+                            }
+                          </div>
+                        }
+
+                        <div class="conversation-name">
+                          @if(data.align !== 'right'){
+                            <small class="text-muted time">{{data.time}}</small>
+                          }@else{
+                            <small class="text-muted time">{{data.time}}</small>
+                            @if(isMessageRead(data)){
+                              <!-- Seen by — click to see who read (groups) -->
+                              <span class="ms-1 seen-by-trigger"
+                                    [title]="isStatus === 'group' ? 'See who read' : 'Read'"
+                                    (click)="isStatus === 'group' ? openSeenByPanel(data, $event) : null"
+                                    [style.cursor]="isStatus === 'group' ? 'pointer' : 'default'">
+                                <i class="ri-check-double-line align-bottom text-primary" style="font-size:0.9rem;"></i>
+                              </span>
+                            }@else{
+                              <span class="ms-1" title="Sent">
+                                <i class="ri-check-double-line align-bottom text-muted" style="font-size:0.9rem;"></i>
+                              </span>
+                            }
+                          }
+                        </div>
+
+                        <!-- ══ SEEN BY PANEL (groupe) ══ -->
+                        <!-- Panel moved outside scroll container — rendered via fixed position -->
+
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+            <div class="alert alert-warning alert-dismissible copyclipboard-alert px-4 fade show"
+                 id="copyClipBoard" role="alert" style="display:none;">
+              Message copied
+            </div>
+          </div>
+
+          <!-- ══ SEEN BY PANEL (group) — position:fixed, outside scroll ══ -->
+          @if(showSeenByPanel){
+            <div class="seen-by-panel-fixed"
+                 [style.top.px]="seenByPanelPos.top"
+                 [style.right.px]="seenByPanelPos.right"
+                 (click)="$event.stopPropagation()">
+              <div class="seen-by-header">
+                <i class="ri-eye-line text-primary"></i>
+                <span>Seen by</span>
+                <button type="button" class="seen-by-close" (click)="closeSeenByPanel()">
+                  <i class="ri-close-line"></i>
+                </button>
+              </div>
+              @if(isLoadingSeenBy){
+                <div class="seen-by-loading">
+                  <div class="spinner-border spinner-border-sm text-primary"></div>
+                  <span>Loading...</span>
+                </div>
+              }@else if(seenByList.length === 0){
+                <div class="seen-by-empty">
+                  <i class="ri-eye-off-line"></i>
+                  <span>Not yet read</span>
+                </div>
+              }@else{
+                <div class="seen-by-list">
+                  @for(reader of seenByList; track reader['userId']){
+                    <div class="seen-by-item">
+                      @if(reader['image']){
+                        <img [src]="reader['image']" class="seen-by-avatar" alt="">
+                      }@else{
+                        <span class="seen-by-avatar-initials">
+                          {{ reader['name'] ? reader['name'].charAt(0).toUpperCase() : '?' }}
+                        </span>
+                      }
+                      <div class="seen-by-info">
+                        <span class="seen-by-name">{{ reader['name'] }}</span>
+                        @if(reader['lastSeen']){
+                          <span class="seen-by-time">{{ _timeAgo(reader['lastSeen']) }}</span>
+                        }
+                      </div>
+                      <i class="ri-check-double-line text-primary ms-auto" style="font-size:13px;"></i>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Reply card — Angular state driven -->
+          @if(isFlag && isreplyMessage && replyToMsg){
+          <div class="reply-preview-bar">
+            <div class="reply-preview-content">
+              <div class="reply-preview-line"></div>
+              <div class="reply-preview-info">
+                <span class="reply-preview-name">{{ replyToMsg.name }}</span>
+                <span class="reply-preview-msg">{{ replyToMsg.message }}</span>
+              </div>
+            </div>
+            <button type="button" class="reply-preview-close" (click)="closeReplay()">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          }
+
+          @if(isFlag){
+          <div class="chat-input-section">
+
+            <!-- ══ EMOJI PICKER ══ -->
+            @if(showEmojiPicker){
+              <div class="custom-emoji-picker-wrapper" (click)="$event.stopPropagation()">
+                <div class="ep-cats">
+                  @for(cat of emojiCategories; track cat.id){
+                    <button type="button"
+                            class="ep-cat-btn"
+                            [class.ep-cat-active]="activeCategoryId === cat.id"
+                            (click)="setEmojiCategory(cat.id)"
+                            [title]="cat.label">
+                      {{ cat.icon }}
+                    </button>
+                  }
+                </div>
+                <div class="ep-search-row">
+                  <input type="text" class="ep-search"
+                         placeholder="Search emoji..."
+                         [(ngModel)]="emojiSearch"
+                         (ngModelChange)="onEmojiSearch($event)"
+                         autocomplete="off">
+                </div>
+                <div class="ep-cat-label">{{ activeCategoryLabel }}</div>
+                <div class="ep-grid">
+                  @for(emoji of displayedEmojis; track emoji){
+                    <button type="button" class="ep-emoji" (click)="insertEmoji(emoji)">{{ emoji }}</button>
+                  }
+                  @if(displayedEmojis.length === 0){
+                    <div class="ep-empty">No emoji found</div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ══ GIF PICKER ══ -->
+            @if(showGifPicker){
+              <div class="gif-picker-wrapper" id="gif-picker-container">
+                <div class="gif-picker-header">
+                  <span class="gif-picker-title">
+                    <i class="ri-image-gif-line me-1"></i>GIFs
+                  </span>
+                  <div class="gif-search-row">
+                    <i class="ri-search-line gif-search-icon"></i>
+                    <input type="text" class="gif-search-input"
+                           placeholder="Search GIFs..."
+                           [(ngModel)]="gifSearchQuery"
+                           (ngModelChange)="onGifSearch($event)"
+                           autocomplete="off">
+                  </div>
+                </div>
+                <div class="gif-grid-container">
+                  @if(isLoadingGifs){
+                    <div class="gif-loading">
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
+                      <span class="ms-2 text-muted fs-13">Loading...</span>
+                    </div>
+                  }@else if(gifResults.length === 0){
+                    <div class="gif-empty">
+                      <i class="ri-image-gif-line fs-2 text-muted opacity-50"></i>
+                      <p class="mt-2 mb-0 fs-13 text-muted">No GIFs found</p>
+                    </div>
+                  }@else{
+                    <div class="gif-grid">
+                      @for(gif of gifResults; track gif.id){
+                        <div class="gif-item" (click)="sendGif(gif)" [title]="gif.title">
+                          <img [src]="getGifPreviewUrl(gif)" [alt]="gif.title" loading="lazy">
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="gif-footer">
+                  <span class="text-muted" style="font-size:10px;">Powered by Tenor</span>
+                </div>
+              </div>
+            }
+
+            @if(showAttachMenu){
+              <div class="attach-menu d-flex gap-2 p-2 rounded shadow-sm"
+                   style="background:#fff;border:1px solid #eee;width:fit-content;
+                          position:absolute;bottom:76px;left:16px;z-index:99;">
+                <button type="button" class="btn btn-light btn-sm d-flex flex-column align-items-center gap-1"
+                        style="min-width:66px;" (click)="openImagePicker()">
+                  <i class="ri-image-line fs-20 text-primary"></i>
+                  <span class="fs-11">Photo</span>
+                </button>
+                <button type="button" class="btn btn-light btn-sm d-flex flex-column align-items-center gap-1"
+                        style="min-width:66px;" (click)="openFilePicker()">
+                  <i class="ri-file-line fs-20 text-warning"></i>
+                  <span class="fs-11">File</span>
+                </button>
+                <button type="button" class="btn btn-light btn-sm d-flex flex-column align-items-center gap-1"
+                        style="min-width:66px;" (click)="sendLocation()" [disabled]="isSendingLocation">
+                  <i class="ri-map-pin-line fs-20 text-danger"></i>
+                  <span class="fs-11">{{ isSendingLocation ? '...' : 'Location' }}</span>
+                </button>
+                <button type="button" class="btn btn-light btn-sm d-flex flex-column align-items-center gap-1"
+                        style="min-width:66px;" (click)="openDocumentPicker()">
+                  <i class="ri-file-pdf-line fs-20 text-danger"></i>
+                  <span class="fs-11">Doc</span>
+                </button>
+              </div>
+            }
+
+            <input #imageInput    type="file" accept="image/*,video/*"  multiple style="display:none" (change)="onFileSelected($event)">
+            <input #fileInput     type="file" accept="*/*"              multiple style="display:none" (change)="onFileSelected($event)">
+            <input #documentInput type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" multiple style="display:none" (change)="onFileSelected($event)">
+
+            @if(isRecording){
+              <div class="d-flex align-items-center gap-2 p-2 mb-2 rounded"
+                   style="background:#fff3cd;border:1px solid #ffc107;">
+                <span style="width:10px;height:10px;background:#dc3545;border-radius:50%;animation:pulse 1s infinite;flex-shrink:0;"></span>
+                <span class="fw-semibold text-danger">{{ formatRecordingTime(recordingDuration) }}</span>
+                <span class="text-muted fs-13 flex-grow-1">Recording in progress...</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="cancelRecording()">
+                  <i class="ri-close-line"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-sm btn-success" (click)="startRecording()">
+                  <i class="ri-send-plane-fill"></i> Send
+                </button>
+              </div>
+            }
+
+            @if(isUploadingFile){
+              <div class="mb-2">
+                <div class="progress" style="height:4px;">
+                  <div class="progress-bar bg-success progress-bar-animated"
+                       [style.width]="uploadProgress + '%'"></div>
+                </div>
+                <small class="text-muted">Uploading {{ uploadProgress }}%</small>
+              </div>
+            }
+
+            @if(!isRecording){
+              <form (ngSubmit)="messageSave()" [formGroup]="formData" id="chatinput-form">
+                <div class="row g-0 align-items-center">
+                  <div class="col-auto">
+                    <button type="button" id="attach-btn"
+                            class="btn btn-link text-decoration-none shadow-none p-1 me-1"
+                            (click)="toggleAttachMenu()"
+                            ngbTooltip="Attach a file">
+                      <i class="ri-attachment-2 fs-20"
+                         [style.color]="showAttachMenu ? '#0ab39c' : '#878a99'"></i>
+                    </button>
+                  </div>
+                  <div class="col-auto">
+                    <div class="chat-input-links me-2">
+                      <div class="links-list-item">
+                        <button type="button" class="btn btn-link text-decoration-none emoji-btn shadow-none"
+                                id="emoji-btn" (click)="$event.stopPropagation(); toggleEmojiPicker()">
+                          <i class="bx bx-smile align-middle fs-20"
+                             [style.color]="showEmojiPicker ? '#0ab39c' : '#878a99'"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- GIF button -->
+                  <div class="col-auto">
+                    <button type="button" id="gif-btn"
+                            class="btn btn-link text-decoration-none shadow-none p-1 me-1"
+                            (click)="$event.stopPropagation(); toggleGifPicker()"
+                            ngbTooltip="Send a GIF">
+                      <span class="gif-btn-label" [class.gif-btn-active]="showGifPicker">GIF</span>
+                    </button>
+                  </div>
+                  <div class="col position-relative">
+                    <input type="text"
+                           class="form-control chat-input bg-light border-light"
+                           id="chat-input"
+                           placeholder="Write a message... (@mention)"
+                           autocomplete="off"
+                           formControlName="message"
+                           (input)="onMessageInput()"
+                           (keyup)="onMessageKeyUp($event)">
+                    @if(showMentionList && mentionSuggestions.length > 0){
+                      <div class="mention-list position-absolute bg-white border rounded shadow"
+                           style="bottom:100%;left:0;right:0;max-height:200px;overflow-y:auto;z-index:1000;">
+                        @for(user of mentionSuggestions; track user.roomId){
+                          <div class="mention-item d-flex align-items-center gap-2 px-3 py-2"
+                               (click)="insertMention(user)" style="cursor:pointer;">
+                            <div class="flex-shrink-0">
+                              @if(user.image){
+                                <img [src]="user.image" class="rounded-circle"
+                                     style="width:28px;height:28px;object-fit:cover;" alt="">
+                              }@else{
+                                <span class="avatar-title rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                      style="width:28px;height:28px;font-size:0.75rem;">
+                                  {{ user.name.charAt(0).toUpperCase() }}
+                                </span>
+                              }
+                            </div>
+                            <div>
+                              <p class="mb-0 fw-semibold" style="font-size:0.9rem;">{{ user.name }}</p>
+                              <small class="text-muted">{{ user.status }}</small>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="col-auto">
+                    <button type="button" class="btn btn-link text-decoration-none shadow-none p-1 ms-1"
+                            (click)="startRecording()" ngbTooltip="Voice message">
+                      <i class="ri-mic-line fs-20" style="color:#878a99;"></i>
+                    </button>
+                  </div>
+                  <div class="col-auto">
+                    <div class="chat-input-links ms-2">
+                      <div class="links-list-item">
+                        <button type="submit"
+                                class="btn btn-success chat-send waves-effect waves-light shadow-none">
+                          <i class="ri-send-plane-2-fill align-bottom"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            }
+
+          </div><!-- /chat-input-section -->
+          } <!-- end @if(isFlag) input -->
+
+        </div>
+      </div>
+
+      <!-- USER INFO OFFCANVAS -->
+      <ng-template #userInfo let-offcanvas>
+        <div class="offcanvas-header border-bottom">
+          <h5 class="offcanvas-title">User Profile</h5>
+          <button type="button" class="btn-close" (click)="offcanvas.dismiss()"></button>
+        </div>
+        <div class="offcanvas-body profile-offcanvas p-0">
+          <div class="p-3 text-center">
+            <div class="avatar-lg mx-auto mb-3">
+              <img [src]="isProfile" class="img-thumbnail rounded-circle avatar-lg">
+            </div>
+            <h5 class="fs-16 mb-1 text-truncate username">{{ username }}</h5>
+            <p class="text-muted mb-0">
+              <i class="ri-record-circle-fill text-success align-bottom me-1"></i>
+              {{ isStatus | titlecase }}
+            </p>
+          </div>
+          <div class="border-top border-top-dashed p-3">
+            <h5 class="fs-15 mb-3">Personal Details</h5>
+            <div class="mb-3 d-flex">
+              <div class="avatar-xs flex-shrink-0 me-3">
+                <span class="avatar-title rounded-circle fs-16 bg-success-subtle text-success">
+                  <i class="ri-user-line"></i>
+                </span>
+              </div>
+              <div class="flex-grow-1">
+                <div class="text-muted fs-14 mb-1">Name</div>
+                <div class="fw-semibold">{{ username }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="border-top border-top-dashed p-3">
+            <h5 class="fs-15 mb-3">Media</h5>
+            <div *ngIf="imagesList.length > 0" class="mb-4">
+              <h6 class="text-muted fs-13 mb-2">Photos</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <div *ngFor="let img of imagesList" style="width:70px;height:70px;cursor:pointer;">
+                  <img *ngIf="img.fileUrl" [src]="img.fileUrl"
+                       style="width:100%;height:100%;object-fit:cover;border-radius:8px;"
+                       (click)="img.fileUrl && img.fileName && downloadFile(img.fileUrl, img.fileName)">
+                </div>
+              </div>
+            </div>
+            <div *ngIf="filesList.length > 0">
+              <h6 class="text-muted fs-13 mb-2">Files</h6>
+              <div class="d-flex flex-column gap-2">
+                <div *ngFor="let file of filesList"
+                     class="p-2 rounded d-flex align-items-center gap-2"
+                     style="background:#f8f9fa;cursor:pointer;"
+                     (click)="file.fileUrl && file.fileName && downloadFile(file.fileUrl, file.fileName)">
+                  <i class="ri-file-line fs-20 text-primary"></i>
+                  <div class="flex-grow-1 overflow-hidden">
+                    <p class="mb-0 text-truncate fw-semibold">{{ file.fileName }}</p>
+                    <small class="text-muted">{{ file.fileSize }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODALES ══════════ -->
+
+<ng-template #addContactModal let-modal>
+  <div class="modal-wrapper">
+    <div class="modal-header-custom">
+      <div class="modal-icon-badge"><i class="ri-user-add-line"></i></div>
+      <div>
+        <h5 class="modal-title-custom">Add a contact</h5>
+        <p class="modal-subtitle">Find a user by name or email</p>
+      </div>
+      <button type="button" class="btn-close-custom" (click)="modal.dismiss()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body-custom">
+      <form [formGroup]="addContactForm" (ngSubmit)="submitAddContact()">
+        <div class="field-group mb-4 position-relative">
+          <label class="field-label">Search a user</label>
+          <div class="search-input-wrapper">
+            <i class="ri-search-line search-input-icon"></i>
+            <input type="text" class="field-input ps-5" [formControl]="searchControl"
+                   placeholder="Nom ou email..." autocomplete="off">
+            @if(isSearching){ <span class="search-spinner"><i class="ri-loader-4-line spin"></i></span> }
+          </div>
+          @if(searchResults.length > 0){
+            <div class="autocomplete-dropdown">
+              @for(user of searchResults; track user.id){
+                <div class="autocomplete-item" (click)="selectUser(user)">
+                  <div class="user-avatar-sm">
+                    @if(user.profile){ <img [src]="user.profile" class="rounded-circle" width="36" height="36" alt=""> }
+                    @else{ <span class="avatar-placeholder">{{ (user.name||'?').charAt(0).toUpperCase() }}</span> }
+                    <span class="status-dot online"></span>
+                  </div>
+                  <div class="user-info">
+                    <span class="user-name">{{ user.name || user.email || 'Utilisateur' }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                  </div>
+                  <i class="ri-add-circle-line add-icon"></i>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if(selectedUser){
+          <div class="selected-user-card mb-4">
+            <div class="selected-user-inner">
+              <div class="user-avatar-md">
+                @if(selectedUser.profile){ <img [src]="selectedUser.profile" class="rounded-circle" width="44" height="44" alt=""> }
+                @else{ <span class="avatar-placeholder-lg">{{ selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : '?' }}</span> }
+                <span class="status-dot online"></span>
+              </div>
+              <div class="selected-user-info">
+                <strong class="selected-name">{{ selectedUser.name }}</strong>
+                <span class="selected-email">{{ selectedUser.email }}</span>
+              </div>
+              <button type="button" class="btn-remove-user" (click)="clearSelectedUser()">
+                <i class="ri-close-circle-fill"></i>
+              </button>
+            </div>
+          </div>
+        }
+        <input type="hidden" formControlName="targetUserId">
+        @if(contactSubmitted && !selectedUser){ <div class="alert-inline error mb-3"><i class="ri-error-warning-line me-2"></i>Veuillez sélectionner un utilisateur.</div> }
+        @if(contactError){ <div class="alert-inline error mb-3"><i class="ri-error-warning-line me-2"></i>{{ contactError }}</div> }
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="modal.dismiss()">Annuler</button>
+          <button type="submit" class="btn-primary-custom" [disabled]="isLoadingContact || !selectedUser">
+            @if(isLoadingContact){ <span class="spinner-border spinner-border-sm me-2"></span> }
+            @else{ <i class="ri-user-add-line me-2"></i> }
+            Ajouter
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #newMessageModal let-modal>
+  <div class="modal-wrapper">
+    <div class="modal-header-custom">
+      <div class="modal-icon-badge green"><i class="ri-send-plane-line"></i></div>
+      <div>
+        <h5 class="modal-title-custom">Nouveau message</h5>
+        <p class="modal-subtitle">Envoyez un message direct</p>
+      </div>
+      <button type="button" class="btn-close-custom" (click)="modal.dismiss()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body-custom">
+      <form [formGroup]="newMessageForm" (ngSubmit)="submitNewMessage()">
+        <div class="field-group mb-4">
+          <label class="field-label">Destinataire</label>
+          <div class="select-wrapper">
+            <i class="ri-user-line select-icon"></i>
+            <select class="field-select ps-5" formControlName="recipientRoomId"
+                    [class.is-invalid]="msgSubmitted && nmf['recipientRoomId'].errors">
+              <option value="">Sélectionner un contact...</option>
+              @for(user of chatData; track user.roomId){ <option [value]="user.roomId">{{ user.name }}</option> }
+            </select>
+            <i class="ri-arrow-down-s-line select-arrow"></i>
+          </div>
+          @if(msgSubmitted && nmf['recipientRoomId'].errors){ <span class="field-error">Veuillez choisir un destinataire.</span> }
+        </div>
+        <div class="field-group mb-4">
+          <label class="field-label">Message</label>
+          <textarea rows="4" class="field-textarea" formControlName="message"
+                    placeholder="Écrivez votre message..."
+                    [class.is-invalid]="msgSubmitted && nmf['message'].errors"></textarea>
+          @if(msgSubmitted && nmf['message'].errors){ <span class="field-error">Le message ne peut pas être vide.</span> }
+        </div>
+        @if(msgError){ <div class="alert-inline error mb-3"><i class="ri-error-warning-line me-2"></i>{{ msgError }}</div> }
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="modal.dismiss()">Annuler</button>
+          <button type="submit" class="btn-primary-custom green" [disabled]="isLoadingMsg">
+            @if(isLoadingMsg){ <span class="spinner-border spinner-border-sm me-2"></span> }
+            @else{ <i class="ri-send-plane-2-fill me-2"></i> }
+            Envoyer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #createGroupModal let-modal>
+  <div class="modal-wrapper wide">
+    <div class="modal-header-custom">
+      <div class="modal-icon-badge purple"><i class="ri-group-line"></i></div>
+      <div>
+        <h5 class="modal-title-custom">Créer un groupe</h5>
+        <p class="modal-subtitle">Créez un canal de discussion partagé</p>
+      </div>
+      <button type="button" class="btn-close-custom" (click)="modal.dismiss()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body-custom">
+      <form [formGroup]="createGroupForm" (ngSubmit)="submitCreateGroup()">
+        <div class="field-group mb-3">
+          <label class="field-label">Nom du groupe <span class="required">*</span></label>
+          <div class="search-input-wrapper">
+            <i class="ri-hashtag search-input-icon"></i>
+            <input type="text" class="field-input ps-5" formControlName="groupName"
+                   placeholder="ex: Équipe design..."
+                   [class.is-invalid]="groupSubmitted && cgf['groupName'].errors">
+          </div>
+          @if(groupSubmitted && cgf['groupName'].errors){
+            <span class="field-error">
+              @if(cgf['groupName'].errors['required']){ Le nom est requis. }
+              @if(cgf['groupName'].errors['minlength']){ Minimum 2 caractères. }
+            </span>
+          }
+        </div>
+        <div class="field-group mb-3">
+          <label class="field-label">Description <span class="optional">(optionnelle)</span></label>
+          <textarea rows="2" class="field-textarea" formControlName="description"
+                    placeholder="Décrivez le but de ce groupe..." style="min-height:70px;"></textarea>
+        </div>
+        <div class="field-group mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="field-label mb-0">Membres <span class="required">*</span></label>
+            <span class="members-count-badge">{{ selectedMembers.length }} sélectionné(s)</span>
+          </div>
+          <div class="members-grid">
+            @for(user of chatData; track user.roomId){
+              <div class="member-card" [class.selected]="isMemberSelected(user)" (click)="toggleMember(user)">
+                <div class="member-avatar">
+                  @if(user.image){ <img [src]="user.image" class="rounded-circle" width="32" height="32" alt=""> }
+                  @else{ <span class="member-initials">{{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}</span> }
+                </div>
+                <span class="member-name">{{ user.name }}</span>
+                <div class="member-check"><i class="ri-check-line"></i></div>
+              </div>
+            }
+          </div>
+          @if(groupSubmitted && selectedMembers.length === 0){
+            <span class="field-error mt-1 d-block">Sélectionnez au moins un membre.</span>
+          }
+        </div>
+        @if(groupError){ <div class="alert-inline error mb-2"><i class="ri-error-warning-line me-2"></i>{{ groupError }}</div> }
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="modal.dismiss()">Annuler</button>
+          <button type="submit" class="btn-primary-custom purple" [disabled]="isLoadingGroup">
+            @if(isLoadingGroup){ <span class="spinner-border spinner-border-sm me-2"></span> }
+            @else{ <i class="ri-group-line me-2"></i> }
+            Créer le groupe
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>
+<!-- ✅ OVERLAY APPEL WebRTC -->
+<app-call></app-call>

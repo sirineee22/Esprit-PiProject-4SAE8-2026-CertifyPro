@@ -1,0 +1,7 @@
+@import '../../../jobs.css';
+
+:host {
+    display: block;
+    background-color: var(--job-bg-dark);
+    min-height: 100vh;
+}

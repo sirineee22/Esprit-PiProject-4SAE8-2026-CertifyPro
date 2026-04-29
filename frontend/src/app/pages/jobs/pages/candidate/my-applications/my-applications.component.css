@@ -1,0 +1,26 @@
+@import '../../../jobs.css';
+/* my-applications.component.css */
+
+/* ✅ Force le fond sombre sur CE composant spécifiquement */
+:host {
+    display: block;
+    background-color: #0a0a0f;
+    min-height: 100vh;
+}
+
+/* Surcharge locale pour les éléments Bootstrap qui résistent */
+.job-module-container .text-muted {
+    color: #94a3b8 !important;
+}
+
+.job-module-container .border-top {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.job-module-container .text-white {
+    color: #f8fafc !important;
+}
+
+.job-module-container a.text-white:hover {
+    color: #a78bfa !important;
+}

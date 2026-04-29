@@ -21,12 +21,15 @@ spring:
             allowedHeaders:
               - "*"
             allowCredentials: true
+            maxAge: 3600
+        add-to-simple-url-handler-mapping: true
       discovery:
         locator:
           enabled: true
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_FIRST
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
       routes:
+        # ================= USER =================
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
@@ -39,22 +42,56 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/auth/**
+        - id: certifications-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/certifications/**,/api/certifications
+        - id: certification-exams-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/certification-exams/**,/api/certification-exams
+        - id: certification-attempts-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/certification-attempts/**
+        - id: ai-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/ai/**
+
+        # ================= PLANNED SESSION =================
         - id: trainer-requests-service
           uri: lb://PLANNED-SESSION-SERVICE
           predicates:
             - Path=/api/trainer-requests/**
+        - id: planned-session-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/schedules/**
+        - id: room-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/rooms/**
+
+        # ================= FORUM =================
         - id: forum-service
           uri: lb://FORUM-SERVICE
           predicates:
             - Path=/api/forum/**,/uploads/posts/**
+
+        # ================= ECOMMERCE =================
         - id: ecommerce-service
           uri: lb://ECOMMERCE-SERVICE
           predicates:
             - Path=/api/products/**,/api/orders/**
+
+        # ================= EVENTS =================
         - id: event-service
           uri: lb://EVENT-SERVICE
           predicates:
             - Path=/api/events/**,/api/admin/events/**
+
+        # ================= TRAINING =================
         - id: evaluations-service
           uri: lb://TRAINING-SERVICE
           predicates:
@@ -79,22 +116,40 @@ spring:
           uri: lb://TRAINING-SERVICE
           predicates:
             - Path=/api/stats/**,/api/stats
-        - id: planned-session-service
-          uri: lb://PLANNED-SESSION-SERVICE
-          predicates:
-            - Path=/api/schedules/**
-        - id: room-service
-          uri: lb://PLANNED-SESSION-SERVICE
-          predicates:
-            - Path=/api/rooms/**
+
+        # ================= COLLABORATION =================
         - id: collaboration-service
           uri: lb://COLLABORATION-SERVICE
           predicates:
             - Path=/api/groups/**
-        - id: ai-service
-          uri: lb://USER-SERVICE
+
+        # ================= JOBS =================
+        - id: job-careers-service
+          uri: lb://JOB-CAREERS-SERVICE
           predicates:
-            - Path=/api/ai/**
+            - Path=/api/jobs/**,/api/companies/**,/api/files/**,/api/candidate/**,/api/admin/applications/**,/api/admin/statistics/**,/api/categories/**,/api/employer/**
+
+        # ================= MESSAGING — REST =================
+        - id: messaging-service-rest
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/api/chat/**
+        - id: messaging-service-uploads
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/uploads/**
+        - id: messaging-service-notifications
+          uri: lb://MESSAGING-SERVICE
+          predicates:
+            - Path=/api/notifications/**
+
+        # ================= WEBSOCKET =================
+        - id: messaging-service-ws
+          uri: lb:ws://MESSAGING-SERVICE
+          predicates:
+            - Path=/ws-chat/**
+          filters:
+            - RewritePath=/ws-chat/(?<segment>.*), /ws-chat/${segment}
 
 eureka:
   client:
@@ -104,3 +159,10 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 10
+
+logging:
+  level:
+    reactor.core.publisher.Operators: OFF
+    reactor.netty: WARN
+    io.netty: WARN
+    org.springframework.cloud.gateway: INFO

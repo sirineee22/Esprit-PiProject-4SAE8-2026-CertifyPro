@@ -42,6 +42,13 @@ import { AuthService } from '../../../../core/auth/auth.service';
               <a routerLink="/certifications" class="btn-hero-secondary">
                 View Certifications
               </a>
+
+              <!-- ✅ BOUTON MESSAGERIE dans les hero-actions (visible si connecté) -->
+              <a *ngIf="isLoggedIn" routerLink="/chat" class="btn-hero-chat">
+                <i class="bi bi-chat-dots-fill"></i>
+                Messagerie
+                <span class="chat-notif-dot"></span>
+              </a>
             </div>
 
              <div class="hero-stats">
@@ -77,11 +84,10 @@ import { AuthService } from '../../../../core/auth/auth.service';
             </div>
           </div>
 
-          <!-- Right Column: Small Hero Visual -->
+          <!-- Right Column -->
           <div class="col-lg-6">
             <div class="hero-visual">
               <div class="hero-img-container">
-                <!-- SVG Illustration - The Credential Architecture (Modern Glassmorphism) -->
                 <svg viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <linearGradient id="mainBlue" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -96,48 +102,29 @@ import { AuthService } from '../../../../core/auth/auth.service';
                       <stop offset="0%" style="stop-color:rgba(255,255,255,0.2)" />
                       <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)" />
                     </linearGradient>
-                    <filter id="glassBlur">
-                      <feGaussianBlur stdDeviation="8" />
-                    </filter>
                     <filter id="softDrop">
                       <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity="0.15" />
                     </filter>
                   </defs>
-
-                  <!-- Background structural elements -->
                   <rect x="40" y="40" width="320" height="240" rx="20" fill="url(#mainBlue)" opacity="0.03" />
-                  <path d="M40 100 L360 100" stroke="hsl(222, 47%, 25%)" stroke-opacity="0.05" stroke-width="1" />
-                  <path d="M120 40 L120 280" stroke="hsl(222, 47%, 25%)" stroke-opacity="0.05" stroke-width="1" />
-
-                  <!-- Floating Glass Card 1 (Behind) -->
                   <g filter="url(#softDrop)">
                     <rect x="60" y="80" width="220" height="140" rx="12" fill="url(#glassGrad)" stroke="white" stroke-opacity="0.3" />
                     <rect x="80" y="105" width="100" height="6" rx="3" fill="white" opacity="0.4" />
                     <rect x="80" y="120" width="140" height="4" rx="2" fill="white" opacity="0.2" />
                     <rect x="80" y="130" width="120" height="4" rx="2" fill="white" opacity="0.2" />
                   </g>
-
-                  <!-- Secondary Geometric Accents -->
                   <circle cx="300" cy="180" r="40" fill="url(#accentGold)" opacity="0.1" />
                   <circle cx="300" cy="180" r="25" stroke="url(#accentGold)" stroke-width="2" stroke-dasharray="4 4" opacity="0.3" />
-
-                  <!-- Floating Glass Card 2 (Front) -->
                   <g filter="url(#softDrop)">
                     <rect x="140" y="130" width="200" height="130" rx="16" fill="white" fill-opacity="0.7" stroke="white" stroke-width="2" />
-                    <!-- Ribbon detail on card -->
                     <rect x="140" y="150" width="200" height="25" fill="url(#mainBlue)" opacity="0.05" />
-                    <!-- Seal Icon -->
                     <circle cx="290" cy="205" r="22" fill="url(#accentGold)" opacity="0.9" />
                     <path d="M282 205 L288 211 L298 199" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-                    
-                    <!-- Text placeholders -->
                     <rect x="165" y="165" width="80" height="8" rx="4" fill="url(#mainBlue)" opacity="0.2" />
                     <rect x="165" y="185" width="100" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
                     <rect x="165" y="195" width="90" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
                     <rect x="165" y="205" width="70" height="5" rx="2" fill="url(#mainBlue)" opacity="0.1" />
                   </g>
-
-                  <!-- Connection Line -->
                   <path d="M100 220 Q 140 280, 240 260" stroke="url(#accentGold)" stroke-width="2" stroke-dasharray="6 6" opacity="0.4" />
                 </svg>
               </div>
@@ -147,7 +134,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
       </div>
     </section>
 
-    <!-- Content Sections (Path to Certification, Featured Courses etc) -->
+    <!-- Certification Path -->
     <section class="certification-path-section">
       <div class="container">
         <h2 class="section-title">Your Path to Certification</h2>
@@ -194,7 +181,205 @@ import { AuthService } from '../../../../core/auth/auth.service';
         </div>
       </div>
     </section>
+
+    <!-- ============================================================
+         ✅ BOUTON FLOTTANT MESSAGERIE (style WhatsApp / Messenger)
+         Visible partout sur la page, coin bas-droit
+         Uniquement si l'utilisateur est connecté
+    ============================================================ -->
+    <ng-container *ngIf="isLoggedIn">
+      <a routerLink="/chat" class="fab-chat" title="Ouvrir la Messagerie">
+        <div class="fab-icon">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <span class="fab-label">Messagerie</span>
+        <!-- Badge nombre de messages non lus -->
+        <span class="fab-badge">3</span>
+      </a>
+    </ng-container>
   `,
+  styles: [`
+    /* ============================================================
+       BOUTON DANS LES HERO ACTIONS
+    ============================================================ */
+    .btn-hero-chat {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-hero-chat:hover {
+      background: rgba(245, 158, 11, 0.9);
+      border-color: transparent;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-hero-chat i {
+      font-size: 1.1rem;
+    }
+
+    .chat-notif-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.7; }
+    }
+
+    /* ============================================================
+       BOUTON FLOTTANT FAB (Floating Action Button) 
+       Style WhatsApp / Facebook Messenger
+       Position : coin bas-droit, visible sur toute la page
+    ============================================================ */
+    .fab-chat {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 9999;
+
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      background: linear-gradient(135deg, #1a2f4e, #0d1f35);
+      color: white;
+      text-decoration: none;
+      border-radius: 50px;
+      padding: 14px 22px 14px 18px;
+
+      box-shadow:
+        0 8px 32px rgba(13, 31, 53, 0.5),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+
+      /* Animation d'entrée */
+      animation: fab-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes fab-enter {
+      from {
+        transform: scale(0) translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .fab-chat:hover {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-color: transparent;
+      transform: scale(1.06) translateY(-3px);
+      box-shadow:
+        0 16px 40px rgba(245, 158, 11, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.2);
+      color: white;
+    }
+
+    /* Pulse animation quand pas hover */
+    .fab-chat:not(:hover) .fab-icon {
+      animation: fab-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes fab-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .fab-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(245, 158, 11, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: background 0.3s;
+    }
+
+    .fab-chat:hover .fab-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .fab-label {
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    /* Badge nombre de messages non lus */
+    .fab-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+      animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+    }
+
+    @keyframes badge-pop {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    /* Sur mobile : seulement l'icône ronde (comme WhatsApp) */
+    @media (max-width: 768px) {
+      .fab-chat {
+        bottom: 24px;
+        right: 24px;
+        border-radius: 50%;
+        padding: 18px;
+        width: 60px;
+        height: 60px;
+        justify-content: center;
+      }
+
+      .fab-label {
+        display: none;
+      }
+
+      .fab-icon {
+        width: auto;
+        height: auto;
+        background: transparent;
+        font-size: 1.5rem;
+      }
+    }
+  `],
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {

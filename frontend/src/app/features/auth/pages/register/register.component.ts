@@ -9,11 +9,8 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
 import { catchError, finalize, switchMap, throwError, timeout } from 'rxjs';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
-<<<<<<< HEAD
 import { passwordStrengthValidator } from '../../../../core/validators/password-strength.validator';
-=======
 import { ToastService } from '../../../../core/services/toast.service';
->>>>>>> origin/certifications-inscriptions
 
 @Component({
   selector: 'app-register',
@@ -74,6 +71,11 @@ import { ToastService } from '../../../../core/services/toast.service';
                   <h4>Learner</h4>
                   <p>Access courses and earn certifications</p>
                 </div>
+                <div class="role-card" (click)="selectRole('EMPLOYER')">
+                  <i class="bi bi-briefcase"></i>
+                  <h4>Employer</h4>
+                  <p>Post job offers and manage candidates</p>
+                </div>
                 <div class="role-card" (click)="selectRole('TRAINER')">
                   <i class="bi bi-person-workspace"></i>
                   <h4>Trainer</h4>
@@ -85,13 +87,13 @@ import { ToastService } from '../../../../core/services/toast.service';
             <!-- Registration Form -->
             <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" *ngIf="selectedRole && !showSuccessModal">
               <div class="selected-role-badge">
-                <i class="bi" [ngClass]="selectedRole === 'LEARNER' ? 'bi-book' : 'bi-person-workspace'"></i>
-                <span>Registering as {{ selectedRole === 'LEARNER' ? 'Learner' : 'Trainer' }}</span>
+                <i class="bi" [ngClass]="getRoleIcon()"></i>
+                <span>Registering as {{ getRoleLabel() }}</span>
                 <button type="button" class="change-role-btn" (click)="changeRole()">Change</button>
               </div>
 
               <!-- Basic Info Section -->
-              <div *ngIf="selectedRole === 'LEARNER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
+              <div *ngIf="selectedRole === 'LEARNER' || selectedRole === 'EMPLOYER' || (selectedRole === 'TRAINER' && trainerStep === 1)">
                 <div class="row gx-3">
                    <div class="col-6">
                       <div class="form-group">
@@ -186,8 +188,8 @@ import { ToastService } from '../../../../core/services/toast.service';
                   <i class="bi bi-arrow-right"></i>
                 </button>
 
-                <!-- Submit Button (Learner) -->
-                <button type="submit" class="submit-btn" *ngIf="selectedRole === 'LEARNER'" [disabled]="registerForm.invalid || isSubmitting">
+                <!-- Submit Button (Learner or Employer) -->
+                <button type="submit" class="submit-btn" *ngIf="selectedRole === 'LEARNER' || selectedRole === 'EMPLOYER'" [disabled]="registerForm.invalid || isSubmitting">
                   <span *ngIf="!isSubmitting">Get Started</span>
                   <span *ngIf="isSubmitting">Processing...</span>
                   <i class="bi bi-chevron-right" *ngIf="!isSubmitting"></i>
@@ -403,7 +405,7 @@ import { ToastService } from '../../../../core/services/toast.service';
     /* Role Selection */
     .role-selection { margin-top: 1rem; }
     .role-title { font-size: 1.1rem; font-weight: 700; color: #0b1f3b; margin-bottom: 1.5rem; }
-    .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .role-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
     .role-card {
       padding: 2rem 1.5rem;
       border: 2px solid #e5e7eb;
@@ -608,6 +610,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       .auth-card { flex-direction: column; height: auto; max-width: 500px; }
       .right-panel { padding: 2.5rem; }
       .role-cards { grid-template-columns: 1fr; }
+      .role-card { min-width: 0; }
     }
   `]
 })
@@ -616,30 +619,20 @@ export class RegisterComponent {
   readonly SearchCountryField = SearchCountryField;
   
   registerForm: FormGroup;
-  selectedRole: 'LEARNER' | 'TRAINER' | null = null;
+  selectedRole: 'LEARNER' | 'TRAINER' | 'EMPLOYER' | null = null;
   trainerStep: number = 1;
   isSubmitting = false;
   showSuccessModal = false;
 
-<<<<<<< HEAD
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private trainerRequestService = inject(TrainerRequestService);
   private router = inject(Router);
+  private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
-=======
-  constructor(
-    private fb: FormBuilder,
-    private userService: UserService,
-    private authService: AuthService,
-    private trainerRequestService: TrainerRequestService,
-    private router: Router,
-    private toast: ToastService
-  ) {
->>>>>>> origin/certifications-inscriptions
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
@@ -654,10 +647,11 @@ export class RegisterComponent {
     });
   }
 
-  selectRole(role: 'LEARNER' | 'TRAINER') {
+  selectRole(role: 'LEARNER' | 'TRAINER' | 'EMPLOYER') {
     this.selectedRole = role;
     this.trainerStep = 1;
 
+    // Add validators for trainer fields only
     if (role === 'TRAINER') {
       this.registerForm.get('subjects')?.setValidators([Validators.required]);
       this.registerForm.get('experience')?.setValidators([Validators.required]);
@@ -705,6 +699,18 @@ export class RegisterComponent {
     this.cdr.detectChanges();
   }
 
+  getRoleIcon(): string {
+    if (this.selectedRole === 'LEARNER') return 'bi-book';
+    if (this.selectedRole === 'EMPLOYER') return 'bi-briefcase';
+    return 'bi-person-workspace';
+  }
+
+  getRoleLabel(): string {
+    if (this.selectedRole === 'LEARNER') return 'Learner';
+    if (this.selectedRole === 'EMPLOYER') return 'Employer';
+    return 'Trainer';
+  }
+
   onSubmit() {
     if (this.registerForm.invalid || this.isSubmitting) return;
     this.isSubmitting = true;
@@ -712,6 +718,8 @@ export class RegisterComponent {
 
     if (this.selectedRole === 'LEARNER') {
       this.registerAsLearner();
+    } else if (this.selectedRole === 'EMPLOYER') {
+      this.registerAsEmployer();
     } else {
       this.registerAsTrainer();
     }
@@ -728,20 +736,29 @@ export class RegisterComponent {
   }
 
   private registerAsLearner() {
+    this.registerWithRole('learner');
+  }
+
+  private registerAsEmployer() {
+    this.registerWithRole('employer');
+  }
+
+  private registerWithRole(role: 'learner' | 'employer') {
     const form = this.registerForm.value;
     const phoneRaw = this.registerForm.get('phoneNumber')?.value;
-    const user: User = {
-      ...form,
+    const body = {
+      firstName: form.firstName,
+      lastName: form.lastName,
       email: (form.email ?? '').trim().toLowerCase(),
       password: (form.password ?? '').trim(),
-      phoneNumber: this.normalizePhone(phoneRaw),
-      active: true
+      phoneNumber: this.normalizePhone(phoneRaw) ?? undefined
     };
 
-    this.userService.create(user).subscribe({
+    this.userService.create({ ...body, active: true } as User).subscribe({
       next: (createdUser: User) => {
-        // Auto-login
-        this.authService.login(user.email!, user.password!).subscribe({
+        const email = body.email;
+        const password = body.password;
+        this.authService.login(email, password).subscribe({
           next: (loginRes) => {
             if (loginRes.user) {
               this.authService.setSession(loginRes.user, loginRes.token);
@@ -764,17 +781,10 @@ export class RegisterComponent {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
-<<<<<<< HEAD
-          alert('Email already exists.');
-        } else {
-          alert('Registration failed.');
-        }
-=======
           this.toast.error('Email already exists. Please use a different email.');
           return;
         }
         this.toast.error('Registration failed. Please try again.');
->>>>>>> origin/certifications-inscriptions
       }
     });
   }
@@ -783,7 +793,8 @@ export class RegisterComponent {
     const form = this.registerForm.value;
     const phoneRaw = this.registerForm.get('phoneNumber')?.value;
     const user: User = {
-      ...form,
+      firstName: form.firstName,
+      lastName: form.lastName,
       email: (form.email ?? '').trim().toLowerCase(),
       password: (form.password ?? '').trim(),
       phoneNumber: this.normalizePhone(phoneRaw),
@@ -794,12 +805,8 @@ export class RegisterComponent {
       next: (createdUser: User) => {
         if (!createdUser?.id) {
           this.isSubmitting = false;
-<<<<<<< HEAD
           this.cdr.detectChanges();
-          alert('Registration failed.');
-=======
           this.toast.error('Registration failed. Please try again.');
->>>>>>> origin/certifications-inscriptions
           return;
         }
 
@@ -811,7 +818,6 @@ export class RegisterComponent {
           certificatesLink: form.certificatesLink
         };
 
-        // Submit trainer request
         this.trainerRequestService.submitRequest(request).subscribe({
           next: () => {
             this.isSubmitting = false;
@@ -820,9 +826,8 @@ export class RegisterComponent {
           },
           error: (err) => {
             console.error('Request failed', err);
-            // Even if request fails, user is created? Usually we'd want both to succeed.
             this.isSubmitting = false;
-            this.showSuccessModal = true; // Still show success since account is created
+            this.showSuccessModal = true;
             this.cdr.detectChanges();
           }
         });
@@ -831,17 +836,10 @@ export class RegisterComponent {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
-<<<<<<< HEAD
-          alert('Email already exists.');
-        } else {
-          alert('Registration failed.');
-        }
-=======
           this.toast.error('Email already exists. Please use a different email.');
           return;
         }
         this.toast.error('Registration failed. Please try again.');
->>>>>>> origin/certifications-inscriptions
       }
     });
   }

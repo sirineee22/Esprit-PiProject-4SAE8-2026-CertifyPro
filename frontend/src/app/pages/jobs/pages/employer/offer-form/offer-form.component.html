@@ -1,0 +1,152 @@
+<div class="job-module-container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">{{ isEditMode ? 'Modifier l\'offre' : 'Créer une offre' }}</h2>
+            <p class="text-muted mb-0">Remplissez les détails pour trouver le candidat idéal.</p>
+        </div>
+        <div>
+            <a routerLink="/employer/jobs" class="btn btn-glass-secondary">
+                <i class="ri-arrow-left-line align-bottom me-1"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading" class="glass-card">
+        <form [formGroup]="offerForm" (ngSubmit)="onSubmit()">
+
+            <div class="row g-4">
+                <!-- Informations principales -->
+                <div class="col-md-12">
+                    <h5 class="text-white border-bottom border-light pb-2 mb-3">Informations de base</h5>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Titre du poste <span class="text-danger">*</span></label>
+                    <input type="text" class="glass-input" formControlName="title"
+                        placeholder="Ex: Développeur Full Stack Angular/Spring">
+                    <div class="text-danger small mt-1"
+                        *ngIf="offerForm.get('title')?.touched && offerForm.get('title')?.invalid">
+                        Le titre est requis.
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Lieu <span class="text-danger">*</span></label>
+                    <input type="text" class="glass-input" formControlName="location"
+                        placeholder="Ex: Tunis, Ariana...">
+                    <div class="text-danger small mt-1"
+                        *ngIf="offerForm.get('location')?.touched && offerForm.get('location')?.invalid">
+                        Le lieu est requis.
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Secteur <span class="text-danger">*</span></label>
+                    <select class="glass-input form-select" formControlName="sector">
+                        <option *ngFor="let s of sectors" [value]="s">{{ s }}</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Type de contrat <span class="text-danger">*</span></label>
+                    <select class="glass-input form-select" formControlName="contractType">
+                        <option *ngFor="let c of contractTypes" [value]="c">{{ c }}</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Niveau d'expérience <span class="text-danger">*</span></label>
+                    <select class="glass-input form-select" formControlName="experienceLevel">
+                        <option *ngFor="let e of experienceLevels" [value]="e">{{ e }}</option>
+                    </select>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="form-check form-switch form-switch-success mt-2">
+                        <input class="form-check-input" type="checkbox" id="remoteSwitch" formControlName="remote">
+                        <label class="form-check-label text-white ms-2" for="remoteSwitch">Offre en Télétravail</label>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label text-muted">Description détaillée <span
+                            class="text-danger">*</span></label>
+                    <textarea class="glass-input" formControlName="description" rows="5"
+                        placeholder="Décrivez les missions, l'environnement de travail..."></textarea>
+                    <div class="text-danger small mt-1"
+                        *ngIf="offerForm.get('description')?.touched && offerForm.get('description')?.invalid">
+                        La description est requise.
+                    </div>
+                </div>
+
+                <!-- Compétences requises -->
+                <div class="col-md-12 mt-5">
+                    <h5 class="text-white border-bottom border-light pb-2 mb-3">Compétences requises</h5>
+                </div>
+
+                <div class="col-md-12" formArrayName="requiredSkills">
+                    <div class="row mb-2" *ngFor="let control of skillsArray.controls; let i = index">
+                        <div class="col-10">
+                            <input type="text" class="glass-input" [formControlName]="i"
+                                placeholder="Ex: Angular, Java, SQL...">
+                        </div>
+                        <div class="col-2">
+                            <button type="button" class="btn btn-outline-danger w-100 h-100" (click)="removeSkill(i)"
+                                [disabled]="skillsArray.length === 1">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-glass-secondary mt-2" (click)="addSkill()">
+                        <i class="ri-add-line me-1"></i> Ajouter une compétence
+                    </button>
+                </div>
+
+                <!-- Paramètres additionnels -->
+                <div class="col-md-12 mt-5">
+                    <h5 class="text-white border-bottom border-light pb-2 mb-3">Détails additionnels</h5>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Salaire Minimum (TND)</label>
+                    <input type="number" class="glass-input" formControlName="salaryMin">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Salaire Maximum (TND)</label>
+                    <input type="number" class="glass-input" formControlName="salaryMax">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Date limite de candidature</label>
+                    <input type="date" class="glass-input" formControlName="deadline">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Statut de l'offre <span class="text-danger">*</span></label>
+                    <select class="glass-input form-select" formControlName="status">
+                        <option value="DRAFT">Brouillon</option>
+                        <option value="PUBLISHED">Publiée</option>
+                        <option value="CLOSED">Clôturée</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end mt-4 pt-3 border-top border-light">
+                <button type="button" routerLink="/employer/jobs" class="btn btn-glass-secondary me-3">Annuler</button>
+                <button type="submit" class="btn btn-glass-primary" [disabled]="submitting || offerForm.invalid">
+                    <span *ngIf="submitting" class="spinner-border spinner-border-sm me-2" role="status"
+                        aria-hidden="true"></span>
+                    {{ isEditMode ? 'Enregistrer les modifications' : 'Créer l\'offre' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
