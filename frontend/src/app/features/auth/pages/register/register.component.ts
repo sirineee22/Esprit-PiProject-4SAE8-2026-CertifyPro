@@ -9,7 +9,11 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../shared/models/user.model';
 import { catchError, finalize, switchMap, throwError, timeout } from 'rxjs';
 import { TrainerRequestService } from '../../../trainer-requests/services/trainer-request.service';
+<<<<<<< HEAD
 import { passwordStrengthValidator } from '../../../../core/validators/password-strength.validator';
+=======
+import { ToastService } from '../../../../core/services/toast.service';
+>>>>>>> origin/certifications-inscriptions
 
 @Component({
   selector: 'app-register',
@@ -617,6 +621,7 @@ export class RegisterComponent {
   isSubmitting = false;
   showSuccessModal = false;
 
+<<<<<<< HEAD
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private authService = inject(AuthService);
@@ -625,6 +630,16 @@ export class RegisterComponent {
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
+=======
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserService,
+    private authService: AuthService,
+    private trainerRequestService: TrainerRequestService,
+    private router: Router,
+    private toast: ToastService
+  ) {
+>>>>>>> origin/certifications-inscriptions
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
@@ -749,10 +764,17 @@ export class RegisterComponent {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
+<<<<<<< HEAD
           alert('Email already exists.');
         } else {
           alert('Registration failed.');
         }
+=======
+          this.toast.error('Email already exists. Please use a different email.');
+          return;
+        }
+        this.toast.error('Registration failed. Please try again.');
+>>>>>>> origin/certifications-inscriptions
       }
     });
   }
@@ -772,8 +794,12 @@ export class RegisterComponent {
       next: (createdUser: User) => {
         if (!createdUser?.id) {
           this.isSubmitting = false;
+<<<<<<< HEAD
           this.cdr.detectChanges();
           alert('Registration failed.');
+=======
+          this.toast.error('Registration failed. Please try again.');
+>>>>>>> origin/certifications-inscriptions
           return;
         }
 
@@ -805,10 +831,17 @@ export class RegisterComponent {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         if (e instanceof HttpErrorResponse && e.status === 409) {
+<<<<<<< HEAD
           alert('Email already exists.');
         } else {
           alert('Registration failed.');
         }
+=======
+          this.toast.error('Email already exists. Please use a different email.');
+          return;
+        }
+        this.toast.error('Registration failed. Please try again.');
+>>>>>>> origin/certifications-inscriptions
       }
     });
   }

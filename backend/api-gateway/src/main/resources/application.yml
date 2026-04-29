@@ -31,6 +31,10 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**,/api/roles/**,/api/admin/audit/**
+        - id: payments-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/payments/**
         - id: auth-service
           uri: lb://USER-SERVICE
           predicates:
@@ -87,6 +91,10 @@ spring:
           uri: lb://COLLABORATION-SERVICE
           predicates:
             - Path=/api/groups/**
+        - id: ai-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/ai/**
 
 eureka:
   client:

@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests/services/trainer-request.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-trainer-requests',
@@ -534,7 +535,8 @@ export class TrainerRequestsComponent implements OnInit {
 
   constructor(
     private trainerRequestService: TrainerRequestService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -565,11 +567,17 @@ export class TrainerRequestsComponent implements OnInit {
     this.isProcessing = true;
     this.trainerRequestService.approveRequest(request.id).subscribe({
       next: () => {
+        this.toast.success(`${request.user.firstName} ${request.user.lastName} is now an approved trainer.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
       error: (err) => {
         console.error('Failed to approve request', err);
+        let message = 'Failed to approve request. Please try again.';
+        if (err.error) {
+          message = typeof err.error === 'string' ? err.error : err.error.message || message;
+        }
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });
@@ -583,11 +591,17 @@ export class TrainerRequestsComponent implements OnInit {
     this.isProcessing = true;
     this.trainerRequestService.rejectRequest(request.id).subscribe({
       next: () => {
+        this.toast.info(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
       error: (err) => {
         console.error('Failed to reject request', err);
+        let message = 'Failed to reject request. Please try again.';
+        if (err.error) {
+          message = typeof err.error === 'string' ? err.error : err.error.message || message;
+        }
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });

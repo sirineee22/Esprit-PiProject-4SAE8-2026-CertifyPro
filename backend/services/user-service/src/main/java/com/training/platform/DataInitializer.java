@@ -18,7 +18,8 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(RoleRepository roleRepository, UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -34,7 +35,7 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // Init Admin User (created on first run if not present)
+        // Init Admin User
         if (userRepository.findByEmailIgnoreCase("admin@platform.com").isEmpty()) {
             Role adminRole = roleRepository.findByName("ADMIN").orElseThrow();
             User admin = new User();
@@ -47,5 +48,46 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println(">>> Admin user created. Login: admin@platform.com / Admin123!");
         }
+
+        // Demo trainer (create or repair password/role/active for this email)
+        ensureDemoTrainerAccount();
+    }
+
+    private static final String DEMO_TRAINER_EMAIL = "trainer@platform.com";
+    private static final String DEMO_TRAINER_PASSWORD = "Trainer123!";
+
+    private void ensureDemoTrainerAccount() {
+        Role trainerRole = roleRepository.findByName("TRAINER").orElseThrow();
+        userRepository.findByEmailIgnoreCase(DEMO_TRAINER_EMAIL).ifPresentOrElse(
+                user -> {
+                    boolean needsSave = false;
+                    if (user.getRole() == null || !"TRAINER".equals(user.getRole().getName())) {
+                        user.setRole(trainerRole);
+                        needsSave = true;
+                    }
+                    if (!passwordEncoder.matches(DEMO_TRAINER_PASSWORD, user.getPassword())) {
+                        user.setPassword(passwordEncoder.encode(DEMO_TRAINER_PASSWORD));
+                        needsSave = true;
+                    }
+                    if (!user.isActive()) {
+                        user.setActive(true);
+                        needsSave = true;
+                    }
+                    if (needsSave) {
+                        userRepository.save(user);
+                        System.out.println(">>> Demo trainer repaired: " + DEMO_TRAINER_EMAIL + " / " + DEMO_TRAINER_PASSWORD);
+                    }
+                },
+                () -> {
+                    User trainer = new User();
+                    trainer.setFirstName("Demo");
+                    trainer.setLastName("Trainer");
+                    trainer.setEmail(DEMO_TRAINER_EMAIL);
+                    trainer.setPassword(passwordEncoder.encode(DEMO_TRAINER_PASSWORD));
+                    trainer.setRole(trainerRole);
+                    trainer.setActive(true);
+                    userRepository.save(trainer);
+                    System.out.println(">>> Demo trainer created: " + DEMO_TRAINER_EMAIL + " / " + DEMO_TRAINER_PASSWORD);
+                });
     }
 }

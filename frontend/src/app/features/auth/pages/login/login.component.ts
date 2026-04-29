@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, LoginResponse } from '../../../../core/auth/auth.service';
-import { User } from '../../../../shared/models/user.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -99,7 +99,7 @@ import { User } from '../../../../shared/models/user.model';
                 <button type="button" class="forgot-btn">FORGOT ACCESS?</button>
               </div>
 
-              <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isSubmitting">
+              <button type="submit" class="submit-btn">
                 <span *ngIf="!isSubmitting">Access Portal <i class="bi bi-chevron-right"></i></span>
                 <span *ngIf="isSubmitting">Signing in…</span>
               </button>
@@ -299,7 +299,9 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private route: ActivatedRoute,
+    private authService: AuthService,
+    private toast: ToastService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -337,13 +339,13 @@ export class LoginComponent {
         this.isSubmitting = false;
         if (e instanceof HttpErrorResponse) {
           if (e.status === 401) {
-            alert('Invalid credentials. Please check your email and password.');
+            this.toast.error('Invalid email or password.');
           } else if (e.status === 500) {
             console.error('Server Error (500):', e);
-            alert('Erreur serveur (500). Veuillez consulter la console pour plus de détails.');
+            this.toast.error('Server error. Please try again or contact support.');
           } else {
             console.error('Login Error:', e);
-            alert('Login failed. Check console (F12) for details.');
+            this.toast.error('Login failed. Please try again.');
           }
         }
       }
@@ -365,13 +367,19 @@ export class LoginComponent {
       },
       error: (e: unknown) => {
         this.isSubmitting = false;
-        alert('Code invalide ou expiré.');
+        this.toast.error('Invalid or expired code.');
       }
     });
   }
 
   private handleLoginSuccess(user: User, token: string) {
     this.authService.setSession(user, token);
+    this.toast.success('Login successful.');
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
     if (user.role?.name === 'ADMIN') {
       this.router.navigate(['/admin/dashboard']);
     } else {

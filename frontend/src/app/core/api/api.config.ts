@@ -3,6 +3,9 @@ export const API_BASE_URL = 'http://localhost:8081';
 export const API_ENDPOINTS = {
   users: `${API_BASE_URL}/api/users`,
   auth: `${API_BASE_URL}/api/auth`,
+  certifications: `${API_BASE_URL}/api/certifications`,
+  certificationExams: `${API_BASE_URL}/api/certification-exams`,
+  payments: `${API_BASE_URL}/api/payments`,
   trainerRequests: `${API_BASE_URL}/api/trainer-requests`,
   forum: {
     posts: `${API_BASE_URL}/api/forum/posts`,
@@ -25,3 +28,4 @@ export const API_ENDPOINTS = {
   schedules: `${API_BASE_URL}/api/schedules`,
   groups: `${API_BASE_URL}/api/groups`,
 };
+
