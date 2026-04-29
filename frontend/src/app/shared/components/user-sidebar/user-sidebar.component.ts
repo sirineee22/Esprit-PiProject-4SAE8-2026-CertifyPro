@@ -772,9 +772,10 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
   }
 
   private loadNotifications() {
+    // ✅ FIX: catch 404 silently — user-service notifications endpoint may not be available
     this.userService.getMyNotifications().subscribe({
       next: (items) => this.notifications = items ?? [],
-      error: () => this.notifications = []
+      error: () => { /* endpoint not available — ignore silently */ }
     });
   }
 

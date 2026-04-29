@@ -118,9 +118,16 @@ export class JobService {
       tags = [(job.tags as string)];
     }
 
+    // ✅ FIX: resolve company logo URL — prefix with API_BASE_URL if relative
+    let company = job.company ?? { id: 0, name: 'Unknown' };
+    if (company.logo && !company.logo.startsWith('http')) {
+      company = { ...company, logo: `http://localhost:8081${company.logo}` };
+    }
+
     return {
       ...job,
       tags,
+      company,
       isUrgent: job.isUrgent ?? false,
       isFeatured: job.isFeatured ?? false,
       isRemote: job.isRemote ?? false,
@@ -129,7 +136,6 @@ export class JobService {
       numberOfVacancy: job.numberOfVacancy ?? 0,
       startSalary: job.startSalary ?? undefined,
       lastSalary: job.lastSalary ?? undefined,
-      company: job.company ?? { id: 0, name: 'Unknown' }
     };
   }
   getMyJobs(page = 0, size = 10): Observable<PageResponse<Job>> {

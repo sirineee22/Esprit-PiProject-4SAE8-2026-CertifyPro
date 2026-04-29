@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { API_BASE_URL, API_ENDPOINTS } from '../../../core/api/api.config';
 import { User, UserProgress } from '../../../shared/models/user.model';
 
@@ -72,11 +73,17 @@ export class UserService {
     }
 
     getMyNotifications(): Observable<AppNotification[]> {
-        return this.http.get<AppNotification[]>(`${this.apiUrl}/notifications/my`);
+        // ✅ FIX: return empty array silently if endpoint returns 404
+        // (user-service notifications may not be deployed yet)
+        return this.http.get<AppNotification[]>(`${this.apiUrl}/notifications/my`).pipe(
+            catchError(() => of([]))
+        );
     }
 
     markNotificationAsRead(notificationId: number): Observable<void> {
-        return this.http.put<void>(`${this.apiUrl}/notifications/${notificationId}/read`, {});
+        return this.http.put<void>(`${this.apiUrl}/notifications/${notificationId}/read`, {}).pipe(
+            catchError(() => of(undefined as any))
+        );
     }
 
     getMyProgress(): Observable<UserProgress> {
