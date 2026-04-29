@@ -96,6 +96,22 @@ import { User } from '../../models/user.model';
             <i class="bi bi-briefcase-fill"></i>
             <span>Job Offers</span>
           </a>
+          <a routerLink="/jobs/employer/my-company" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-building"></i>
+            <span>Companies</span>
+          </a>
+          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-list-task"></i>
+            <span>Manage Offers</span>
+          </a>
+          <a routerLink="/jobs/employer/jobs/new" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Create Offer</span>
+          </a>
+          <a routerLink="/jobs/candidate/profile" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-person-badge-fill"></i>
+            <span>Candidate Profiles</span>
+          </a>
         </div>
       </nav>
 
