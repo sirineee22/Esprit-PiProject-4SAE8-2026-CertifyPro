@@ -100,26 +100,58 @@ import { AppNotification, UserService } from '../../../features/users/services/u
         <!-- Jobs Section -->
         <div class="nav-section">
           <span class="section-label" *ngIf="!isCollapsed">JOBS</span>
-          <a routerLink="/jobs" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Job Search' : ''">
+
+          <!-- Visible pour tous -->
+          <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link" [title]="isCollapsed ? 'Job Search' : ''">
             <i class="bi bi-search"></i>
             <span>Job Search</span>
+          </a>
+
+          <!-- LEARNER / candidat -->
+          <a routerLink="/jobs/candidate/profile" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Profile' : ''">
+            <i class="bi bi-person-badge"></i>
+            <span>My Profile</span>
           </a>
           <a routerLink="/jobs/candidate/applications" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Applications' : ''">
             <i class="bi bi-file-earmark-text"></i>
             <span>My Applications</span>
           </a>
-          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Offers' : ''" *ngIf="isEmployerOrAdmin">
-            <i class="bi bi-briefcase"></i>
-            <span>My Offers</span>
+          <a routerLink="/jobs/candidate/saved" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Saved Jobs' : ''">
+            <i class="bi bi-bookmark-heart"></i>
+            <span>Saved Jobs</span>
           </a>
-          <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Applications' : ''" *ngIf="isEmployerOrAdmin">
-            <i class="bi bi-people"></i>
-            <span>Applications</span>
+          <a routerLink="/jobs/candidate/recommendations" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'AI Recommendations' : ''">
+            <i class="bi bi-stars"></i>
+            <span>AI Recommendations</span>
           </a>
-          <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Job Stats' : ''" *ngIf="isAdmin">
-            <i class="bi bi-bar-chart"></i>
-            <span>Job Stats</span>
-          </a>
+
+          <!-- EMPLOYER -->
+          <ng-container *ngIf="isEmployerOrAdmin">
+            <a routerLink="/jobs/employer/my-company" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Company' : ''">
+              <i class="bi bi-building"></i>
+              <span>My Company</span>
+            </a>
+            <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Offers' : ''">
+              <i class="bi bi-briefcase"></i>
+              <span>My Offers</span>
+            </a>
+            <a routerLink="/jobs/employer/jobs/new" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Create Offer' : ''">
+              <i class="bi bi-plus-circle"></i>
+              <span>Create Offer</span>
+            </a>
+            <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'All Applications' : ''">
+              <i class="bi bi-people"></i>
+              <span>All Applications</span>
+            </a>
+          </ng-container>
+
+          <!-- ADMIN -->
+          <ng-container *ngIf="isAdmin">
+            <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Job Statistics' : ''">
+              <i class="bi bi-bar-chart-line"></i>
+              <span>Job Statistics</span>
+            </a>
+          </ng-container>
         </div>
         
         <!-- Trainer/Admin Section -->
