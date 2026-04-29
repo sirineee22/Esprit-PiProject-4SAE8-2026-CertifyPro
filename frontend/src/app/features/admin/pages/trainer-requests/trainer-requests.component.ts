@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainerRequestService, TrainerRequest } from '../../../trainer-requests/services/trainer-request.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-trainer-requests',
@@ -534,7 +535,8 @@ export class TrainerRequestsComponent implements OnInit {
 
   constructor(
     private trainerRequestService: TrainerRequestService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -558,14 +560,14 @@ export class TrainerRequestsComponent implements OnInit {
   }
 
   approveRequest(request: TrainerRequest) {
-    if (!confirm(`Approve ${request.user.firstName} ${request.user.lastName} as a trainer?\n\nThis will:\n• Change their role to TRAINER\n• Activate their account\n• Grant them trainer privileges`)) {
+    if (!confirm(`Approve ${request.user.firstName} ${request.user.lastName} as a trainer?`)) {
       return;
     }
 
     this.isProcessing = true;
     this.trainerRequestService.approveRequest(request.id).subscribe({
       next: () => {
-        alert(`✅ Success!\n\n${request.user.firstName} ${request.user.lastName} is now an approved trainer.\n\nImportant: They must log out and log in again to access trainer features (their session still has the old role).`);
+        this.toast.success(`${request.user.firstName} ${request.user.lastName} is now an approved trainer.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
@@ -575,21 +577,21 @@ export class TrainerRequestsComponent implements OnInit {
         if (err.error) {
           message = typeof err.error === 'string' ? err.error : err.error.message || message;
         }
-        alert('❌ Error: ' + message);
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });
   }
 
   rejectRequest(request: TrainerRequest) {
-    if (!confirm(`Decline ${request.user.firstName} ${request.user.lastName}'s trainer application?\n\nThey can reapply after 7 days.`)) {
+    if (!confirm(`Decline ${request.user.firstName} ${request.user.lastName}'s trainer application?`)) {
       return;
     }
 
     this.isProcessing = true;
     this.trainerRequestService.rejectRequest(request.id).subscribe({
       next: () => {
-        alert(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
+        this.toast.info(`Application from ${request.user.firstName} ${request.user.lastName} has been declined.`);
         this.loadPendingRequests();
         this.isProcessing = false;
       },
@@ -599,7 +601,7 @@ export class TrainerRequestsComponent implements OnInit {
         if (err.error) {
           message = typeof err.error === 'string' ? err.error : err.error.message || message;
         }
-        alert('❌ Error: ' + message);
+        this.toast.error(message);
         this.isProcessing = false;
       }
     });

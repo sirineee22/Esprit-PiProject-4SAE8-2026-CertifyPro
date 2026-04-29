@@ -2,7 +2,18 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { API_BASE_URL, API_ENDPOINTS } from '../../../core/api/api.config';
-import { User } from '../../../shared/models/user.model';
+import { User, UserProgress } from '../../../shared/models/user.model';
+
+export interface AppNotification {
+    id: number;
+    userId: number;
+    type: string;
+    title: string;
+    message: string;
+    eventId?: number;
+    read: boolean;
+    createdAt: string;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -34,6 +45,18 @@ export class UserService {
         });
     }
 
+    setup2fa(userId: number): Observable<{ secret: string, qrCodeUrl: string }> {
+        return this.http.post<{ secret: string, qrCodeUrl: string }>(`${this.apiUrl}/${userId}/2fa/setup`, {});
+    }
+
+    enable2fa(userId: number, secret: string, code: string): Observable<{ message: string }> {
+        return this.http.post<{ message: string }>(`${this.apiUrl}/${userId}/2fa/enable`, { secret, code });
+    }
+
+    disable2fa(userId: number): Observable<{ message: string }> {
+        return this.http.post<{ message: string }>(`${this.apiUrl}/${userId}/2fa/disable`, {});
+    }
+
     create(user: User): Observable<User> {
         return this.http.post<User>(this.apiUrl, user);
     }
@@ -46,5 +69,17 @@ export class UserService {
     delete(id: number): Observable<void> {
         const url = `${this.apiUrl}/${id}`;
         return this.http.delete<void>(url);
+    }
+
+    getMyNotifications(): Observable<AppNotification[]> {
+        return this.http.get<AppNotification[]>(`${this.apiUrl}/notifications/my`);
+    }
+
+    markNotificationAsRead(notificationId: number): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/notifications/${notificationId}/read`, {});
+    }
+
+    getMyProgress(): Observable<UserProgress> {
+        return this.http.get<UserProgress>(`${this.apiUrl}/progress/my`);
     }
 }

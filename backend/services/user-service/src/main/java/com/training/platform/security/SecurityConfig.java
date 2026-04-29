@@ -2,6 +2,7 @@ package com.training.platform.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,20 +27,68 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * High-priority chain: internal microservice paths bypass all Spring Security.
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain internalFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/users/internal/**")
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
+            );
+        return http.build();
+    }
+
+    /**
+     * Main chain: all other API endpoints require valid JWT.
+     */
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.disable())
+            .cors(cors -> cors.disable()) // Gateway handles CORS
             .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.disable()) // Allow iframe embedding (H2 console)
+            )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+<<<<<<< HEAD
+                .requestMatchers("/api/auth/login", "/api/auth/verify-2fa").permitAll()
+=======
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register/**").permitAll()
+>>>>>>> origin/feature/clean-job-module
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/trainer-requests").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/profile-image/**").permitAll()
+                
+                // Sensitive user / role APIs
+                .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                
+                // Trainer requests
+                .requestMatchers(HttpMethod.GET, "/api/trainer-requests").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/approve").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/trainer-requests/*/reject").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/trainer-requests/my-requests").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/trainer-requests").authenticated()
+                
+                // Formations (Training Service)
+                .requestMatchers(HttpMethod.GET, "/api/formations/**").permitAll()
+                
+                // planned-session
+                .requestMatchers(HttpMethod.GET, "/api/rooms/**").authenticated()
+                .requestMatchers("/api/rooms/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/schedules/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/schedules").hasRole("TRAINER")
+                
+                // Catch-all
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

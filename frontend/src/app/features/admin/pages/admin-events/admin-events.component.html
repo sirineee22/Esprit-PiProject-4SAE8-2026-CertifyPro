@@ -85,9 +85,14 @@
             <td>{{ formatDate(e.dateStart) }}</td>
             <td>{{ e.status }}</td>
             <td>
-              <button type="button" class="btn-delete" (click)="delete(e.id)" [disabled]="deletingId === e.id">
-                Delete
-              </button>
+              <div class="btn-group">
+                <a [routerLink]="['/admin/events', e.id, 'registrations']" class="btn btn-sm btn-outline-primary">
+                  Registrations
+                </a>
+                <button type="button" class="btn-delete" (click)="delete(e.id)" [disabled]="deletingId === e.id">
+                  Delete
+                </button>
+              </div>
             </td>
           </tr>
         }

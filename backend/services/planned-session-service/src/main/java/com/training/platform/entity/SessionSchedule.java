@@ -1,0 +1,44 @@
+package com.training.platform.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "session_schedules")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SessionSchedule {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String topic;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
+
+    @Column(name = "trainer_id", nullable = false)
+    private Long trainerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    private Room room;
+
+    // Links to the course/module id this session belongs to
+    @Column(name = "course_id")
+    private Long courseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SessionStatus status = SessionStatus.SCHEDULED;
+}

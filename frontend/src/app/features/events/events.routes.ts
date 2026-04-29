@@ -16,4 +16,9 @@ export const eventsRoutes: Routes = [
     path: ':id',
     component: EventDetailComponent
   },
+  {
+    path: ':id/participants',
+    loadComponent: () => import('./pages/event-registrations/event-registrations.component').then(c => c.EventRegistrationsComponent),
+    canActivate: [authGuard]
+  }
 ];

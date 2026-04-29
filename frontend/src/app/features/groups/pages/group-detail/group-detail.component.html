@@ -1,0 +1,85 @@
+<div class="detail-page" *ngIf="group">
+    <div class="detail-container">
+
+        <!-- Back + Header -->
+        <a routerLink="/groups" class="back-link"><i class="bi bi-arrow-left"></i> Back to Groups</a>
+
+        <div class="detail-header">
+            <div class="header-badge" [class.private]="group.visibility === 'PRIVATE'">
+                <i [class]="group.visibility === 'PRIVATE' ? 'bi bi-lock-fill' : 'bi bi-globe2'"></i>
+            </div>
+            <div>
+                <h1>{{ group.name }}</h1>
+                <p class="desc">{{ group.description || 'No description' }}</p>
+                <span class="meta">Created by {{ group.teacherName }} · {{ group.visibility }}</span>
+            </div>
+        </div>
+
+        <!-- Teacher Actions -->
+        <div class="teacher-actions" *ngIf="isOwner">
+            <!-- Add Student -->
+            <div class="action-card">
+                <h3><i class="bi bi-person-plus-fill"></i> Add Student</h3>
+                <div class="inline-form">
+                    <input type="text" [(ngModel)]="addStudentName" placeholder="Student name..." class="form-input" />
+                    <button class="btn btn-primary" (click)="addMember()">Add</button>
+                </div>
+            </div>
+
+            <!-- Pin Message -->
+            <div class="action-card">
+                <h3><i class="bi bi-pin-angle-fill"></i> Post Message</h3>
+                <textarea [(ngModel)]="newMessage" class="form-input" placeholder="Write a message..."
+                    rows="2"></textarea>
+                <div class="msg-actions">
+                    <label class="pin-toggle"><input type="checkbox" [(ngModel)]="pinMessage" /> Pin this
+                        message</label>
+                    <button class="btn btn-primary" (click)="postMessage()">Post</button>
+                </div>
+            </div>
+
+            <!-- Upload File -->
+            <div class="action-card">
+                <h3><i class="bi bi-cloud-arrow-up-fill"></i> Upload File</h3>
+                <p class="hint">PDF, Excel, or Text files</p>
+                <div class="inline-form">
+                    <input type="file" (change)="onFileSelected($event)"
+                        accept=".pdf,.xls,.xlsx,.csv,.txt,.doc,.docx" />
+                    <button class="btn btn-primary" (click)="uploadFile()" [disabled]="!selectedFile">Upload</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pinned Messages -->
+        <div class="section">
+            <h2><i class="bi bi-pin-fill"></i> Messages</h2>
+            <div class="msg-list" *ngIf="messages.length > 0">
+                <div class="msg-card" *ngFor="let msg of messages" [class.pinned]="msg.pinned">
+                    <div class="msg-pin" *ngIf="msg.pinned"><i class="bi bi-pin-angle-fill"></i> Pinned</div>
+                    <p class="msg-content">{{ msg.content }}</p>
+                    <span class="msg-meta">{{ msg.authorName }} · {{ msg.createdAt | date:'short' }}</span>
+                </div>
+            </div>
+            <p class="empty-msg" *ngIf="messages.length === 0">No messages yet.</p>
+        </div>
+
+        <!-- Files -->
+        <div class="section">
+            <h2><i class="bi bi-folder-fill"></i> Shared Files</h2>
+            <div class="files-list" *ngIf="files.length > 0">
+                <div class="file-card" *ngFor="let file of files">
+                    <i [class]="getFileIcon(file.fileType)" class="file-icon"></i>
+                    <div class="file-info">
+                        <h4>{{ file.fileName }}</h4>
+                        <span>{{ formatSize(file.fileSize) }} · {{ file.uploadedByName }} · {{ file.uploadedAt |
+                            date:'short' }}</span>
+                    </div>
+                    <button class="btn btn-download" (click)="downloadFile(file.id, file.fileName)"><i
+                            class="bi bi-download"></i></button>
+                </div>
+            </div>
+            <p class="empty-msg" *ngIf="files.length === 0">No files shared yet.</p>
+        </div>
+
+    </div>
+</div>

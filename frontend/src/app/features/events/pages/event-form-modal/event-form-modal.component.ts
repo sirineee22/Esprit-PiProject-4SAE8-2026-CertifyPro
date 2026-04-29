@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EventsApiService } from '../../services/events.api';
 import { EventRefreshService } from '../../services/event-refresh.service';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { CreateEventRequest, Event, EventType, EventMode } from '../../../../shared/models/event.model';
+import { CreateEventRequest, Event, EventType, EventMode, LearningLevel } from '../../../../shared/models/event.model';
 
 @Component({
   selector: 'app-event-form-modal',
@@ -28,12 +28,16 @@ export class EventFormModalComponent {
 
   types: EventType[] = ['WEBINAR', 'WORKSHOP', 'QNA', 'MEETUP', 'BOOTCAMP'];
   modes: EventMode[] = ['ONLINE', 'ONSITE', 'HYBRID'];
+  levels: LearningLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
     description: [''],
     type: ['WEBINAR' as EventType, Validators.required],
     mode: ['ONLINE' as EventMode, Validators.required],
+    learningLevel: ['BEGINNER' as LearningLevel, Validators.required],
+    category: [''],
+    requiredSkillsText: [''],
     dateStart: ['', Validators.required],
     dateEnd: ['', Validators.required],
     meetingLink: [''],
@@ -51,6 +55,9 @@ export class EventFormModalComponent {
         description: this.event.description ?? '',
         type: this.event.type,
         mode: this.event.mode,
+        learningLevel: this.event.learningLevel ?? 'BEGINNER',
+        category: this.event.category ?? '',
+        requiredSkillsText: (this.event.requiredSkills ?? []).join(', '),
         dateStart: start,
         dateEnd: end,
         meetingLink: this.event.meetingLink ?? '',
@@ -85,11 +92,18 @@ export class EventFormModalComponent {
       return;
     }
     const user = this.auth.getCurrentUser();
+    const requiredSkills = (v.requiredSkillsText || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const body: CreateEventRequest = {
       title: v.title,
       description: v.description || undefined,
       type: v.type,
       mode: v.mode,
+      learningLevel: v.learningLevel,
+      category: v.category || undefined,
+      requiredSkills,
       dateStart: new Date(v.dateStart).toISOString(),
       dateEnd: new Date(v.dateEnd).toISOString(),
       meetingLink: v.meetingLink || undefined,

@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EventsApiService } from '../../services/events.api';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { CreateEventRequest, EventType, EventMode } from '../../../../shared/models/event.model';
+import { CreateEventRequest, EventType, EventMode, LearningLevel } from '../../../../shared/models/event.model';
 
 @Component({
   selector: 'app-trainer-event-form',
@@ -24,18 +24,26 @@ export class TrainerEventFormComponent {
 
   types: EventType[] = ['WEBINAR', 'WORKSHOP', 'QNA', 'MEETUP', 'BOOTCAMP'];
   modes: EventMode[] = ['ONLINE', 'ONSITE', 'HYBRID'];
+  levels: LearningLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
     description: [''],
     type: ['WEBINAR' as EventType, Validators.required],
     mode: ['ONLINE' as EventMode, Validators.required],
+    learningLevel: ['BEGINNER' as LearningLevel, Validators.required],
     dateStart: ['', Validators.required],
     dateEnd: ['', Validators.required],
     meetingLink: [''],
     location: [''],
     maxParticipants: [50, [Validators.required, Validators.min(1), Validators.max(1000)]],
   });
+
+  get minStartDateTime(): string {
+    const date = new Date(Date.now() + 3 * 60 * 1000);
+    const tz = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tz).toISOString().slice(0, 16);
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -58,6 +66,7 @@ export class TrainerEventFormComponent {
             description: e.description ?? '',
             type: e.type,
             mode: e.mode,
+            learningLevel: e.learningLevel ?? 'BEGINNER',
             dateStart: start,
             dateEnd: end,
             meetingLink: e.meetingLink ?? '',
@@ -73,14 +82,27 @@ export class TrainerEventFormComponent {
   submit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
+    const startAt = new Date(v.dateStart).getTime();
+    const minStartAt = Date.now() + 3 * 60 * 1000;
+    if (startAt < minStartAt) {
+      this.submitError = 'Start date/time must be at least 3 minutes after current time.';
+      return;
+    }
+    if (new Date(v.dateEnd).getTime() <= startAt) {
+      this.submitError = 'End date/time must be after start date/time.';
+      return;
+    }
     const user = this.auth.getCurrentUser();
     const body: CreateEventRequest = {
       title: v.title,
       description: v.description || undefined,
       type: v.type,
       mode: v.mode,
+      learningLevel: v.learningLevel,
       dateStart: new Date(v.dateStart).toISOString(),
       dateEnd: new Date(v.dateEnd).toISOString(),
+      category: undefined,
+      requiredSkills: [],
       meetingLink: v.meetingLink || undefined,
       location: v.location || undefined,
       maxParticipants: v.maxParticipants,

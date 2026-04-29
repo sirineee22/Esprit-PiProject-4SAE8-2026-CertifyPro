@@ -1,17 +1,17 @@
 import { Component, OnInit, signal, WritableSignal, ChangeDetectorRef, NgZone, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { firstValueFrom, timeout } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserService } from '../../users/services/users.api';
 import { ThemeService } from '../../../core/services/theme.service';
-import { User } from '../../../shared/models/user.model';
+import { User, UserProgress } from '../../../shared/models/user.model';
 import { API_BASE_URL } from '../../../core/api/api.config';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="profile-premium-wrapper">
       <!-- Profile Header -->
@@ -36,17 +36,31 @@ import { API_BASE_URL } from '../../../core/api/api.config';
               <h1 class="profile-header-name">{{currentUser()?.firstName}} {{currentUser()?.lastName}}</h1>
               <div class="profile-header-meta">
                 <span class="meta-item">
-                  <i class="bi bi-envelope"></i>
-                  {{currentUser()?.email}}
+                   <i class="bi bi-envelope"></i>
+                   {{currentUser()?.email}}
                 </span>
                 <span class="meta-item">
-                  <i class="bi bi-geo-alt"></i>
-                  Membre CertifyPro
+                   <i class="bi bi-geo-alt"></i>
+                   Membre CertifyPro
                 </span>
                 <span class="meta-item">
-                  <i class="bi bi-calendar3"></i>
-                  Membre depuis 2026
+                   <i class="bi bi-calendar3"></i>
+                   Membre depuis 2026
                 </span>
+              </div>
+              
+              <div class="xp-strip" *ngIf="progress() as p">
+                <div class="xp-top">
+                  <span class="xp-level">Level {{ p.levelNumber }} - {{ p.levelLabel }}</span>
+                  <span class="xp-points">{{ p.xpTotal }} XP</span>
+                </div>
+                <div class="xp-bar">
+                  <div class="xp-fill" [style.width.%]="progressPercent()"></div>
+                </div>
+                <div class="xp-next" *ngIf="p.xpToNextLevel > 0">{{ p.xpToNextLevel }} XP to next level</div>
+                <div class="badges-list" *ngIf="p.badges.length">
+                  <span class="badge-pill" *ngFor="let b of p.badges | slice:0:4">{{ b.badgeLabel }}</span>
+                </div>
               </div>
             </div>
             <div class="profile-header-actions">
@@ -192,16 +206,45 @@ import { API_BASE_URL } from '../../../core/api/api.config';
                   <div class="premium-divider"></div>
 
                   <div class="security-list-modern">
-                    <div class="security-card-flat">
+                    <div class="security-card-flat" [class.enabled]="currentUser()?.isTwoFactorEnabled">
                       <div class="sec-card-icon"><i class="bi bi-shield-shaded"></i></div>
                       <div class="sec-card-info">
                         <strong>Two-Factor Authentication</strong>
-                        <div class="status-pill warning">
-                          <span class="pulse-dot"></span> NOT ENABLED
+                        <div class="status-pill" [class.warning]="!currentUser()?.isTwoFactorEnabled" [class.success]="currentUser()?.isTwoFactorEnabled">
+                          <span class="pulse-dot"></span> {{ currentUser()?.isTwoFactorEnabled ? 'ENABLED' : 'NOT ENABLED' }}
                         </div>
                         <p>Add an extra layer of protection by requiring a verification code in addition to your password.</p>
                       </div>
-                      <button class="btn-action-outline">Enable Security</button>
+                      <button *ngIf="!currentUser()?.isTwoFactorEnabled" class="btn-action-outline" (click)="start2faSetup()">Enable Security</button>
+                      <button *ngIf="currentUser()?.isTwoFactorEnabled" class="btn-action-outline text-danger" (click)="disable2fa()">Disable</button>
+                    </div>
+
+                    <!-- 2FA Setup Section -->
+                    <div class="setup-2fa-section animate-slide-up" *ngIf="isSettingUp2fa()">
+                      <div class="setup-header">
+                        <h4>Setup Two-Factor Authentication</h4>
+                        <button class="btn-close" (click)="isSettingUp2fa.set(false)"><i class="bi bi-x"></i></button>
+                      </div>
+                      <div class="setup-grid">
+                        <div class="setup-instruction">
+                          <span class="step-num">1</span>
+                          <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).</p>
+                        </div>
+                        <div class="qr-box">
+                          <img *ngIf="qrCodeUrl()" [src]="qrCodeUrl()" alt="QR Code">
+                          <div *ngIf="!qrCodeUrl()" class="qr-placeholder">Generating...</div>
+                        </div>
+                        <div class="setup-instruction">
+                          <span class="step-num">2</span>
+                          <p>Enter the 6-digit code from your app to verify and activate.</p>
+                        </div>
+                        <div class="verify-code-box">
+                          <input type="text" [(ngModel)]="verificationCode" placeholder="000 000" maxlength="6" class="verify-input">
+                          <button class="btn-verify-enable" (click)="enable2fa()" [disabled]="verificationCode.length !== 6 || isEnabling()">
+                            {{ isEnabling() ? 'Activating...' : 'Verify & Enable' }}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -281,6 +324,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       --text-muted: #64748b;
       --shadow-premium: 0 15px 35px rgba(11, 31, 59, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03);
       --border-soft: rgba(30, 58, 95, 0.08);
+      --color-success: #10b981;
+      --color-danger: #ef4444;
     }
 
     .profile-premium-wrapper {
@@ -298,7 +343,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       padding: 0 2rem;
     }
 
-    /* --- PROFILE HEADER (neutral background) --- */
+    /* --- PROFILE HEADER --- */
     .profile-header-section {
       padding: calc(0.5rem + 72px) 0 1rem;
       background: var(--bg-cream);
@@ -407,6 +452,39 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       color: #1e3a5f;
       font-size: 1rem;
     }
+    .xp-strip {
+      margin-top: 1rem;
+      max-width: 520px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+    .xp-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }
+    .xp-level { font-size: 0.85rem; font-weight: 700; color: #1e3a5f; }
+    .xp-points { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
+    .xp-bar {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .xp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1e3a5f, #f59e0b);
+    }
+    .xp-next { margin-top: 0.35rem; font-size: 0.75rem; color: #64748b; }
+    .badges-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem; }
+    .badge-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+    }
     .profile-header-actions { flex-shrink: 0; }
     .btn-modifier {
       display: inline-flex;
@@ -428,7 +506,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
     .btn-modifier i { font-size: 1.2rem; }
 
-    /* --- CONTENT SECTION (cream + blue accent like home) --- */
+    /* --- CONTENT SECTION --- */
     .profile-content-section {
       background: var(--bg-cream);
       padding: 1rem 0 5rem;
@@ -489,32 +567,14 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       transition: all 0.25s ease;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
-    .tab-pill i {
-      font-size: 1.1rem;
-      opacity: 0.9;
-    }
-    .tab-pill:hover {
-      background: #eef4fc;
-      color: var(--primary);
-      border-color: rgba(30, 58, 95, 0.15);
-    }
-    .tab-pill.active {
-      background: #f2f5f9;
-      color: var(--primary-dark);
-      border-color: rgba(30, 58, 95, 0.2);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-    .tab-pill.active i {
-      color: var(--accent-orange);
-      opacity: 1;
-    }
+    .tab-pill i { font-size: 1.1rem; opacity: 0.9; }
+    .tab-pill:hover { background: #eef4fc; color: var(--primary); border-color: rgba(30, 58, 95, 0.15); }
+    .tab-pill.active { background: #f2f5f9; color: var(--primary-dark); border-color: rgba(30, 58, 95, 0.2); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    .tab-pill.active i { color: var(--accent-orange); opacity: 1; }
 
-    .content-surface {
-      max-width: 800px;
-      margin: 0 auto;
-    }
+    .content-surface { max-width: 800px; margin: 0 auto; }
 
-    /* --- CONTENT CARD (home step-card style) --- */
+    /* --- CONTENT CARD --- */
     .content-card-premium {
       background: white;
       border-radius: 20px;
@@ -524,14 +584,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       overflow: hidden;
       transition: box-shadow 0.3s ease;
     }
-    .content-card-premium:hover {
-      box-shadow: 0 25px 50px rgba(30, 58, 95, 0.1);
-    }
-    .card-title-group {
-      padding: 2rem 2.5rem;
-      border-bottom: 2px solid rgba(30, 58, 95, 0.12);
-      position: relative;
-    }
+    .content-card-premium:hover { box-shadow: 0 25px 50px rgba(30, 58, 95, 0.1); }
+    .card-title-group { padding: 2rem 2.5rem; border-bottom: 2px solid rgba(30, 58, 95, 0.12); position: relative; }
     .card-title-group::after {
       content: '';
       position: absolute;
@@ -578,17 +632,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .form-footer-actions { display: flex; justify-content: flex-end; align-items: center; gap: 1.5rem; margin-top: 3rem; }
     .btn-cancel-flat { background: none; border: none; font-weight: 700; color: var(--primary); cursor: pointer; }
     .btn-save-glow {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.875rem 2rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      background: var(--primary); color: white; border: none; padding: 0.875rem 2rem;
+      border-radius: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s ease;
     }
     .btn-save-glow:hover:not(:disabled) {
       background: var(--primary-dark);
@@ -603,52 +648,67 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .premium-divider { height: 1px; background: rgba(30, 58, 95, 0.08); margin: 3rem 0; }
 
     .security-card-flat {
-      background: #f8f9fa;
-      border: 1px solid #e2e8f0;
-      padding: 2rem;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      gap: 2rem;
+      background: #f8f9fa; border: 1px solid #e2e8f0; padding: 2rem;
+      border-radius: 16px; display: flex; align-items: center; gap: 2rem; position: relative;
     }
+    .security-card-flat.enabled { border-color: var(--color-success); background: #f0fdf4; }
+    
     .sec-card-icon {
-      width: 56px;
-      height: 56px;
-      background: white;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: #e67e00;
+      width: 56px; height: 56px; background: white; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #e67e00;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .sec-card-info { flex: 1; }
     .sec-card-info strong { display: block; font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 0.5rem; }
     .sec-card-info p { font-size: 0.9rem; color: var(--text-muted); margin: 0.5rem 0 0; line-height: 1.6; }
-
-    .status-pill {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.4rem 0.85rem; border-radius: 100px;
-      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;
-    }
+    
+    .status-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.85rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; }
     .status-pill.warning { background: #fff1f2; color: #e11d48; }
-    .pulse-dot { width: 8px; height: 8px; background: #e11d48; border-radius: 50%; animation: pulse 2s infinite; }
+    .status-pill.success { background: #dcfce7; color: #166534; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
+    .status-pill.warning .pulse-dot { background: #e11d48; }
+    .status-pill.success .pulse-dot { background: #166534; animation: none; }
 
     .btn-action-outline {
-      background: white;
-      border: 2px solid #0b1f3b;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      color: #0b1f3b;
-      cursor: pointer;
-      transition: all 0.2s;
+      background: white; border: 2px solid #0b1f3b; padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem; font-weight: 600; color: #0b1f3b; cursor: pointer; transition: all 0.2s;
     }
-    .btn-action-outline:hover {
-      background: #0b1f3b;
-      color: white;
+    .btn-action-outline:hover { background: #0b1f3b; color: white; }
+    .btn-action-outline.text-danger { border-color: var(--color-danger); color: var(--color-danger); }
+    .btn-action-outline.text-danger:hover { background: var(--color-danger); color: white; }
+
+    /* 2FA Setup Flow */
+    .setup-2fa-section {
+      margin-top: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; 
+      padding: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     }
+    .setup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .setup-header h4 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--primary-dark); }
+    .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+    
+    .setup-grid { display: grid; grid-template-columns: 1fr 200px; gap: 2rem; align-items: center; }
+    .setup-instruction { display: flex; gap: 1rem; align-items: flex-start; }
+    .step-num { 
+      width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .qr-box { 
+      grid-row: span 2; width: 200px; height: 200px; background: #f8f9fa; border: 1px solid #e2e8f0;
+      border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .qr-box img { width: 100%; height: 100%; display: block; }
+    .qr-placeholder { font-size: 0.8rem; color: #94a3b8; font-weight: 600; }
+    
+    .verify-code-box { display: flex; gap: 1rem; }
+    .verify-input { 
+      flex: 1; padding: 0.75rem 1.25rem; border: 2px solid #e2e8f0; border-radius: 10px;
+      font-size: 1.1rem; font-weight: 700; letter-spacing: 0.2em; text-align: center;
+    }
+    .btn-verify-enable { 
+      background: var(--primary-dark); color: white; border: none; padding: 0.75rem 1.5rem;
+      border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-verify-enable:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Appearance Shelf */
     .theme-shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -697,7 +757,8 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     /* Keyframes */
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
-    @keyframes float-slow { 0% { transform: translate(0,0); } 100% { transform: translate(40px, -40px); } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     @media (max-width: 768px) {
       .profile-header-card {
@@ -720,6 +781,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 })
 export class ProfileComponent implements OnInit {
   currentUser = signal<User | null>(null);
+  progress = signal<UserProgress | null>(null);
   activeTab: string = 'general';
   isEditMode = signal<boolean>(false);
   isSaving = signal<boolean>(false);
@@ -729,6 +791,13 @@ export class ProfileComponent implements OnInit {
   imgError = false;
   uploadingImage = signal(false);
   @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
+
+  // 2FA Flow
+  isSettingUp2fa = signal(false);
+  isEnabling = signal(false);
+  qrCodeUrl = signal<string | null>(null);
+  twoFactorSecret = signal<string | null>(null);
+  verificationCode = '';
 
   // Feedback
   showToast = false;
@@ -761,54 +830,7 @@ export class ProfileComponent implements OnInit {
     this.loadUser();
   }
 
-  initials(): string {
-    const u = this.currentUser();
-    if (!u?.firstName && !u?.lastName) return '';
-    const f = (u.firstName || '').trim().charAt(0).toUpperCase();
-    const l = (u.lastName || '').trim().charAt(0).toUpperCase();
-    return (f + l) || '';
-  }
-
-  /** Full URL for profile image (backend returns relative path). */
-  avatarImageUrl(): string | null {
-    const url = this.currentUser()?.profileImageUrl;
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return API_BASE_URL + url;
-  }
-
-  triggerFileInput(): void {
-    if (this.uploadingImage()) return;
-    this.fileInputRef?.nativeElement?.click();
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file || !this.currentUser()?.id) return;
-    this.uploadingImage.set(true);
-    this.imgError = false;
-    this.userService.uploadProfileImage(this.currentUser()!.id!, file).subscribe({
-      next: (user) => {
-        this.currentUser.set(user);
-        this.authService.setSession(user);
-        this.profileForm.patchValue({ profileImageUrl: user.profileImageUrl || '' });
-        this.uploadingImage.set(false);
-        this.notify('Photo mise à jour !');
-        this.cd.detectChanges();
-      },
-      error: (err) => {
-        this.uploadingImage.set(false);
-        const msg = err?.error ?? err?.message ?? 'Erreur lors de l\'upload';
-        this.notify(typeof msg === 'string' ? msg : 'Upload impossible', true);
-        this.cd.detectChanges();
-      }
-    });
-    input.value = '';
-  }
-
   loadUser() {
-    this.imgError = false;
     const user = this.authService.getCurrentUser();
     if (!user?.id) {
       this.currentUser.set(user);
@@ -824,6 +846,12 @@ export class ProfileComponent implements OnInit {
           phoneNumber: freshUser.phoneNumber || '',
           profileImageUrl: freshUser.profileImageUrl || ''
         });
+        
+        this.userService.getMyProgress().subscribe({
+          next: (p) => this.progress.set(p),
+          error: () => this.progress.set(null)
+        });
+        
         this.cd.detectChanges();
       },
       error: () => {
@@ -838,12 +866,86 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  progressPercent(): number {
+    const p = this.progress();
+    if (!p) return 0;
+    const min = p.levelNumber === 1 ? 0 : (p.levelNumber === 2 ? 100 : (p.levelNumber === 3 ? 300 : 600));
+    const max = p.levelNumber === 1 ? 100 : (p.levelNumber === 2 ? 300 : (p.levelNumber === 3 ? 600 : (p.xpTotal + Math.max(1, p.xpToNextLevel))));
+    const range = Math.max(1, max - min);
+    const value = Math.max(0, Math.min(range, p.xpTotal - min));
+    return Math.round((value / range) * 100);
+  }
+
+  // --- 2FA Logic ---
+
+  start2faSetup() {
+    if (!this.currentUser()?.id) return;
+    this.isSettingUp2fa.set(true);
+    this.qrCodeUrl.set(null);
+    this.verificationCode = '';
+
+    this.userService.setup2fa(this.currentUser()!.id!).subscribe({
+      next: (res) => {
+        this.qrCodeUrl.set(res.qrCodeUrl);
+        this.twoFactorSecret.set(res.secret);
+      },
+      error: (err) => {
+        const msg = (err.status === 403 || err.status === 401) 
+          ? 'Session expirée ou ID incorrect. Merci de vous déconnecter et reconnecter.' 
+          : 'Erreur lors de la configuration 2FA';
+        this.notify(msg, true);
+        this.isSettingUp2fa.set(false);
+      }
+    });
+  }
+
+  enable2fa() {
+    if (!this.currentUser()?.id || !this.twoFactorSecret() || !this.verificationCode) return;
+    this.isEnabling.set(true);
+
+    this.userService.enable2fa(this.currentUser()!.id!, this.twoFactorSecret()!, this.verificationCode).subscribe({
+      next: () => {
+        this.isEnabling.set(false);
+        this.isSettingUp2fa.set(false);
+        this.notify('Double authentification activée !');
+        this.userService.getById(this.currentUser()!.id!).subscribe(u => {
+            this.currentUser.set(u);
+            this.authService.setSession(u);
+            this.cd.detectChanges();
+        });
+      },
+      error: (err) => {
+        const msg = (err.status === 403 || err.status === 401)
+          ? 'Session invalide (ID mismatch). Déconnectez-vous et reconnectez-vous.'
+          : 'Code invalide ou erreur serveur';
+        this.notify(msg, true);
+        this.isEnabling.set(false);
+      }
+    });
+  }
+
+  disable2fa() {
+    if (!confirm('Êtes-vous sûr de vouloir désactiver la 2FA ? Cela réduira la sécurité de votre compte.') || !this.currentUser()?.id) return;
+
+    this.userService.disable2fa(this.currentUser()!.id!).subscribe({
+      next: () => {
+        this.notify('2FA désactivée.');
+        this.userService.getById(this.currentUser()!.id!).subscribe(u => {
+            this.currentUser.set(u);
+            this.authService.setSession(u);
+            this.cd.detectChanges();
+        });
+      },
+      error: () => this.notify('Erreur lors de la désactivation', true)
+    });
+  }
+
   toggleEdit() {
     this.isEditMode.set(!this.isEditMode());
-    this.isSaving.set(false); // ALWAYS reset saving flag on toggle
+    this.isSaving.set(false);
 
     if (!this.isEditMode()) {
-      this.loadUser(); // Reset form on cancel
+      this.loadUser(); 
     }
     this.cd.detectChanges();
   }
@@ -857,22 +959,19 @@ export class ProfileComponent implements OnInit {
 
     this.userService.update(current.id, { ...current, ...this.profileForm.value } as User).subscribe({
       next: (user: User) => {
-        // Unlock button immediately
         this.isSaving.set(false);
         this.cd.detectChanges();
 
-        // Background session sync
-        this.imgError = false;
         setTimeout(() => {
           try {
             this.authService.setSession(user);
             this.currentUser.set(user);
+            this.cd.detectChanges();
           } catch (e) {
             console.error('[Profile] Sync Error:', e);
           }
         }, 50);
 
-        // Defer toast and edit-mode change to avoid ExpressionChangedAfterItHasBeenCheckedError
         setTimeout(() => {
           this.notify('Profile updated successfully!');
           setTimeout(() => {
@@ -889,7 +988,6 @@ export class ProfileComponent implements OnInit {
       }
     });
 
-    // 10 second absolute failsafe
     setTimeout(() => {
       if (this.isSaving()) {
         this.isSaving.set(false);
@@ -911,8 +1009,6 @@ export class ProfileComponent implements OnInit {
     this.isSavingSecurity.set(true);
     this.cd.detectChanges();
 
-    // In a real app, you'd verify currentPassword first. 
-    // Here we use the generic update endpoint which handles the password field.
     const updatedData = {
       ...current,
       password: newPassword
@@ -933,7 +1029,6 @@ export class ProfileComponent implements OnInit {
       }
     });
 
-    // Failsafe
     setTimeout(() => {
       if (this.isSavingSecurity()) {
         this.isSavingSecurity.set(false);
@@ -946,7 +1041,45 @@ export class ProfileComponent implements OnInit {
     this.toastMessage = message;
     this.isToastError = isError;
     this.showToast = true;
-    setTimeout(() => this.showToast = false, 3000);
+    setTimeout(() => {
+      this.showToast = false;
+      this.cd.detectChanges();
+    }, 3000);
+  }
+
+  initials(): string {
+    const u = this.currentUser();
+    if (!u?.firstName && !u?.lastName) return '';
+    return ((u.firstName || '').trim().charAt(0) + (u.lastName || '').trim().charAt(0)).toUpperCase();
+  }
+
+  avatarImageUrl(): string | null {
+    const url = this.currentUser()?.profileImageUrl;
+    if (!url) return null;
+    return url.startsWith('http') ? url : API_BASE_URL + url;
+  }
+
+  triggerFileInput(): void { this.fileInputRef?.nativeElement?.click(); }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file || !this.currentUser()?.id) return;
+    this.uploadingImage.set(true);
+    this.cd.detectChanges();
+    this.userService.uploadProfileImage(this.currentUser()!.id!, file).subscribe({
+      next: (user) => {
+        this.currentUser.set(user);
+        this.authService.setSession(user);
+        this.uploadingImage.set(false);
+        this.notify('Photo mise à jour !');
+        this.cd.detectChanges();
+      },
+      error: () => {
+        this.uploadingImage.set(false);
+        this.notify('Erreur upload', true);
+        this.cd.detectChanges();
+      }
+    });
   }
 }
-

@@ -14,6 +14,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findByStatus(Event.EventStatus status);
 
+    List<Event> findByStatusAndDateStartAfterOrderByDateStartAsc(Event.EventStatus status, Instant after);
+
     Page<Event> findByStatusAndDateStartAfter(Event.EventStatus status, Instant after, Pageable pageable);
 
     long countByStatus(Event.EventStatus status);

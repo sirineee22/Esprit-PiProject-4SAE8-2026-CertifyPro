@@ -6,9 +6,12 @@ import com.training.platform.entity.User;
 import com.training.platform.service.AuthService;
 import com.training.platform.repository.UserRepository;
 import com.training.platform.security.JwtUtil;
-import jakarta.validation.Valid;
+import com.training.platform.service.TwoFactorService;import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,21 +30,20 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final TwoFactorService twoFactorService;
     private final AuthService authService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuthService authService) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                          JwtUtil jwtUtil, TwoFactorService twoFactorService, AuthService authService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.twoFactorService = twoFactorService;
         this.authService = authService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        if (request == null || request.email == null || request.password == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email and password are required");
-        }
-
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             String email = request.email.trim().toLowerCase();
             Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
@@ -59,45 +61,86 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("User role not set. Please contact support.");
             }
-            String token = jwtUtil.generateToken(
-                    user.getEmail(),
-                    user.getId(),
-                    user.getRole().getName()
-            );
-            log.info("Login OK for email={}", email);
-            return ResponseEntity.ok(LoginResponse.from(user, token));
+
+            // Check if 2FA is enabled
+            if (user.isTwoFactorEnabled()) {
+                log.info("Login: MFA Required for email={}", email);
+                return ResponseEntity.ok(java.util.Map.of(
+                    "mfaRequired", true,
+                    "email", email
+                ));
+            }
+
+            return finalizeLogin(user);
         } catch (Exception e) {
-            log.error("Login 500 for email={}", request != null ? request.email : "?", e);
+            log.error("Login 500 for email={}. Error: {}", request != null ? request.email : "?", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Login failed. Please try again.");
+                    .body("Login failed: " + e.getMessage());
         }
     }
 
-    @PostMapping("/register/{role}")
-    public ResponseEntity<User> register(
-            @Valid @RequestBody RegisterRequest request,
-            @PathVariable String role) {
-        String roleName = role.toUpperCase();
-        if (!roleName.equals("LEARNER") && !roleName.equals("EMPLOYER")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<?> verify2fa(@Valid @RequestBody Verify2faRequest request) {
+        try {
+            String email = request.email.trim().toLowerCase();
+            Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+            }
+            User user = userOpt.get();
+            
+            if (!twoFactorService.isCodeValid(user.getTwoFactorSecret(), request.code)) {
+                log.warn("MFA 401: Invalid code for email={}", email);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code invalide");
+            }
+
+            return finalizeLogin(user);
+        } catch (Exception e) {
+            log.error("verify2fa 500", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        User user = authService.register(request, roleName);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    }
+
+    private ResponseEntity<?> finalizeLogin(User user) {
+        user.setLastLogin(java.time.Instant.now());
+        user.setLastActivityAt(java.time.Instant.now());
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getId(),
+                user.getRole().getName()
+        );
+        log.info("Login OK for email={}", user.getEmail());
+        return ResponseEntity.ok(LoginResponse.from(user, token));
     }
 
     static class LoginRequest {
-        @NotBlank
-        @Email
-        public String email;
 
         @NotBlank
         public String password;
     }
 
+    static class Verify2faRequest {
+        @NotBlank
+        @Email
+        public String email;
+
+        @NotBlank
+        public String code;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     static class LoginResponse {
         public String token;
         public UserData user;
+        public boolean mfaRequired = false;
 
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
         static class UserData {
             public Long id;
             public String firstName;
@@ -106,6 +149,7 @@ public class AuthController {
             public String phoneNumber;
             public boolean active;
             public Role role;
+            public boolean isTwoFactorEnabled;
         }
 
         static LoginResponse from(User user, String token) {
@@ -119,6 +163,7 @@ public class AuthController {
             response.user.phoneNumber = user.getPhoneNumber();
             response.user.active = user.isActive();
             response.user.role = user.getRole();
+            response.user.isTwoFactorEnabled = user.isTwoFactorEnabled();
             return response;
         }
     }

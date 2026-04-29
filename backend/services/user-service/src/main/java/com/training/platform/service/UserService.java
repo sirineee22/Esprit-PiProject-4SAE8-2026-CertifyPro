@@ -26,8 +26,6 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Error: Email is already in use!");
         }
-        // TODO: Password complexity check can be added here
-        // TODO: Password encoding
         return userRepository.save(user);
     }
 

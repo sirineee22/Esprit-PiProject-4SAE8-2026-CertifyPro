@@ -7,46 +7,95 @@ import { HomeComponent } from './features/home/pages/home/home.component';
 import { ProfileComponent } from './features/profile/pages/profile.component';
 import { CoursesListComponent } from './features/courses/pages/courses-list.component';
 import { CertificationsListComponent } from './features/certifications/pages/certifications-list.component';
+import { CertificationDetailComponent } from './features/certifications/pages/certification-detail.component';
+import { CreateCertificationComponent } from './features/certifications/pages/create-certification.component';
+import { ExamQuizComponent } from './features/certifications/pages/exam-quiz.component';
+import { ExamModeSelectComponent } from './features/certifications/pages/exam-mode-select.component';
+import { CertificateVerifyComponent } from './features/certifications/pages/certificate-verify.component';
 import { MyCoursesComponent } from './features/my-courses/pages/my-courses.component';
 import { AboutComponent } from './features/about/pages/about.component';
 import { ChatComponent } from './chat/chat';
 
 import { authRoutes } from './features/auth/auth.routes';
 import { adminRoutes } from './features/admin/admin.routes';
+import { sessionsRoutes } from './features/sessions/sessions.routes';
+import { groupsRoutes } from './features/groups/groups.routes';
 import { jobsRoutes } from './features/jobs/jobs.routes';
 
 import { authGuard } from './core/guards/auth.guard';
 import { nonAdminGuard } from './core/guards/non-admin.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { trainerGuard } from './core/guards/trainer.guard';
+
+import { ProductListComponent } from './product-list/product-list.component';
+import { ProductDetailsComponent } from './product-list/product-details.component';
+import { CartComponent } from './product-list/cart.component';
+import { ProductsListComponent } from './product-list/products-list.component';
+import { Forumclient } from './forumclient/forumclient';
 
 export const routes: Routes = [
-  // ================= AUTH =================
+  // Auth routes (no layout)
   ...authRoutes,
 
-  // ================= USER LAYOUT =================
+  // Forum standalone
+  { path: 'forum', component: Forumclient },
+
+  // User routes (with navbar/footer)
   {
     path: '',
     component: UserLayoutComponent,
     children: [
       { path: '', component: HomeComponent },
-
-      { path: 'chat', component: ChatComponent, canActivate: [authGuard, nonAdminGuard] },
       { path: 'profile', component: ProfileComponent, canActivate: [authGuard, nonAdminGuard] },
+      { path: 'chat', component: ChatComponent, canActivate: [authGuard, nonAdminGuard] },
 
       { path: 'courses', component: CoursesListComponent },
       { path: 'certifications', component: CertificationsListComponent },
-
+      { path: 'certifications/:id', component: CertificationDetailComponent },
+      { path: 'certifications/:id/exam', component: ExamModeSelectComponent, canActivate: [authGuard] },
+      { path: 'certifications/:id/exam/:mode', component: ExamQuizComponent, canActivate: [authGuard] },
+      { path: 'certificate/verify', component: CertificateVerifyComponent },
+      { path: 'trainer/create-certification', component: CreateCertificationComponent, canActivate: [authGuard, trainerGuard] },
       { path: 'my-courses', component: MyCoursesComponent, canActivate: [authGuard, nonAdminGuard] },
       { path: 'my-certifications', component: CertificationsListComponent, canActivate: [authGuard, nonAdminGuard] },
+      { path: 'my-progress', redirectTo: '', pathMatch: 'full' },
 
+      // Training & Evaluation
+      {
+        path: 'trainings',
+        loadChildren: () => import('./features/formation/formation.routes').then(m => m.formationRoutes)
+      },
+      {
+        path: 'evaluations',
+        loadChildren: () => import('./features/evaluation/evaluation.routes').then(m => m.EVALUATION_ROUTES)
+      },
+
+      // Core Pages
+      { path: 'help', redirectTo: '', pathMatch: 'full' },
       { path: 'about', component: AboutComponent },
+      { path: 'how-it-works', redirectTo: '', pathMatch: 'full' },
+      { path: 'community', redirectTo: '', pathMatch: 'full' },
 
-      // ================= JOBS MODULE =================
+      // Events
+      { path: 'events', loadChildren: () => import('./features/events/events.routes').then(m => m.eventsRoutes) },
+
+      // Forum & E-commerce
+      { path: 'posts', component: Forumclient },
+      { path: 'shop/products', component: ProductListComponent },
+      { path: 'shop/productss', component: ProductsListComponent },
+      { path: 'shop/products/:id', component: ProductDetailsComponent },
+      { path: 'shop/cart', component: CartComponent },
+
+      // Planning & Collaborations
+      ...sessionsRoutes,
+      ...groupsRoutes,
+
+      // Jobs module
       { path: 'jobs', children: jobsRoutes },
     ]
   },
 
-  // ================= ADMIN LAYOUT =================
+  // Admin routes
   {
     path: 'admin',
     component: AdminLayoutComponent,

@@ -33,7 +33,7 @@ export interface UploadResponse {
 export class ChatApiService {
 
   // ✅ Single base URL — everything goes through the gateway
-  private readonly BASE = 'http://localhost:8080/api/chat';
+  private readonly BASE = 'http://localhost:8081/api/chat';
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 

@@ -5,8 +5,10 @@ import { API_ENDPOINTS } from '../api/api.config';
 import { User } from '../../shared/models/user.model';
 
 export interface LoginResponse {
-  token: string;
-  user: User;
+  token?: string;
+  user?: User;
+  mfaRequired?: boolean;
+  email?: string;
 }
 
 export interface RegisterRequest {
@@ -27,20 +29,31 @@ export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  // In-memory fallback for when localStorage is blocked (Edge tracking prevention)
+  private _tokenMemory: string | null = null;
+
+  constructor(private http: HttpClient) {
+    try { this._tokenMemory = localStorage.getItem(this.tokenKey); } catch { }
+  }
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${API_ENDPOINTS.auth}/login`, { email, password });
   }
 
-  /** Inscription avec rôle : learner | employer (backend: POST /api/auth/register/{role}) */
+  verify2fa(email: string, code: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${API_ENDPOINTS.auth}/verify-2fa`, { email, code });
+  }
+
+  /** Register with role: learner | employer */
   register(role: 'learner' | 'employer', body: RegisterRequest): Observable<User> {
     return this.http.post<User>(`${API_ENDPOINTS.auth}/register/${role}`, body);
   }
 
   private loadUser(): User | null {
-    const raw = localStorage.getItem(this.userKey);
-    return raw ? (JSON.parse(raw) as User) : null;
+    try {
+      const raw = localStorage.getItem(this.userKey);
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch { return null; }
   }
 
   getCurrentUser(): User | null {
@@ -48,7 +61,12 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return localStorage.getItem(this.loginKey) === 'true';
+    try {
+      if (localStorage.getItem(this.loginKey) === 'true') return true;
+      const raw = localStorage.getItem(this.userKey);
+      if (raw) { const u = JSON.parse(raw) as User; return !!(u && u.id); }
+    } catch { }
+    return this.currentUserSubject.value !== null;
   }
 
   isEmployer(): boolean {
@@ -61,22 +79,27 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    if (this._tokenMemory) return this._tokenMemory;
+    try { return localStorage.getItem(this.tokenKey); } catch { return null; }
   }
 
   setSession(user: User, token?: string): void {
-    localStorage.setItem(this.userKey, JSON.stringify(user));
-    localStorage.setItem(this.loginKey, 'true');
-    if (token) {
-      localStorage.setItem(this.tokenKey, token);
-    }
+    if (token) this._tokenMemory = token;
+    try {
+      localStorage.setItem(this.userKey, JSON.stringify(user));
+      localStorage.setItem(this.loginKey, 'true');
+      if (token) localStorage.setItem(this.tokenKey, token);
+    } catch { }
     this.currentUserSubject.next(user);
   }
 
   clearSession(): void {
-    localStorage.removeItem(this.userKey);
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.loginKey);
+    this._tokenMemory = null;
+    try {
+      localStorage.removeItem(this.userKey);
+      localStorage.removeItem(this.tokenKey);
+      localStorage.removeItem(this.loginKey);
+    } catch { }
     this.currentUserSubject.next(null);
   }
 }

@@ -19,6 +19,7 @@ export class EventsTrainerTabComponent {
   loading = true;
   error: string | null = null;
   cancellingId: number | null = null;
+  deletingId: number | null = null;
 
   constructor(
     public api: EventsApiService,
@@ -55,11 +56,27 @@ export class EventsTrainerTabComponent {
     this.cancellingId = e.id;
     this.api.cancel(e.id).subscribe({
       next: () => {
+        this.events = this.events.map(ev =>
+          ev.id === e.id ? { ...ev, status: 'CANCELLED' } : ev
+        );
         this.cancellingId = null;
-        this.load();
       },
       error: () => {
         this.cancellingId = null;
+      },
+    });
+  }
+
+  deleteEvent(e: Event): void {
+    if (!confirm('Supprimer définitivement cet événement ? Cette action est irréversible.')) return;
+    this.deletingId = e.id;
+    this.api.delete(e.id).subscribe({
+      next: () => {
+        this.events = this.events.filter(ev => ev.id !== e.id);
+        this.deletingId = null;
+      },
+      error: () => {
+        this.deletingId = null;
       },
     });
   }

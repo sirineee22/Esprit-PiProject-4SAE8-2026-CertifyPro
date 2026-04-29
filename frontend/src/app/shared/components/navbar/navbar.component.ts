@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
-import { API_BASE_URL } from '../../../core/api/api.config';
 
 @Component({
   selector: 'app-navbar',
@@ -26,10 +25,11 @@ import { API_BASE_URL } from '../../../core/api/api.config';
         </div>
       </a>
 
-      <!-- Desktop Navigation - Minimal for logged in users -->
-      <div class="nav-links-desktop d-none d-md-flex" *ngIf="!isLoggedIn">
+      <!-- Desktop Navigation -->
+      <div class="nav-links-desktop d-none d-md-flex">
         <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" routerLinkActive="active">Courses</a>
-        <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">À propos</a>
+        <a class="nav-link-modern" routerLink="/certifications" routerLinkActive="active">Certification</a>
+        <a class="nav-link-modern" routerLink="/about" routerLinkActive="active">About</a>
       </div>
       
       <!-- Right Side Actions -->
@@ -40,14 +40,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
         </ng-container>
         
         <ng-template #userLoggedIn>
-          <div class="welcome-text">Bienvenue, {{currentUser?.firstName}}!</div>
+          <div class="welcome-text">Welcome, {{currentUser?.firstName}}!</div>
           <div class="user-profile-nav-wrapper">
             <div class="user-profile-nav-modern" (click)="toggleDropdown($event)">
-               <div class="nav-avatar">
-                 <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="navAvatarImgError = true">
-                 <span *ngIf="(!avatarUrl() || navAvatarImgError) && initials()" class="nav-avatar-initials">{{ initials() }}</span>
-                 <i *ngIf="(!avatarUrl() || navAvatarImgError) && !initials()" class="bi bi-person-circle"></i>
-               </div>
+               <i class="bi bi-person-circle"></i>
                <span class="user-name-modern">{{ currentUser?.firstName }}</span>
                <i class="bi bi-chevron-down dropdown-arrow" [class.rotate]="isDropdownOpen"></i>
             </div>
@@ -101,14 +97,15 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       <div class="mobile-nav-links">
         <ng-container *ngIf="!isLoggedIn">
           <a class="nav-link-modern" [routerLink]="isLoggedIn ? '/courses' : '/login'" (click)="isMenuOpen = false">Courses</a>
-          <a class="nav-link-modern" routerLink="/about" (click)="isMenuOpen = false">À propos</a>
+          <a class="nav-link-modern" routerLink="/certifications" (click)="isMenuOpen = false">Certification</a>
+          <a class="nav-link-modern" routerLink="/about" (click)="isMenuOpen = false">About</a>
         </ng-container>
         <ng-container *ngIf="isLoggedIn">
-          <a class="nav-link-modern" routerLink="/" (click)="isMenuOpen = false">Accueil</a>
-          <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">Mon Profil</a>
-          <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">Mes Cours</a>
-          <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">Mes Certifications</a>
-          <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Parcourir les Cours</a>
+          <a class="nav-link-modern" routerLink="/" (click)="isMenuOpen = false">Home</a>
+          <a class="nav-link-modern" routerLink="/profile" (click)="isMenuOpen = false">My Profile</a>
+          <a class="nav-link-modern" routerLink="/my-courses" (click)="isMenuOpen = false">My Courses</a>
+          <a class="nav-link-modern" routerLink="/my-certifications" (click)="isMenuOpen = false">My Certifications</a>
+          <a class="nav-link-modern" routerLink="/courses" (click)="isMenuOpen = false">Browse Courses</a>
         </ng-container>
         <hr class="mobile-divider">
         <ng-container *ngIf="!isLoggedIn; else mobileUserLoggedIn">
@@ -119,11 +116,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
            <div class="d-flex flex-column gap-2">
              <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded shadow-sm">
                <div class="d-flex align-items-center gap-2">
-                 <div class="nav-avatar nav-avatar-mobile">
-                   <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="navAvatarImgError = true">
-                   <span *ngIf="(!avatarUrl() || navAvatarImgError) && initials()" class="nav-avatar-initials">{{ initials() }}</span>
-                   <i *ngIf="(!avatarUrl() || navAvatarImgError) && !initials()" class="bi bi-person-circle text-primary"></i>
-                 </div>
+                 <i class="bi bi-person-circle text-primary"></i>
                  <span class="fw-bold">{{ currentUser?.firstName }}</span>
                </div>
                <button (click)="logout()" class="btn btn-sm btn-outline-danger">Logout</button>
@@ -142,7 +135,6 @@ export class NavbarComponent implements OnDestroy {
   isMenuOpen = false;
   isDropdownOpen = false;
   currentUser: User | null = null;
-  navAvatarImgError = false;
   private router = inject(Router);
   private readonly subscriptions = new Subscription();
 
@@ -153,21 +145,6 @@ export class NavbarComponent implements OnDestroy {
         this.isLoggedIn = !!user;
       })
     );
-  }
-
-  avatarUrl(): string | null {
-    const url = this.currentUser?.profileImageUrl;
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return API_BASE_URL + url;
-  }
-
-  initials(): string {
-    const u = this.currentUser;
-    if (!u?.firstName && !u?.lastName) return '';
-    const f = (u.firstName || '').trim().charAt(0).toUpperCase();
-    const l = (u.lastName || '').trim().charAt(0).toUpperCase();
-    return (f + l) || '';
   }
 
   get isAdmin(): boolean {

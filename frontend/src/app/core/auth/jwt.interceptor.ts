@@ -7,10 +7,9 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const token = authService.getToken();
 
   if (token) {
-    // Décoder le JWT pour extraire userId
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.userId; // ← ton JWT a "userId": 28
+      const userId = payload.userId;
 
       req = req.clone({
         setHeaders: {

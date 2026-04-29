@@ -110,7 +110,7 @@ import { API_ENDPOINTS } from '../../../../../core/api/api.config';
       <div class="oc-body">
         <div class="oc-header">
           <div class="oc-logo">
-            <img *ngIf="job.company?.logo" [src]="job.company.logo" alt="logo"/>
+            <img *ngIf="job.company?.logo" [src]="job.company?.logo" alt="logo"/>
             <div class="oc-logo-ph" *ngIf="!job.company?.logo">{{ job.title.charAt(0) }}</div>
           </div>
           <div class="oc-title-wrap">

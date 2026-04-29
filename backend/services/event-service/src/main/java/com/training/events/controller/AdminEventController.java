@@ -68,7 +68,7 @@ public class AdminEventController {
             "ONSITE", eventRepository.countByMode(Event.EventMode.ONSITE),
             "HYBRID", eventRepository.countByMode(Event.EventMode.HYBRID)
         ));
-        dto.setTotalRegistrations(registrationRepository.countByStatus(EventRegistration.RegistrationStatus.REGISTERED));
+        dto.setTotalRegistrations(registrationRepository.countByStatus(EventRegistration.RegistrationStatus.APPROVED));
         return ResponseEntity.ok(dto);
     }
 

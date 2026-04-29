@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EventsApiService } from '../../../events/services/events.api';
@@ -20,7 +20,10 @@ export class AdminEventsComponent {
   error: string | null = null;
   deletingId: number | null = null;
 
-  constructor(private api: EventsApiService) {}
+  constructor(
+    private api: EventsApiService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -34,10 +37,12 @@ export class AdminEventsComponent {
       next: (list) => {
         this.events = list;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error = err?.error?.message || err?.message || 'Erreur chargement';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -49,10 +54,12 @@ export class AdminEventsComponent {
       next: (s) => {
         this.stats = s;
         this.statsLoading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.statsLoading = false;
         this.statsError = true;
+        this.cdr.detectChanges();
       },
     });
   }

@@ -1,56 +1,89 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
     name: api-gateway
-
   cloud:
     gateway:
-
       globalcors:
         corsConfigurations:
           '[/**]':
             allowedOriginPatterns:
-              # ✅ FIX: use allowedOriginPatterns instead of allowedOrigins.
-              # allowedOrigins: "*" is rejected by Spring when allowCredentials: true,
-              # because the CORS spec forbids wildcard origin with credentials.
-              - "http://localhost:4200"
+              - "*"
             allowedMethods:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
-              - PATCH
             allowedHeaders:
               - "*"
             allowCredentials: true
-
+            maxAge: 3600
+        add-to-simple-url-handler-mapping: true
       discovery:
         locator:
           enabled: true
-
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_LAST
-
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
       routes:
-
         # ================= USER =================
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/api/users/**,/api/roles/**
-
+            - Path=/api/users/**,/api/roles/**,/api/admin/audit/**
+        - id: payments-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/payments/**
         - id: auth-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/auth/**
-
-        - id: trainer-requests-service
+        - id: certifications-service
           uri: lb://USER-SERVICE
           predicates:
+            - Path=/api/certifications/**,/api/certifications
+        - id: certification-exams-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/certification-exams/**,/api/certification-exams
+        - id: certification-attempts-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/certification-attempts/**
+        - id: ai-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/ai/**
+
+        # ================= PLANNED SESSION =================
+        - id: trainer-requests-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
             - Path=/api/trainer-requests/**
+        - id: planned-session-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/schedules/**
+        - id: room-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/rooms/**
+
+        # ================= FORUM =================
+        - id: forum-service
+          uri: lb://FORUM-SERVICE
+          predicates:
+            - Path=/api/forum/**,/uploads/posts/**
+
+        # ================= ECOMMERCE =================
+        - id: ecommerce-service
+          uri: lb://ECOMMERCE-SERVICE
+          predicates:
+            - Path=/api/products/**,/api/orders/**
 
         # ================= EVENTS =================
         - id: event-service
@@ -58,7 +91,39 @@ spring:
           predicates:
             - Path=/api/events/**,/api/admin/events/**
 
-        # ================= JOB =================
+        # ================= TRAINING =================
+        - id: evaluations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/evaluations/**,/api/evaluations
+        - id: formations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/formations/**,/api/formations
+        - id: quizzes-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/quizzes/**,/api/quizzes
+        - id: progression-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/progression/**,/api/progression
+        - id: favorites-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/favorites/**,/api/favorites
+        - id: stats-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/stats/**,/api/stats
+
+        # ================= COLLABORATION =================
+        - id: collaboration-service
+          uri: lb://COLLABORATION-SERVICE
+          predicates:
+            - Path=/api/groups/**
+
+        # ================= JOBS =================
         - id: job-careers-service
           uri: lb://JOB-CAREERS-SERVICE
           predicates:
@@ -69,32 +134,20 @@ spring:
           uri: lb://MESSAGING-SERVICE
           predicates:
             - Path=/api/chat/**
-
-        # ================= MESSAGING — FICHIERS STATIQUES =================
-        # ✅ FIX: router /uploads/** vers le messaging-service pour servir
-        # les images, vidéos, fichiers uploadés via le gateway
         - id: messaging-service-uploads
           uri: lb://MESSAGING-SERVICE
           predicates:
             - Path=/uploads/**
-
-        # ================= MESSAGING — NOTIFICATIONS =================
         - id: messaging-service-notifications
           uri: lb://MESSAGING-SERVICE
           predicates:
             - Path=/api/notifications/**
 
         # ================= WEBSOCKET =================
-        # ✅ CRITICAL FIX: WebSocket routes MUST use lb:ws:// (not lb://) so that
-        # Spring Cloud Gateway performs the load-balancing upgrade correctly.
-        # Using lb:// causes the Upgrade: websocket header to be dropped and the
-        # connection falls back to HTTP, breaking all real-time features.
         - id: messaging-service-ws
           uri: lb:ws://MESSAGING-SERVICE
           predicates:
             - Path=/ws-chat/**
-          # ✅ FIX: Add the RemoveHopByHop filter ONLY for the WS route so that
-          # Upgrade, Connection headers pass through the gateway untouched.
           filters:
             - RewritePath=/ws-chat/(?<segment>.*), /ws-chat/${segment}
 
@@ -102,10 +155,13 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 5
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
 
 logging:
   level:
-    # ✅ Supprime "Connection reset by peer" — déconnexion WebSocket normale côté client
     reactor.core.publisher.Operators: OFF
     reactor.netty: WARN
     io.netty: WARN

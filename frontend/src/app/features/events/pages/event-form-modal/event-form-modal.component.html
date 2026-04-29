@@ -11,7 +11,8 @@
       <form [formGroup]="form" (ngSubmit)="submit()" id="eventForm">
         <div class="form-group">
           <label class="form-label">Titre <span class="req">*</span></label>
-          <input type="text" formControlName="title" class="form-control" placeholder="Titre de l'événement" />
+          <input type="text" formControlName="title" class="form-control" [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched" placeholder="Titre de l'événement" />
+          <div class="invalid-feedback" *ngIf="form.get('title')?.invalid && form.get('title')?.touched">Le titre est requis.</div>
         </div>
 
         <div class="form-group">
@@ -41,12 +42,35 @@
 
         <div class="row">
           <div class="form-group">
+            <label class="form-label">Learning level <span class="req">*</span></label>
+            <select formControlName="learningLevel" class="form-control">
+              @for (l of levels; track l) {
+              <option [value]="l">{{ l }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <input type="text" formControlName="category" class="form-control" placeholder="ex: Data Analytics, Web, AI" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Required skills</label>
+          <input type="text" formControlName="requiredSkillsText" class="form-control"
+            placeholder="SQL, Python, Statistics (comma separated)" />
+        </div>
+
+        <div class="row">
+          <div class="form-group">
             <label class="form-label">Début <span class="req">*</span></label>
-            <input type="datetime-local" formControlName="dateStart" class="form-control" />
+            <input type="datetime-local" formControlName="dateStart" class="form-control" [class.is-invalid]="form.get('dateStart')?.invalid && form.get('dateStart')?.touched" />
+            <div class="invalid-feedback" *ngIf="form.get('dateStart')?.invalid && form.get('dateStart')?.touched">Date de début requise.</div>
           </div>
           <div class="form-group">
             <label class="form-label">Fin <span class="req">*</span></label>
-            <input type="datetime-local" formControlName="dateEnd" class="form-control" />
+            <input type="datetime-local" formControlName="dateEnd" class="form-control" [class.is-invalid]="form.get('dateEnd')?.invalid && form.get('dateEnd')?.touched" />
+            <div class="invalid-feedback" *ngIf="form.get('dateEnd')?.invalid && form.get('dateEnd')?.touched">Date de fin requise.</div>
           </div>
         </div>
 
@@ -68,7 +92,8 @@
 
         <div class="form-group">
           <label class="form-label">Nombre max de participants <span class="req">*</span></label>
-          <input type="number" formControlName="maxParticipants" class="form-control" min="1" placeholder="Ex: 50" />
+          <input type="number" formControlName="maxParticipants" class="form-control" [class.is-invalid]="form.get('maxParticipants')?.invalid && form.get('maxParticipants')?.touched" min="1" placeholder="Ex: 50" />
+          <div class="invalid-feedback" *ngIf="form.get('maxParticipants')?.invalid && form.get('maxParticipants')?.touched">Minimum 1.</div>
         </div>
 
         @if (submitError) {

@@ -23,6 +23,13 @@ public class CreateEventRequest {
     private Event.EventMode mode;
 
     @NotNull
+    private Event.LearningLevel learningLevel;
+
+    private String category;
+
+    private List<String> requiredSkills;
+
+    @NotNull
     private Instant dateStart;
 
     @NotNull
@@ -33,7 +40,14 @@ public class CreateEventRequest {
     private String location;
 
     @NotNull
+    @jakarta.validation.constraints.Min(value = 1, message = "Le nombre maximum de participants doit être au moins 1")
     private Integer maxParticipants;
+
+    @jakarta.validation.constraints.AssertTrue(message = "La date de fin doit être après la date de début")
+    public boolean isDateRangeValid() {
+        if (dateStart == null || dateEnd == null) return true;
+        return dateEnd.isAfter(dateStart);
+    }
 
     private String trainerFirstName;
 
@@ -49,6 +63,12 @@ public class CreateEventRequest {
     public void setType(Event.EventType type) { this.type = type; }
     public Event.EventMode getMode() { return mode; }
     public void setMode(Event.EventMode mode) { this.mode = mode; }
+    public Event.LearningLevel getLearningLevel() { return learningLevel; }
+    public void setLearningLevel(Event.LearningLevel learningLevel) { this.learningLevel = learningLevel; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public List<String> getRequiredSkills() { return requiredSkills; }
+    public void setRequiredSkills(List<String> requiredSkills) { this.requiredSkills = requiredSkills; }
     public Instant getDateStart() { return dateStart; }
     public void setDateStart(Instant dateStart) { this.dateStart = dateStart; }
     public Instant getDateEnd() { return dateEnd; }

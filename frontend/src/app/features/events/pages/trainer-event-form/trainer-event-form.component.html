@@ -28,7 +28,15 @@
         </select>
       </label>
       <label>
-        Start <input type="datetime-local" formControlName="dateStart" />
+        Current level
+        <select formControlName="learningLevel">
+          @for (l of levels; track l) {
+            <option [value]="l">{{ l }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Start <input type="datetime-local" formControlName="dateStart" [min]="minStartDateTime" />
       </label>
       <label>
         End <input type="datetime-local" formControlName="dateEnd" />

@@ -1,0 +1,248 @@
+Rapport de PIDEV
+´Elabor ´e par : Dahmene Sirine / Kalai Zar Rania /
+Romdhani Nesrine / Houari Khalil / Saadaoui Mohamed
+Ali / Sanai Ammar
+Intelligent Platform for Training
+Management Professional
+Certifications
+Ann ´ee Universitaire : 2025-2026
+Table des mati `eres
+1 Spring 0 7
+1.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+1.2 Analysis of Existing Applications . . . . . . . . . . . . . . . . . . . . 8
+1.2.1 National Solutions . . . . . . . . . . . . . . . . . . . . . . . . 8
+1.2.2 International Solutions . . . . . . . . . . . . . . . . . . . . . . 9
+1.3 Critique of Existing Solutions . . . . . . . . . . . . . . . . . . . . . . 10
+1.4 Proposed Solution and Added Value . . . . . . . . . . . . . . . . . . . 10
+1.5 Functional Requirements . . . . . . . . . . . . . . . . . . . . . . . . . 11
+1.6 Non-Functional Requirements . . . . . . . . . . . . . . . . . . . . . . 13
+1.7 Conception UML . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+1.7.1 Global Use Case Diagram . . . . . . . . . . . . . . . . . . . . 14
+1.7.2 Global Class Diagram . . . . . . . . . . . . . . . . . . . . . . 16
+1.8 Global architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+1.8.1 Physical architecture . . . . . . . . . . . . . . . . . . . . . . . 16
+1.8.2 Logical architecture . . . . . . . . . . . . . . . . . . . . . . . 19
+1.9 Maquettes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+3
+Table des figures
+1.1 Global Use Case Diagram . . . . . . . . . . . . . . . . . . . . . . . . 15
+1.2 Global Class Diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+1.3 Physical architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+1.4 Logical architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+1.5 Maquettes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+5
+Chapitre1
+Spring 0
+Contents
+1.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+1.2 Analysis of Existing Applications . . . . . . . . . . . . . . . . . . 8
+1.2.1 National Solutions . . . . . . . . . . . . . . . . . . . . . . . 8
+1.2.2 International Solutions . . . . . . . . . . . . . . . . . . . . . 9
+1.3 Critique of Existing Solutions . . . . . . . . . . . . . . . . . . . . . 10
+1.4 Proposed Solution and Added Value . . . . . . . . . . . . . . . . . 10
+1.5 Functional Requirements . . . . . . . . . . . . . . . . . . . . . . . 11
+1.6 Non-Functional Requirements . . . . . . . . . . . . . . . . . . . . 13
+1.7 Conception UML . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+1.7.1 Global Use Case Diagram . . . . . . . . . . . . . . . . . . . 14
+1.7.2 Global Class Diagram . . . . . . . . . . . . . . . . . . . . . 16
+1.8 Global architecture . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+1.8.1 Physical architecture . . . . . . . . . . . . . . . . . . . . . . 16
+1.8.2 Logical architecture . . . . . . . . . . . . . . . . . . . . . . 19
+1.9 Maquettes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+7
+Chapitre 1.Spring 0
+1.1 Introduction
+The rapid growth of digital technologies has transformed professional training, en-
+couraging organizations to adopt online platforms for learning and certification. Howe-
+ver, many existing solutions lack either local adaptability or full integration of essential
+services. This project aims to design an intelligent platform for managing professional
+training and certifications by centralizing course management, enrollment, assessments,
+certifications, events, payments, and e-commerce within a unified system. Based on a
+microservice architecture, the platform will ensure scalability, security, and an impro-
+ved user experience while meeting the needs of learners, trainers, administrators, and
+companies.
+1.2 Analysis of Existing Applications
+1.2.1 National Solutions
+GoMyCode
+oPositioning :
+GoMyCode is a technology training platform focused on employability, offering
+intensive programs based on project-driven learning.
+oStrengths :
+• Strong local presence that improves accessibility for learners.
+• Mentorship model that enhances motivation and engagement.
+• Practical approach enabling learners to build a professional portfolio.
+oWeaknesses :
+• Smaller course catalog compared to international platforms.
+• Less advanced HR and compliance management (audit, advanced reporting).
+• Pedagogical standardization may vary depending on cohorts and instructors.
+8
+Chapitre 1.Spring 0
+DeepLearn Academy
+oPositioning :
+DeepLearn Academy positions itself as a specialized training center that pro-
+vides more personalized learner support.
+oStrengths :
+• More direct supervision and learner support.
+• Potential specialization in specific technical domains.
+oWeaknesses :
+• Limited international brand recognition, reducing the global value of certifica-
+tions.
+• Less developed digital ecosystem (analytics, integrations, learning paths).
+• Content updates may depend on available resources.
+1.2.2 International Solutions
+Coursera
+oPositioning :
+Coursera is a global online learning platform that delivers certified courses in
+partnership with leading universities and industry organizations.
+oStrengths :
+• High certification value due to academic partnerships.
+• Well-structured learning paths including graded assessments and capstone pro-
+jects.
+• Enterprise offering through Coursera for Business.
+oWeaknesses :
+• Higher cost for certain certificates and subscription plans.
+• Limited customization for local markets (language, employment context).
+• Mentorship and hands-on guidance are not consistently available across all
+9
+Chapitre 1.Spring 0
+courses.
+1.3 Critique of Existing Solutions
+The analysis of existing platforms highlights the rapid evolution of digital learning
+environments, yet several limitations persist. International platforms such as Coursera
+offer diverse courses and strong academic recognition but often lack adaptation to lo-
+cal contexts and job market needs. In contrast, national platforms better address local
+demands but typically provide smaller catalogs and less advanced technological infra-
+structures. This study also identifies common gaps, including the absence of a unified
+platform integrating training, certifications, payments, and e-commerce, limited analy-
+tics for decision-making, insufficient collaborative spaces, and difficulties in balancing
+personalized learning with standardized pathways. These findings justify the develop-
+ment of an intelligent platform that combines the technological strength of international
+solutions with the flexibility of local platforms.
+1.4 Proposed Solution and Added Value
+To address the limitations of existing platforms, we propose the development of an
+intelligent platform for managing professional training and certifications. The system
+will centralize key processes such as course management, enrollment, evaluation, certi-
+fication, payments, collaboration, and e-commerce within a single digital environment.
+Built on a microservices architecture, the platform will ensure scalability, flexibility, and
+maintainability. Its added value lies in providing a unified ecosystem, advanced analytics
+for decision-making, collaborative spaces to enhance user interaction, and personalized
+learning experiences. Moreover, the platform will combine international technological
+standards with local adaptability, making it both efficient and relevant to regional needs.
+10
+Chapitre 1.Spring 0
+1.5 Functional Requirements
+Functional requirements define the core features of the platform for managing e-
+learning activities, certifications, events, and e-commerce services.
+—Module 1 : User Management and Authentication
+- User registration and account creation.
+- Secure authentication with email verification.
+- Role-Based Access Control (RBAC) and permission management.
+- User profile management and password reset functionality.
+—Module 2 : Course Management
+- Creation and modification of training programs.
+- Organization of courses into structured modules and lessons.
+- Creation and management of exams and quizzes.
+- Advanced training categorization and tagging.
+—Module 3 : Discussion Forum
+- Pedagogical space for creation of publications (posts).
+- Hierarchical comments on publications.
+- User reactions on posts and comments.
+- Content moderation (deletion and modification by authors).
+—Module 4 : Messaging Management
+- Private messaging system and internal conversations.
+- Real-time and email-based notifications.
+- Detailed message history and communication logs.
+- Personalized notification preferences.
+—Module 5 : Event Management
+- Creation and planning of pedagogical events and webinars.
+- Automated registration management and participation tracking.
+- Intelligent automatic reminders for upcoming sessions.
+11
+Chapitre 1.Spring 0
+—Module 6 : Pedagogical Monitoring & Evaluation
+- Real-time learner progress tracking and activity history.
+- Comprehensive exam and quiz administration.
+- Grade assignment, qualitative feedback, and result consultation.
+—Module 7 : Enrollments & Sessions Management
+- Online enrollment processing and prerequisite validation.
+- Detailed session lifecycle management.
+- Centralized enrollment and payment history.
+—Module 8 : Certification Management
+- Automatic certificate generation with unique IDs and QR codes.
+- Definition of certification criteria (scores, attendance, projects).
+- Secure downloading, verification, and certification history.
+—Module 9 : Planning & Activity Analysis
+- Planning of in-person (pr ´esentielle) sessions and conflict management.
+- Advanced dashboards and statistical reporting on platform activity.
+- Performance analysis and data export in multiple formats.
+—Module 10 : Collaborations
+- Management of collaborative work groups.
+- Secure resource sharing and integrated group communication tools.
+—Module 11 : Jobs & Careers (Emplois et Carri `eres)
+- Support for identifying job opportunities and internships.
+- Career path identification aligned with skills and background.
+- Connection between educational achievements and market needs.
+—Module 12 : E-Commerce
+- Commercial catalog for courses, products, and event tickets.
+12
+Chapitre 1.Spring 0
+- Integrated shopping cart, order management, and secure checkout.
+- Local and international payment gateway integration.
+—Module 13 : Machine Learning & Intelligent Features
+- AI-based personalized course and certification recommendations.
+- Behavioral analysis and detection of ”at-risk” learners.
+- Intelligent chatbot for 24/7 user support and guidance.
+1.6 Non-Functional Requirements
+Non-functional requirements define the quality attributes and technical constraints
+of the platform.
+oPerformance :
+Fast response times and support for a large number of concurrent users by Opti-
+mize API Calls
+oScalability :
+Microservices architecture enabling system growth in users, data, and content.
+oSecurity :
+Data encryption (HTTPS/TLS), secure authentication (JWT), RBAC, protection
+against common cyberattacks, and compliance with data protection regulations.
+oReliability Availability :
+High system availability, regular backups, disaster recovery, and exam data pro-
+tection mechanisms.
+oMaintainability :
+Modular architecture, monitoring, logging, testing, and comprehensive API do-
+cumentation.
+13
+Chapitre 1.Spring 0
+oInteroperability :
+RESTful APIs and data import/export capabilities for future integrations.
+oAccessibility Usability :
+Responsive interface, clear navigation, multilingual support, and basic accessi-
+bility standards.
+1.7 Conception UML
+1.7.1 Global Use Case Diagram
+Image 1.7.1 Global Use Case Diagram
+14
+Chapitre 1.Spring 0
+FIGURE1.1 – Global Use Case Diagram
+15
+Chapitre 1.Spring 0
+1.7.2 Global Class Diagram
+Image 1.7.2 Global Class Diagram
+1.8 Global architecture
+1.8.1 Physical architecture
+Image 1.8.1 Physical architecture
+16
+Chapitre 1.Spring 0
+FIGURE1.2 – Global Class Diagram
+17
+Chapitre 1.Spring 0
+FIGURE1.3 – Physical architecture
+18
+Chapitre 1.Spring 0
+1.8.2 Logical architecture
+Image 1.8.2 Logical architecture
+FIGURE1.4 – Logical architecture
+1.9 Maquettes
+Image 1.9 Maquettes
+19
+Chapitre 1.Spring 0
+FIGURE1.5 – Maquettes
+20

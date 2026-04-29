@@ -1,0 +1,156 @@
+<!-- products-list.component.html -->
+<div class="shop-container">
+  <!-- Header -->
+  <div class="shop-header">
+    <div class="header-left">
+      <h1>Our Products</h1>
+      <p class="product-count">{{filteredProducts.length}} products available</p>
+    </div>
+    
+    <div class="header-actions">
+     
+      
+      <button class="btn-add-product" (click)="openAddModal()">
+        <i class="bi bi-plus-circle"></i>
+        Add Product
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input 
+        type="text" 
+        placeholder="Search products..." 
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+      >
+    </div>
+
+    <div class="filter-group">
+      <select [(ngModel)]="selectedCategory" (ngModelChange)="applyFilters()">
+        <option *ngFor="let cat of categories" [value]="cat">{{cat}}</option>
+      </select>
+
+      <select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+        <option value="name">Sort by Name</option>
+        <option value="price">Sort by Price</option>
+        <option value="stock">Sort by Stock</option>
+      </select>
+
+      <button class="btn-sort-order" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; applyFilters()">
+        <i class="bi" [class.bi-sort-up]="sortOrder === 'asc'" [class.bi-sort-down]="sortOrder === 'desc'"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading amazing products...</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid" *ngIf="!isLoading">
+    <div class="product-card" *ngFor="let product of filteredProducts">
+      <!-- Product Image -->
+      <div class="product-image">
+        <img src="https://imagedelivery.net/JAV112JY973Crznn4xb8Sg/805f7b71-bdf5-4c29-0a20-38408f1d5300/mobile" [alt]="product.name">
+        <span class="stock-badge" [ngClass]="getStockStatus(product.stock).class">
+          {{getStockStatus(product.stock).text}}
+        </span>
+      </div>
+
+      <!-- Product Info -->
+      <div class="product-info">
+        <h3 class="product-title">{{product.name}}</h3>
+        <p class="product-description">{{product.description | slice:0:100}}{{product.description.length > 100 ? '...' : ''}}</p>
+        
+        <div class="product-details">
+          <span class="product-category" *ngIf="product.category">{{product.category}}</span>
+          <span class="product-price">{{product.price | number:'1.2-2'}} €</span>
+        </div>
+
+        <div class="product-stock">
+          <span class="stock-quantity">Stock: {{product.stock}} units</span>
+        </div>
+      </div>
+
+      <!-- Product Actions -->
+      <div class="product-actions">
+      
+
+        <div class="admin-actions" *ngIf="true"> <!-- Add admin condition here -->
+          <button class="btn-edit" (click)="openEditModal(product)">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn-delete" (click)="deleteProduct(product)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredProducts.length === 0">
+      <i class="bi bi-box"></i>
+      <h3>No products found</h3>
+      <p>Try adjusting your search or filter criteria</p>
+    </div>
+  </div>
+
+  <!-- Edit/Add Modal -->
+  <div class="modal-overlay" *ngIf="isEditModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ isAddMode ? 'Add New Product' : 'Edit Product' }}</h2>
+        <button class="btn-close" (click)="closeEditModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" [(ngModel)]="editedProduct.name" placeholder="Enter product name">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="editedProduct.description" placeholder="Enter product description" rows="4"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (€)</label>
+            <input type="number" [(ngModel)]="editedProduct.price" placeholder="0.00" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" [(ngModel)]="editedProduct.stock" placeholder="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select [(ngModel)]="editedProduct.category">
+            <option *ngFor="let cat of categories.slice(1)" [value]="cat">{{cat}}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Image URL</label>
+          <input type="url" [(ngModel)]="editedProduct.imageUrl" placeholder="https://...">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button class="btn-save" (click)="saveProduct()">
+          {{ isAddMode ? 'Create Product' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

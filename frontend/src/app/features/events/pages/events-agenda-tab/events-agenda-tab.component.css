@@ -109,6 +109,12 @@
   color: #991b1b;
 }
 
+.status-badge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+  text-decoration: line-through;
+}
+
 .status-badge.default {
   background: #f1f5f9;
   color: #475569;
@@ -220,6 +226,17 @@
   background: #f1f5f9;
   color: #1e3a5f;
   border-color: #1e3a5f;
+}
+
+.icon-btn-delete {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.icon-btn-delete:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 .main-btns {

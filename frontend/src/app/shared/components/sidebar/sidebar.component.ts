@@ -40,17 +40,41 @@ import { User } from '../../models/user.model';
             <i class="bi bi-people-fill"></i>
             <span>User Management</span>
           </a>
+          <a routerLink="/admin/posts" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <span>Forum Management</span>
+          </a>
+          <a routerLink="/admin/productss" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-shop"></i>
+            <span>Ecommerce Management</span>
+          </a>
+          <a routerLink="/admin/orders" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-cart-check"></i>
+            <span>Orders Management</span>
+          </a>
           <a routerLink="/admin/events" routerLinkActive="active" class="nav-link">
             <i class="bi bi-calendar-event"></i>
             <span>Events</span>
+          </a>
+          <a routerLink="/admin/rooms" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-door-open-fill"></i>
+            <span>Rooms</span>
+          </a>
+          <a routerLink="/admin/audit-logs" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-clock-history"></i>
+            <span>Audit & History</span>
           </a>
         </div>
         
         <div class="nav-section">
           <span class="section-label">PLATFORM</span>
-          <a class="nav-link disabled">
-            <i class="bi bi-journal-check"></i>
-            <span>Trainings</span>
+          <a routerLink="/trainings" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <i class="bi bi-grid-view"></i>
+            <span>Trainings Catalog</span>
+          </a>
+          <a routerLink="/trainings/add" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-journal-plus"></i>
+            <span>Add Training</span>
           </a>
           <a class="nav-link disabled">
             <i class="bi bi-shield-lock-fill"></i>
@@ -311,7 +335,6 @@ import { User } from '../../models/user.model';
       box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
     }
   `]
-
 })
 export class SidebarComponent implements OnInit {
   currentUser: User | null = null;

@@ -65,7 +65,7 @@ export class ChatWsService implements OnDestroy {
        * The gateway routes /ws-chat/** → lb:ws://MESSAGING-SERVICE
        * (see corrected gateway-application.yml).
        */
-      brokerURL: 'ws://localhost:8080/ws-chat',
+      brokerURL: 'ws://localhost:8081/ws-chat',
       connectHeaders: {
         Authorization: `Bearer ${this.auth.getToken()}`,
       },

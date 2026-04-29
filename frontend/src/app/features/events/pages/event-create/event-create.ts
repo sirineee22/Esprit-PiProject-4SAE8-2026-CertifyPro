@@ -5,7 +5,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { EventsApiService } from '../../services/events.api';
 import { EventRefreshService } from '../../services/event-refresh.service';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { CreateEventRequest, EventType, EventMode, Event } from '../../../../shared/models/event.model';
+import { CreateEventRequest, EventType, EventMode, Event, LearningLevel } from '../../../../shared/models/event.model';
 import * as L from 'leaflet';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 
@@ -47,12 +47,16 @@ export class EventCreateComponent implements OnInit, AfterViewInit, OnDestroy {
 
   types: EventType[] = ['WEBINAR', 'WORKSHOP', 'QNA', 'MEETUP', 'BOOTCAMP'];
   modes: EventMode[] = ['ONLINE', 'ONSITE', 'HYBRID'];
+  levels: LearningLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
     description: [''],
     type: ['WEBINAR' as EventType, Validators.required],
     mode: ['ONLINE' as EventMode, Validators.required],
+    learningLevel: ['BEGINNER' as LearningLevel, Validators.required],
+    category: [''],
+    requiredSkillsText: [''],
     dateStart: ['', Validators.required],
     dateEnd: ['', Validators.required],
     meetingLink: [''],
@@ -60,6 +64,12 @@ export class EventCreateComponent implements OnInit, AfterViewInit, OnDestroy {
     maxParticipants: [50, [Validators.required, Validators.min(1), Validators.max(1000)]],
     program: this.fb.array([])
   });
+
+  get minStartDateTime(): string {
+    const date = new Date(Date.now() + 3 * 60 * 1000);
+    const tz = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tz).toISOString().slice(0, 16);
+  }
 
   get programControls() {
     return this.form.get('program') as FormArray;
@@ -259,6 +269,9 @@ export class EventCreateComponent implements OnInit, AfterViewInit, OnDestroy {
           description: e.description ?? '',
           type: e.type,
           mode: e.mode,
+          learningLevel: e.learningLevel ?? 'BEGINNER',
+          category: e.category ?? '',
+          requiredSkillsText: (e.requiredSkills ?? []).join(', '),
           dateStart: e.dateStart.slice(0, 16),
           dateEnd: e.dateEnd.slice(0, 16),
           meetingLink: e.meetingLink ?? '',
@@ -286,6 +299,16 @@ export class EventCreateComponent implements OnInit, AfterViewInit, OnDestroy {
   submit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
+    const startAt = new Date(v.dateStart).getTime();
+    const minStartAt = Date.now() + 3 * 60 * 1000;
+    if (startAt < minStartAt) {
+      this.submitError = 'Start date/time must be at least 3 minutes after current time.';
+      return;
+    }
+    if (new Date(v.dateEnd).getTime() <= startAt) {
+      this.submitError = 'End date/time must be after start date/time.';
+      return;
+    }
 
     if ((v.mode === 'ONLINE' || v.mode === 'HYBRID') && !(v.meetingLink ?? '').trim()) {
       this.submitError = 'Le lien de réunion est requis pour cet événement.';
@@ -301,6 +324,9 @@ export class EventCreateComponent implements OnInit, AfterViewInit, OnDestroy {
       description: v.description || undefined,
       type: v.type,
       mode: v.mode,
+      learningLevel: v.learningLevel,
+      category: v.category || undefined,
+      requiredSkills: (v.requiredSkillsText || '').split(',').map((s: string) => s.trim()).filter(Boolean),
       dateStart: new Date(v.dateStart).toISOString(),
       dateEnd: new Date(v.dateEnd).toISOString(),
       meetingLink: v.meetingLink || undefined,

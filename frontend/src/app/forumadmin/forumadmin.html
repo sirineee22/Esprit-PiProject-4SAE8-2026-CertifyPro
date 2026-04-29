@@ -1,0 +1,446 @@
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+  rel="stylesheet"
+/>
+
+<div class="forum-page">
+  <div class="container-fluid py-4">
+
+    <!-- HERO HEADER -->
+    <div class="hero-panel mb-4">
+      <div class="hero-left">
+        <div class="hero-badge">
+          <i class="bi bi-shield-check"></i>
+          <span>Forum Administration</span>
+        </div>
+
+        <h1>Forum Admin Dashboard</h1>
+        <p>
+          Gérez les posts, commentaires, traductions et export PDF avec une
+          interface plus claire et plus fluide.
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <button class="action-btn light" (click)="initializePage()">
+          <i class="bi bi-arrow-clockwise"></i>
+          Rafraîchir
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid mb-4">
+      <div class="stat-card stat-blue">
+        <div class="stat-icon">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.totalPosts }}</div>
+          <div class="stat-label">Posts</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-purple">
+        <div class="stat-icon">
+          <i class="bi bi-chat-left-text"></i>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.totalComments }}</div>
+          <div class="stat-label">Commentaires</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-green">
+        <div class="stat-icon">
+          <i class="bi bi-hand-thumbs-up"></i>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.totalLikes }}</div>
+          <div class="stat-label">Réactions</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-orange">
+        <div class="stat-icon">
+          <i class="bi bi-image"></i>
+        </div>
+        <div>
+          <div class="stat-value">{{ stats.totalImages }}</div>
+          <div class="stat-label">Posts avec image</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar-card mb-4">
+      <div class="toolbar-left">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange()"
+            placeholder="Rechercher par titre, contenu, commentaire ou user..."
+          />
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <div class="lang-box">
+          <label>From</label>
+          <select [(ngModel)]="translationFrom">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="ar">AR</option>
+            <option value="it">IT</option>
+            <option value="es">ES</option>
+            <option value="de">DE</option>
+          </select>
+        </div>
+
+        <div class="lang-box">
+          <label>To</label>
+          <select [(ngModel)]="translationTo">
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="ar">AR</option>
+            <option value="it">IT</option>
+            <option value="es">ES</option>
+            <option value="de">DE</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="ai-generator-box mb-4">
+
+      <div class="ai-header">
+        <i class="bi bi-stars"></i>
+        <span>AI Post Generator</span>
+      </div>
+    
+      <div class="ai-input-wrap">
+        <textarea
+          [(ngModel)]="aiPrompt"
+          placeholder="Décris ton idée... ex: un post motivant sur le sport et discipline"
+        ></textarea>
+    
+        <button
+          class="ai-btn"
+          (click)="generatePostAi()"
+          [disabled]="generatingAi"
+        >
+    
+          <span *ngIf="!generatingAi">
+            <i class="bi bi-magic"></i>
+            Générer avec IA
+          </span>
+    
+          <span *ngIf="generatingAi">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Génération...
+          </span>
+    
+        </button>
+      </div>
+    
+    </div>
+
+    <!-- CREATE POST -->
+    <div class="panel-card create-card mb-4">
+      <div class="section-title">
+        <div>
+          <h3><i class="bi bi-plus-circle"></i> Créer un nouveau post</h3>
+          <p>Publiez un contenu avec image et mise à jour immédiate.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="modern-field">
+          <label>Titre</label>
+          <div class="field-shell">
+            <i class="bi bi-type"></i>
+            <input [(ngModel)]="newPost.title" placeholder="Titre du post" />
+          </div>
+        </div>
+
+        <div class="modern-field full">
+          <label>Contenu</label>
+          <div class="field-shell textarea-shell">
+            <i class="bi bi-chat-left-text"></i>
+            <textarea
+              [(ngModel)]="newPost.content"
+              placeholder="Exprime-toi..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-row">
+        <label class="upload-btn">
+          <i class="bi bi-image"></i>
+          Ajouter une image
+          <input type="file" hidden (change)="onImageSelected($event)" />
+        </label>
+
+        <button
+          *ngIf="imagePreview"
+          type="button"
+          class="action-btn danger"
+          (click)="removeSelectedImage()"
+        >
+          <i class="bi bi-x-circle"></i>
+          Retirer l'image
+        </button>
+      </div>
+
+      <div *ngIf="imagePreview" class="preview-wrapper">
+        <img [src]="imagePreview" class="preview-img" alt="Preview" />
+      </div>
+
+      <div class="create-actions">
+        <button
+          class="action-btn primary"
+          (click)="createPost()"
+          [disabled]="submittingPost"
+        >
+          <span *ngIf="!submittingPost">
+            <i class="bi bi-send-fill"></i>
+            Publier maintenant
+          </span>
+
+          <span *ngIf="submittingPost">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Publication...
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div *ngIf="loading" class="loading-box">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p>Chargement des posts...</p>
+    </div>
+
+    <!-- EMPTY -->
+    <div *ngIf="!loading && filteredPosts.length === 0" class="empty-state">
+      <i class="bi bi-inboxes"></i>
+      <h4>Aucun post trouvé</h4>
+      <p>Essaie de changer le filtre ou crée un nouveau post.</p>
+    </div>
+
+    <!-- POSTS -->
+    <div class="posts-grid" *ngIf="!loading && filteredPosts.length > 0">
+      <div
+        *ngFor="let post of filteredPosts; trackBy: trackByPostId"
+        class="post-card"
+      >
+        <!-- VIEW MODE -->
+        <ng-container *ngIf="!post.isEditing">
+          <div class="post-top">
+            <div class="user-box">
+              <div class="avatar">
+                {{ post.userId }}
+              </div>
+
+              <div>
+                <div class="user-name">
+                  {{ post.user?.prenom || 'User' }} {{ post.user?.nom || '#' + post.userId }}
+                </div>
+            
+                <div class="post-date">
+                  {{ post.createdAt | date : 'medium' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="top-actions">
+              <button class="icon-btn" (click)="startEditPost(post)" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <button class="icon-btn danger" (click)="deletePost(post)" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="post-body">
+            <h3>{{ post.title }}</h3>
+            <p class="post-content">{{ post.content }}</p>
+
+            <img
+              *ngIf="post.imageUrl"
+              [src]="getPostImage(post)"
+              class="post-image"
+              alt="Post image"
+            />
+          </div>
+
+          <!-- TRANSLATION -->
+          <div *ngIf="post.isTranslated" class="translation-box">
+            <div class="translation-head">
+              <span><i class="bi bi-translate"></i> Traduction</span>
+
+              <button class="mini-btn" (click)="clearTranslation(post)">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <h4 *ngIf="post.translatedTitle">{{ post.translatedTitle }}</h4>
+            <p *ngIf="post.translatedContent">{{ post.translatedContent }}</p>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="post-actions">
+            <button
+              class="chip-btn"
+              (click)="toggleLike(post)"
+              [disabled]="likingPosts.has(post.id)"
+              [class.active]="post.isLikedByCurrentUser"
+            >
+              <i
+                class="bi"
+                [ngClass]="post.isLikedByCurrentUser ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"
+              ></i>
+              <span>{{ post.reactionCount || 0 }}</span>
+            </button>
+
+            <button class="chip-btn" (click)="toggleComments(post)">
+              <i class="bi bi-chat-dots"></i>
+              <span>{{ post.commentCount || 0 }}</span>
+            </button>
+
+            <button class="chip-btn" (click)="toggleCommentForm(post)">
+              <i class="bi bi-plus-circle"></i>
+              <span>Comment</span>
+            </button>
+
+            <button
+  class="chip-btn"
+  (click)="translatePost(post)"
+  [disabled]="post.isTranslating"
+>
+
+<span *ngIf="!post.isTranslating && !post.isTranslated">
+<i class="bi bi-translate"></i>
+Traduire
+</span>
+
+<span *ngIf="post.isTranslated">
+<i class="bi bi-arrow-counterclockwise"></i>
+Original
+</span>
+
+<span *ngIf="post.isTranslating">
+<span class="spinner-border spinner-border-sm"></span>
+...
+</span>
+
+</button>
+
+            <button class="chip-btn pdf-btn" (click)="exportPostToPdf(post)">
+              <i class="bi bi-file-earmark-pdf"></i>
+              <span>PDF</span>
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- EDIT MODE -->
+        <ng-container *ngIf="post.isEditing">
+          <div class="edit-box">
+            <div class="modern-field">
+              <label>Titre</label>
+              <div class="field-shell">
+                <i class="bi bi-type"></i>
+                <input [(ngModel)]="post.editTitle" />
+              </div>
+            </div>
+
+            <div class="modern-field">
+              <label>Contenu</label>
+              <div class="field-shell textarea-shell">
+                <i class="bi bi-chat-left-text"></i>
+                <textarea [(ngModel)]="post.editContent"></textarea>
+              </div>
+            </div>
+
+            <div class="edit-actions">
+              <button class="action-btn success" (click)="savePost(post)">
+                <i class="bi bi-check-lg"></i>
+                Sauvegarder
+              </button>
+
+              <button class="action-btn danger" (click)="cancelEditPost(post)">
+                <i class="bi bi-x-lg"></i>
+                Annuler
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- COMMENT FORM -->
+        <div *ngIf="post.showCommentForm" class="comment-form">
+          <input
+            [(ngModel)]="post.newComment"
+            placeholder="Ajouter un commentaire..."
+          />
+
+          <button class="action-btn primary" (click)="addComment(post)">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+
+        <!-- COMMENTS -->
+        <div *ngIf="post.showComments" class="comments-list">
+          <div
+            *ngFor="let c of post.comments; trackBy: trackByCommentId"
+            class="comment-item"
+          >
+            <ng-container *ngIf="editingCommentId !== c.id">
+              <div class="comment-content">
+                <div class="comment-meta">
+                   <span>
+                    {{ c.user?.prenom || 'User' }} {{ c.user?.nom || '#' + c.userId }}
+                  </span>
+                  <small>{{ c.date | date : 'short' }}</small>
+                </div>
+
+                <p>{{ c.content }}</p>
+              </div>
+
+              <div class="comment-actions">
+                <button class="icon-btn" (click)="startEditComment(c)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <button class="icon-btn danger" (click)="deleteComment(post, c)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="editingCommentId === c.id">
+              <div class="comment-edit">
+                <input [(ngModel)]="editingCommentContent" />
+
+                <div class="comment-edit-actions">
+                  <button class="action-btn success sm" (click)="saveComment(c)">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+
+                  <button class="action-btn danger sm" (click)="cancelEditComment()">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

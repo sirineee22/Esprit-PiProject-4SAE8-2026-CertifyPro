@@ -79,8 +79,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return false;
         }
         String suffix = path.substring("/api/events/".length());
-        // Treat list (above), get-by-id, and participants as public
-        return suffix.matches("\\d+(/participants)?");
+        // Public GETs: single event, participants, and reviews (same as SecurityConfig permitAll)
+        return suffix.matches("\\d+(/(participants|reviews))?");
     }
 
     public static class JwtUserDetails {

@@ -7,11 +7,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface EventRegistrationRepository extends JpaRepository<EventRegistration, Long> {
 
+    List<EventRegistration> findByEvent(Event event);
     Optional<EventRegistration> findByEventAndLearnerId(Event event, Long learnerId);
 
     boolean existsByEventAndLearnerIdAndStatus(Event event, Long learnerId, EventRegistration.RegistrationStatus status);
@@ -30,13 +32,18 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     boolean existsByEventIdAndLearnerId(Long eventId, Long learnerId);
 
+    boolean existsByEvent_IdAndLearnerIdAndStatusIn(Long eventId, Long learnerId, Collection<EventRegistration.RegistrationStatus> statuses);
+
     long countByStatus(EventRegistration.RegistrationStatus status);
 
     @Modifying
     @Query("DELETE FROM EventRegistration r WHERE r.event.id = :eventId")
     void deleteByEventId(@Param("eventId") Long eventId);
 
-    /** Returns [eventId, count] for REGISTERED registrations per event. */
-    @Query("SELECT r.event.id, COUNT(r) FROM EventRegistration r WHERE r.status = 'REGISTERED' GROUP BY r.event.id")
+    /** Returns [eventId, count] for APPROVED registrations per event. */
+    @Query("SELECT r.event.id, COUNT(r) FROM EventRegistration r WHERE r.status = 'APPROVED' GROUP BY r.event.id")
     List<Object[]> countRegisteredByEventId();
+
+    @Query("SELECT r.event.id, COUNT(r) FROM EventRegistration r WHERE r.status IN :statuses GROUP BY r.event.id")
+    List<Object[]> countByEventIdAndStatusIn(@Param("statuses") Collection<EventRegistration.RegistrationStatus> statuses);
 }

@@ -20,6 +20,7 @@ public class UpdateUserRequest {
     @Email
     private String email;
 
+    @jakarta.validation.constraints.Pattern(regexp = "^(\\+\\d{1,3}[- ]?)?\\d{8,12}$", message = "Format de numéro de téléphone invalide")
     private String phoneNumber;
 
     @Size(max = 500)

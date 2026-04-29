@@ -1,10 +1,11 @@
-﻿import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
 import { API_BASE_URL } from '../../../core/api/api.config';
+import { AppNotification, UserService } from '../../../features/users/services/users.api';
 
 @Component({
   selector: 'app-user-sidebar',
@@ -45,114 +46,86 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             <i class="bi bi-house-door"></i>
             <span>Home</span>
           </a>
+          <a routerLink="/trainings" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Browse Trainings' : ''">
+            <i class="bi bi-grid-view"></i>
+            <span>Browse Trainings</span>
+          </a>
           <a routerLink="/about" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'About Us' : ''">
             <i class="bi bi-info-circle"></i>
             <span>About Us</span>
+          </a>
+          <a routerLink="/posts" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Forum' : ''">
+            <i class="bi bi-chat-left-text"></i>
+            <span>Posts</span>
+          </a>
+          <a routerLink="/shop/productss" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Our products' : ''">
+            <i class="bi bi-bag"></i>
+            <span>Our products</span>
           </a>
         </div>
 
         <!-- My Learning Section -->
         <div class="nav-section">
           <span class="section-label" *ngIf="!isCollapsed">MY LEARNING</span>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'My Courses' : ''">
+          <a routerLink="/trainings/my-learning" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Courses' : ''">
             <i class="bi bi-book"></i>
             <span>My Courses</span>
-          </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Certifications' : ''">
-            <i class="bi bi-award"></i>
-            <span>Certifications</span>
-          </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Progress' : ''">
-            <i class="bi bi-graph-up"></i>
-            <span>Progress</span>
-          </div>
-          <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Ã‰vÃ©nements' : ''">
-            <i class="bi bi-calendar-event"></i>
-            <span>Event</span>
           </a>
-         <a routerLink="/chat" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Messagerie' : ''">
-  <i class="bi bi-chat-dots"></i>
-  <span>Messagerie</span>
-</a>
+          <a routerLink="/evaluations/my-evals" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Results' : ''">
+            <i class="bi bi-graph-up"></i>
+            <span>My Results</span>
+          </a>
+          <a routerLink="/trainings/wishlist" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'My Wishlist' : ''">
+            <i class="bi bi-heart"></i>
+            <span>My Wishlist</span>
+          </a>
+          <a routerLink="/events" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Événements' : ''">
+            <i class="bi bi-calendar-event"></i>
+            <span>Événements</span>
+          </a>
+          <div class="nav-link disabled" [title]="isCollapsed ? 'Messagerie' : ''">
+            <i class="bi bi-chat-dots"></i>
+            <span>Messagerie</span>
+          </div>
           <div class="nav-link disabled" [title]="isCollapsed ? 'E-commerce' : ''">
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
           </div>
-        </div>
-
-        <!-- Jobs Section -->
-        <div class="nav-section">
-          <span class="section-label" *ngIf="!isCollapsed">JOBS</span>
-          <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" [title]="isCollapsed ? 'Job Search' : ''">
-            <i class="bi bi-search"></i>
-            <span>Job Search</span>
-          </a>
-
-          <!-- CANDIDATE links -->
-          <a routerLink="/jobs/candidate/applications" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'My Applications' : ''">
-            <i class="bi bi-file-earmark-check"></i>
-            <span>My Applications</span>
-          </a>
-          <a routerLink="/jobs/candidate/saved" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Saved Jobs' : ''">
-            <i class="bi bi-bookmark-heart"></i>
-            <span>Saved Jobs</span>
-          </a>
-          <a routerLink="/jobs/candidate/recommendations" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Recommendations' : ''">
-            <i class="bi bi-stars"></i>
-            <span>Recommendations</span>
-          </a>
-          <a routerLink="/jobs/candidate/profile" routerLinkActive="active" class="nav-link" *ngIf="isCandidate" [title]="isCollapsed ? 'Candidate Profile' : ''">
-            <i class="bi bi-person-badge"></i>
-            <span>Candidate Profile</span>
-          </a>
-
-          <!-- EMPLOYER links -->
-          <a routerLink="/jobs/employer/my-company" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'My Company' : ''">
-            <i class="bi bi-building"></i>
-            <span>My Company</span>
-          </a>
-          <a routerLink="/jobs/employer/jobs" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'My Job Offers' : ''">
-            <i class="bi bi-briefcase"></i>
-            <span>My Job Offers</span>
-          </a>
-          <a routerLink="/jobs/employer/jobs/new" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'Create Job Offer' : ''">
-            <i class="bi bi-plus-circle"></i>
-            <span>Create Job Offer</span>
-          </a>
-          <a routerLink="/jobs/employer/applications" routerLinkActive="active" class="nav-link" *ngIf="isEmployer" [title]="isCollapsed ? 'Offer Applications' : ''">
-            <i class="bi bi-people-fill"></i>
-            <span>Offer Applications</span>
-          </a>
-
-          <!-- ADMIN links -->
-          <a routerLink="/jobs/admin/stats" routerLinkActive="active" class="nav-link" *ngIf="isAdmin" [title]="isCollapsed ? 'Jobs Stats' : ''">
-            <i class="bi bi-bar-chart"></i>
-            <span>Jobs Stats</span>
+          <a routerLink="/groups" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Groups' : ''">
+            <i class="bi bi-people"></i>
+            <span>Groups</span>
           </a>
         </div>
         
-        <!-- Trainer Section (only for trainers) -->
-        <div class="nav-section" *ngIf="isTrainer">
-          <span class="section-label" *ngIf="!isCollapsed">TRAINER</span>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'My Trainings' : ''">
-            <i class="bi bi-easel"></i>
-            <span>My Trainings</span>
-          </div>
+        <!-- Trainer/Admin Section -->
+        <div class="nav-section" *ngIf="isTrainer || isAdmin">
+          <span class="section-label" *ngIf="!isCollapsed">{{ isAdmin ? 'ADMIN' : 'TRAINER' }}</span>
+          <a routerLink="/evaluations/dashboard" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Dashboard' : ''">
+            <i class="bi bi-speedometer2"></i>
+            <span>Analytics Dashboard</span>
+          </a>
+          <a routerLink="/trainings/add" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Add Training' : ''">
+            <i class="bi bi-journal-plus"></i>
+            <span>Add New Training</span>
+          </a>
+          <a routerLink="/evaluations" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Evaluations' : ''">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Student Evaluations</span>
+          </a>
           <div class="nav-link disabled" [title]="isCollapsed ? 'My Students' : ''">
             <i class="bi bi-people"></i>
             <span>My Students</span>
           </div>
         </div>
+      </nav>
 
-        </nav>
-
-      <!-- Single user panel (click = profile, Settings + Logout on the right) -->
+      <!-- Single user panel -->
       <div class="user-profile-section">
         <div class="profile-card" [class.collapsed-card]="isCollapsed">
           <a routerLink="/profile" routerLinkActive="active" class="profile-card-link" title="My Profile">
             <div class="user-avatar-wrapper">
               <div class="user-avatar">
-                <img *ngIf="avatarUrl()" [src]="avatarUrl()" alt="" (error)="avatarImgError = true">
+                <img *ngIf="avatarUrl() && !avatarImgError" [src]="avatarUrl()" alt="" (error)="handleAvatarError()">
                 <span *ngIf="(!avatarUrl() || avatarImgError) && initials()" class="avatar-initials">{{ initials() }}</span>
                 <i *ngIf="(!avatarUrl() || avatarImgError) && !initials()" class="bi bi-person-fill"></i>
               </div>
@@ -164,6 +137,10 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             </div>
           </a>
           <div class="profile-card-actions" *ngIf="!isCollapsed">
+            <button type="button" class="action-btn bell-btn" (click)="toggleNotifications()" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <span *ngIf="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+            </button>
             <a routerLink="/profile" routerLinkActive="active" class="action-btn" title="Settings">
               <i class="bi bi-gear"></i>
             </a>
@@ -172,51 +149,45 @@ import { API_BASE_URL } from '../../../core/api/api.config';
             </button>
           </div>
           <div class="profile-card-actions collapsed-actions" *ngIf="isCollapsed">
+            <button type="button" class="action-btn bell-btn" (click)="toggleNotifications()" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <span *ngIf="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+            </button>
             <a routerLink="/profile" class="action-btn" title="Settings"><i class="bi bi-gear"></i></a>
             <button type="button" class="action-btn logout-btn" (click)="logout()" title="Logout"><i class="bi bi-box-arrow-right"></i></button>
           </div>
-          <div class="nav-item">
- 
-</div>
+        </div>
+        <div class="notifications-panel" *ngIf="notificationsOpen">
+          <div class="notifications-header">
+            <strong>Notifications</strong>
+            <span class="small text-muted">{{ unreadCount }} unread</span>
+          </div>
+          <div class="notifications-list" *ngIf="notifications.length > 0; else noNotif">
+            <button type="button" class="notif-item" *ngFor="let n of notifications" (click)="openNotification(n)">
+              <div class="notif-dot" [class.unread]="!n.read"></div>
+              <div class="notif-content">
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-message">{{ n.message }}</div>
+                <div class="notif-time">{{ formatNotifDate(n.createdAt) }}</div>
+              </div>
+            </button>
+          </div>
+          <ng-template #noNotif>
+            <div class="text-muted small py-2">No notifications yet.</div>
+          </ng-template>
         </div>
       </div>
     </aside>
   `,
   styles: [`
-  .nav-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 15px;
-  color: #6c7a9c;
-  text-decoration: none;
-  transition: all 0.3s;
-}
-
-.nav-link.active {
-  color: #4f8ef7;
-  background: rgba(79, 142, 247, 0.1);
-  border-radius: 8px;
-}
-
-.badge-new {
-  background: linear-gradient(135deg, #4f8ef7, #00d4b4);
-  color: white;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: auto;
-  font-weight: bold;
-  text-transform: uppercase;
-}
     :host {
-      --sidebar-bg: #0f172a;
-      --sidebar-border: rgba(255,255,255,0.05);
-      --primary: #f59e0b;
-      --primary-light: rgba(245,158,11,0.15);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b;
+      --sidebar-bg: #ffffff;
+      --sidebar-border: #f0f0f0;
+      --primary: hsl(222, 47%, 20%);
+      --primary-light: hsla(222, 47%, 20%, 0.1);
+      --text-main: #1a1c1e;
+      --text-muted: #64748b;
+      --accent: hsl(38, 92%, 50%);
       --transition-speed: 0.35s;
       --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -234,14 +205,13 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       padding: 0;
       z-index: 1000;
       transition: width var(--transition-speed) var(--transition-ease);
-      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
     }
 
     .user-sidebar-content.collapsed {
       width: 80px;
     }
 
-    /* Top Section */
     .sidebar-top {
       padding: 1.5rem;
       display: flex;
@@ -259,37 +229,22 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       min-height: auto;
     }
 
-    .collapsed .sidebar-logo-section {
-      flex: none;
-    }
-
     .sidebar-logo-section {
       display: flex;
       align-items: center;
       gap: 12px;
       text-decoration: none;
-      animation: fadeIn 0.5s ease-out;
     }
 
     .sidebar-logo-icon {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, #4a3427, #8b6e4e);
+      background: #0b1120;
       border-radius: 10px;
-      border: 1px solid rgba(245,158,11,0.3);
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 15px rgba(74,52,39,0.2);
-    }
-
-    .sidebar-logo-glow {
-      position: absolute;
-      inset: -1px;
-      background: linear-gradient(135deg, #f59e0b, transparent);
-      border-radius: 11px;
-      opacity: 0.6;
     }
 
     .sidebar-logo-icon-inner {
@@ -306,9 +261,7 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     .sidebar-brand-name {
       font-size: 1.25rem;
       font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.02em;
-      line-height: 1;
+      color: #0b1f3b;
     }
 
     .sidebar-brand-name span {
@@ -319,48 +272,31 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       font-size: 0.6rem;
       letter-spacing: 0.25em;
       font-weight: 800;
-      color: #475569;
-      margin: 3px 0 0 0;
+      color: #94a3b8;
       text-transform: uppercase;
     }
 
     .sidebar-toggle-btn {
       width: 32px;
       height: 32px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--sidebar-border);
+      background: white;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.2s;
     }
 
-    .sidebar-toggle-btn:hover {
-      background: rgba(255,255,255,0.1);
-      color: #f59e0b;
-      border-color: rgba(245,158,11,0.3);
-    }
-
-    /* Search Bar */
     .sidebar-search {
       padding: 0 1.5rem 1.5rem;
     }
 
     .search-input-wrapper {
       position: relative;
-      background: rgba(255,255,255,0.05);
+      background: #f8fafc;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: all 0.2s;
-    }
-
-    .search-input-wrapper:focus-within {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(245,158,11,0.4);
-      box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
     }
 
     .search-input-wrapper i {
@@ -369,7 +305,6 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       top: 50%;
       transform: translateY(-50%);
       color: var(--text-muted);
-      font-size: 0.9rem;
     }
 
     .search-input-wrapper input {
@@ -378,15 +313,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       background: transparent;
       border: none;
       font-size: 0.85rem;
-      color: var(--text-main);
       outline: none;
     }
 
-    .search-input-wrapper input::placeholder {
-      color: #475569;
-    }
-
-    /* Nav Section */
     .sidebar-nav {
       flex: 1;
       padding: 0 0.75rem;
@@ -394,16 +323,6 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       flex-direction: column;
       gap: 1.5rem;
       overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    .sidebar-nav::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .sidebar-nav::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.1);
-      border-radius: 10px;
     }
 
     .nav-section {
@@ -414,9 +333,9 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     .section-label {
       font-size: 0.65rem;
-      font-weight: 800;
-      color: #475569;
-      letter-spacing: 0.15em;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
       padding: 0 0.75rem;
       margin-bottom: 0.5rem;
     }
@@ -425,150 +344,66 @@ import { API_BASE_URL } from '../../../core/api/api.config';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 0.75rem;
       text-decoration: none;
       color: var(--text-muted);
-      border-radius: 12px;
-      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+      border-radius: 10px;
       font-weight: 500;
       font-size: 0.9rem;
-      position: relative;
     }
 
     .nav-link i {
       width: 24px;
       font-size: 1.2rem;
       text-align: center;
-      transition: transform 0.2s;
     }
 
     .nav-link:hover:not(.disabled) {
-      background: rgba(255,255,255,0.05);
-      color: white;
-      transform: translateX(4px);
-    }
-
-    .nav-link:hover i {
-      transform: scale(1.1);
+      background: #F0F4F8;
+      color: #27324B;
     }
 
     .nav-link.active {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
+      background: #F0F4F8;
       color: #27324B;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(39, 50, 75, 0.08);
     }
 
     .nav-link.disabled {
-      opacity: 0.3;
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
-    .collapsed .nav-link {
-      justify-content: center;
-      padding: 0.75rem;
-    }
-
-    .collapsed .nav-link span {
-      display: none;
-    }
-
-    /* Single user panel */
     .user-profile-section {
       padding: 1rem 0.75rem 1.5rem;
-      border-top: 1px solid rgba(255,255,255,0.05);
+      border-top: 1px solid var(--sidebar-border);
+      position: relative;
     }
 
     .profile-card {
-      background: rgba(255,255,255,0.03);
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 0.65rem 0.75rem;
+      padding: 0.85rem;
       display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all var(--transition-speed) var(--transition-ease);
+    }
+
+    .collapsed-card {
+      padding: 0.75rem 0.25rem;
       align-items: center;
-      gap: 0.75rem;
-      transition: all 0.2s;
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      min-height: 52px;
-    }
-
-    .profile-card:hover {
-      background: rgba(255,255,255,0.06);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-    }
-
-    .profile-card:has(.profile-card-link.active) {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(39, 50, 75, 0.08);
+      background: transparent;
+      border-color: transparent;
     }
 
     .profile-card-link {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      flex: 1;
-      min-width: 0;
-      text-decoration: none;
+      text-decoration: none !important;
       color: inherit;
-      border-radius: 10px;
-      padding: 2px 0;
-    }
-
-    .profile-card-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .profile-card-actions.collapsed-actions {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .action-btn {
-      width: 36px;
-      height: 36px;
-      border: none;
-      background: rgba(255,255,255,0.05);
-      color: #94a3b8;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      
-      text-decoration: none;
-      font-size: 1.1rem;
-    }
-
-    .action-btn:hover {
-      background: rgba(255,255,255,0.1);
-      color: #f59e0b;
-    }
-
-    .action-btn.logout-btn {
-      color: #ef4444;
-    }
-
-    .action-btn.logout-btn:hover {
-      background: rgba(239,68,68,0.15);
-      color: #ef4444;
-    }
-
-    .collapsed-card {
-      padding: 0.75rem 0;
-      background: transparent;
-      flex-direction: column;
-      gap: 0.75rem;
-      border: none;
-      box-shadow: none;
-      min-height: auto;
-    }
-
-    .collapsed-card .profile-card-link {
-      flex: none;
     }
 
     .user-avatar-wrapper {
@@ -577,42 +412,41 @@ import { API_BASE_URL } from '../../../core/api/api.config';
     }
 
     .user-avatar {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #334155, #1e293b);
-      border: 1px solid rgba(255,255,255,0.1);
+      width: 42px;
+      height: 42px;
+      background: white;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
       border-radius: 50%;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #f59e0b;
-      font-size: 1.15rem;
-      overflow: hidden;
     }
+
     .user-avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .user-avatar .avatar-initials {
+
+    .avatar-initials {
       font-size: 0.85rem;
-      font-weight: 700;
+      font-weight: 800;
+      color: var(--primary);
     }
 
     .status-indicator {
       position: absolute;
-      right: 0;
-      bottom: 0;
+      bottom: 2px;
+      right: 2px;
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      border: 2px solid #0f172a;
-      background: #22c55e;
+      border: 2px solid white;
     }
 
-    .status-indicator.online {
-      background: #22c55e;
-    }
+    .status-indicator.online { background: #10b981; }
 
     .user-info {
       flex: 1;
@@ -621,64 +455,195 @@ import { API_BASE_URL } from '../../../core/api/api.config';
 
     .user-name {
       font-size: 0.9rem;
-      font-weight: 700;
-      color: #f8fafc;
+      font-weight: 800;
+      color: #0b1f3b;
       margin: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      line-height: 1.3;
+      text-decoration: none !important;
     }
 
     .user-role {
       font-size: 0.7rem;
-      color: #f59e0b;
-      margin: 0.25rem 0 0;
       font-weight: 700;
+      color: var(--text-muted);
+      margin: 2px 0 0 0;
       text-transform: uppercase;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.05em;
+      text-decoration: none !important;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
+    .profile-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.4rem;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .collapsed-actions {
+      flex-direction: column;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 0.75rem;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #f1f5f9;
+      color: #0b1f3b;
+    }
+
+    .action-btn i { font-size: 1.1rem; }
+
+    .bell-btn { position: relative; }
+
+    .notif-badge {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      min-width: 16px;
+      height: 16px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    .logout-btn:hover {
+      background: #fef2f2;
+      color: #ef4444;
+    }
+
+    /* Notifications Panel */
+    .notifications-panel {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0.75rem;
+      right: 0.75rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 0;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      overflow: hidden;
+      animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUpFade {
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      .user-sidebar-content {
-        position: fixed;
-        left: -100%;
-        transition: left 0.3s ease;
-      }
-      .user-sidebar-content.active {
-        left: 0;
-      }
+    .notifications-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-  `]
 
+    .notifications-list {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .notif-item {
+      width: 100%;
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2px;
+    }
+
+    .notif-item:hover { background: #f8fafc; }
+
+    .notif-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .notif-dot.unread { background: #f59e0b; }
+
+    .notif-content { flex: 1; }
+    .notif-title { font-size: 0.85rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+    .notif-message { font-size: 0.75rem; color: #64748b; margin-top: 2px; line-height: 1.4; }
+    .notif-time { font-size: 0.65rem; color: #94a3b8; margin-top: 4px; font-weight: 600; }
+
+  `]
 })
 export class UserSidebarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isCollapsed = false;
   avatarImgError = false;
+  notifications: AppNotification[] = [];
+  notificationsOpen = false;
   @Output() sidebarToggled = new EventEmitter<boolean>();
   private sub?: Subscription;
+  private notificationsSub?: Subscription;
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private userService: UserService
   ) { }
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
     this.sub = this.authService.currentUser$.subscribe((u) => {
       this.currentUser = u;
+      if (u) {
+        this.loadNotifications();
+      }
     });
+
+    if (this.currentUser) {
+      this.loadNotifications();
+      this.notificationsSub = interval(30000).subscribe(() => this.loadNotifications());
+    }
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
+    this.notificationsSub?.unsubscribe();
+  }
+
+  handleAvatarError() {
+    setTimeout(() => this.avatarImgError = true);
   }
 
   avatarUrl(): string | null {
@@ -700,14 +665,6 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role?.name === 'TRAINER';
   }
 
-  get isEmployer(): boolean {
-    return this.currentUser?.role?.name === 'EMPLOYER';
-  }
-
-  get isCandidate(): boolean {
-    return this.currentUser?.role?.name === 'LEARNER';
-  }
-
   get isAdmin(): boolean {
     return this.currentUser?.role?.name === 'ADMIN';
   }
@@ -717,9 +674,60 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     this.sidebarToggled.emit(this.isCollapsed);
   }
 
+  get unreadCount(): number {
+    return this.notifications.filter(n => !n.read).length;
+  }
+
+  toggleNotifications() {
+    this.notificationsOpen = !this.notificationsOpen;
+    if (this.notificationsOpen) {
+      this.loadNotifications();
+    }
+  }
+
+  private loadNotifications() {
+    this.userService.getMyNotifications().subscribe({
+      next: (items) => this.notifications = items ?? [],
+      error: () => this.notifications = []
+    });
+  }
+
+  openNotification(n: AppNotification) {
+    const targetRoute = this.resolveNotificationRoute(n);
+    if (!n.read) {
+      this.userService.markNotificationAsRead(n.id).subscribe({
+        next: () => {
+          n.read = true;
+          if (targetRoute) this.router.navigate(targetRoute);
+        },
+        error: () => {
+          if (targetRoute) this.router.navigate(targetRoute);
+        }
+      });
+      return;
+    }
+    if (targetRoute) this.router.navigate(targetRoute);
+  }
+
+  private resolveNotificationRoute(n: AppNotification): any[] | null {
+    if (!n.eventId) return null;
+    if (['REGISTRATION_APPROVED', 'WAITLIST_PROMOTED'].includes(n.type)) {
+      return ['/events', n.eventId, 'participants'];
+    }
+    return ['/events', n.eventId];
+  }
+
+  formatNotifDate(value: string): string {
+    return new Date(value).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   logout() {
     this.authService.clearSession();
     this.router.navigate(['/login']);
   }
 }
-

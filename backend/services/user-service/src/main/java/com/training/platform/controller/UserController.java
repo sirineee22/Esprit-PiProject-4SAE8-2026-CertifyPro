@@ -2,9 +2,14 @@ package com.training.platform.controller;
 
 import com.training.platform.dto.UpdateUserRequest;
 import com.training.platform.entity.User;
+import com.training.platform.entity.AuditLog;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.UserRepository;
+import com.training.platform.repository.AuditLogRepository;
 import com.training.platform.security.JwtAuthenticationFilter;
+import com.training.platform.service.EmailService;
+import com.training.platform.service.TwoFactorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -19,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +51,15 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private TwoFactorService twoFactorService;
+
     @Value("${app.upload.profile-dir:uploads/profile}")
     private String profileImageUploadDirName;
 
@@ -54,12 +67,16 @@ public class UserController {
         return Paths.get(profileImageUploadDirName).toAbsolutePath();
     }
 
-    private Optional<Long> getCurrentUserId() {
+    private Optional<JwtAuthenticationFilter.JwtUserDetails> getCurrentUserDetails() {
         Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
         if (details instanceof JwtAuthenticationFilter.JwtUserDetails u) {
-            return Optional.of(u.userId);
+            return Optional.of(u);
         }
         return Optional.empty();
+    }
+
+    private Optional<Long> getCurrentUserId() {
+        return getCurrentUserDetails().map(u -> u.userId);
     }
 
     private boolean isAdmin() {
@@ -77,9 +94,77 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        Optional<Long> currentId = getCurrentUserId();
+        if (currentId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!currentId.get().equals(id) && !isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // --- 2FA Endpoints ---
+
+    @PostMapping("/{id}/2fa/setup")
+    public ResponseEntity<?> setup2fa(@PathVariable Long id) {
+        if (!getCurrentUserId().filter(uid -> uid.equals(id)).isPresent()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return userRepository.findById(id).map(user -> {
+            try {
+                String secret = twoFactorService.generateNewSecret();
+                String qrCodeUrl = twoFactorService.getQrCodeUrl(secret, user.getEmail());
+                return ResponseEntity.ok(java.util.Map.of(
+                    "secret", secret,
+                    "qrCodeUrl", qrCodeUrl
+                ));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la génération du QR Code");
+            }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/2fa/enable")
+    public ResponseEntity<?> enable2fa(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        if (!getCurrentUserId().filter(uid -> uid.equals(id)).isPresent()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String secret = body.get("secret");
+        String code = body.get("code");
+
+        if (secret == null || code == null) {
+            return ResponseEntity.badRequest().body("Secret and code are required");
+        }
+
+        return userRepository.findById(id).map(user -> {
+            if (twoFactorService.isCodeValid(secret, code)) {
+                user.setTwoFactorSecret(secret);
+                user.setTwoFactorEnabled(true);
+                userRepository.save(user);
+                return ResponseEntity.ok(java.util.Map.of("message", "2FA activée avec succès"));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code invalide");
+            }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/2fa/disable")
+    public ResponseEntity<?> disable2fa(@PathVariable Long id) {
+        if (!getCurrentUserId().filter(uid -> uid.equals(id)).isPresent()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return userRepository.findById(id).map(user -> {
+            user.setTwoFactorEnabled(false);
+            user.setTwoFactorSecret(null);
+            userRepository.save(user);
+            return ResponseEntity.ok(java.util.Map.of("message", "2FA désactivée"));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/batch")
@@ -159,16 +244,19 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
         try {
-            // Hash password before saving
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-            // Assign default LEARNER role if no role provided
             if (user.getRole() == null) {
                 user.setRole(roleRepository.findByName("LEARNER")
-                    .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
+                        .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             }
+            User created = userRepository.save(user);
+            
+            getCurrentUserDetails().ifPresent(actor -> {
+                auditLogRepository.save(new AuditLog("USER_CREATE", actor.userId, actor.email, "USER", String.valueOf(created.getId()), "Created new user: " + created.getEmail()));
+            });
 
-            return ResponseEntity.ok(userRepository.save(user));
+            emailService.sendWelcomeEmail(created.getEmail(), created.getFirstName());
+            return ResponseEntity.ok(created);
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
@@ -176,6 +264,14 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
+        Optional<Long> currentId = getCurrentUserId();
+        if (currentId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!currentId.get().equals(id) && !isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only update your own profile");
+        }
+        boolean admin = isAdmin();
         return userRepository.findById(id)
                 .map(user -> {
                     if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
@@ -193,26 +289,62 @@ public class UserController {
                     if (request.getProfileImageUrl() != null) {
                         user.setProfileImageUrl(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl().trim());
                     }
-                    if (request.getActive() != null) {
-                        user.setActive(request.getActive());
-                    }
-                    if (request.getRole() != null) {
-                        user.setRole(request.getRole());
+                    if (admin) {
+                        if (request.getActive() != null) {
+                            user.setActive(request.getActive());
+                        }
+                        if (request.getRole() != null) {
+                            user.setRole(request.getRole());
+                        }
                     }
                     if (request.getPassword() != null && !request.getPassword().isBlank()) {
                         user.setPassword(passwordEncoder.encode(request.getPassword()));
                     }
-                    return ResponseEntity.ok(userRepository.save(user));
+                    User updated = userRepository.save(user);
+                    getCurrentUserDetails().ifPresent(actor -> {
+                        auditLogRepository.save(new AuditLog("USER_UPDATE", actor.userId, actor.email, "USER", String.valueOf(id), "Updated user: " + user.getEmail()));
+                    });
+                    return ResponseEntity.ok(updated);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        if (userRepository.existsById(id)) {
+        return userRepository.findById(id).map(user -> {
             userRepository.deleteById(id);
-            return ResponseEntity.ok().build();
+            getCurrentUserDetails().ifPresent(actor -> {
+                auditLogRepository.save(new AuditLog("USER_DELETE", actor.userId, actor.email, "USER", String.valueOf(id), "Deleted user: " + user.getEmail()));
+            });
+            return ResponseEntity.ok().<Void>build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/approve-trainer")
+    public ResponseEntity<?> approveTrainerRole(@PathVariable Long id) {
+        return userRepository.findById(id).map(user -> {
+            com.training.platform.entity.Role trainerRole = roleRepository.findByName("TRAINER")
+                    .orElseThrow(() -> new RuntimeException("TRAINER role not found"));
+            user.setRole(trainerRole);
+            user.setActive(true);
+            userRepository.save(user);
+            return ResponseEntity.ok("User upgraded to trainer");
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/role")
+    public ResponseEntity<String> getUserRole(@PathVariable Long id) {
+        return userRepository.findById(id).map(user -> {
+            return ResponseEntity.ok(user.getRole() != null ? user.getRole().getName() : "");
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity
+                .ok(userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name));
     }
 }
