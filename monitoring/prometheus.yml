@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ── job-careers-service ──────────────────────────────
+  - job_name: 'job-careers-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['job-careers-service:8089']
+    labels:
+      service: 'job-careers-service'
+
+  # ── messaging-service ────────────────────────────────
+  - job_name: 'messaging-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['messanging-service:8085']
+    labels:
+      service: 'messaging-service'
+
+  # ── Prometheus lui-même ──────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
