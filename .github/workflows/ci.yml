@@ -41,6 +41,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+        working-directory: backend/services/job-careers-service
+
       - name: Run tests + JaCoCo coverage
         run: ./mvnw test jacoco:report --no-transfer-progress
         working-directory: backend/services/job-careers-service
@@ -101,6 +105,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+        working-directory: backend/services/messanging-service
 
       - name: Run tests + JaCoCo coverage
         run: ./mvnw test jacoco:report --no-transfer-progress
