@@ -23,14 +23,6 @@ jobs:
       - name: Build and Test with Maven
         working-directory: backend/services/user-service
         run: mvn clean test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.H2Dialect
-          JWT_SECRET: test-secret-min-32-chars-for-testing-only
-          STRIPE_SECRET_KEY: sk_test_dummy_key_for_tests_only
-          OPENAI_API_KEY: dummy-key-for-tests
-          EUREKA_CLIENT_ENABLED: "false"
 
   frontend-test:
     name: Frontend Build & Test
