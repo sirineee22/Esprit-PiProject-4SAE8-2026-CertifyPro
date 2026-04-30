@@ -1,0 +1,70 @@
+// ═══════════════════════════════════════════════════════════════
+// CI — Angular Frontend
+// Déclenché à chaque git push
+// ═══════════════════════════════════════════════════════════════
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_DIR = 'frontend'
+        IMAGE_NAME  = 'nesrrine/certifypro-frontend'
+        COMMIT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
+    }
+
+    tools {
+        nodejs 'NodeJS-20'   // configuré dans Jenkins → Global Tool Configuration
+    }
+
+    stages {
+
+        stage('1 — Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code récupéré — commit: ${env.COMMIT_SHA}"
+            }
+        }
+
+        stage('2 — npm ci') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'npm ci'
+                    echo '✅ Dépendances installées depuis package-lock.json'
+                }
+            }
+        }
+
+        stage('3 — ng build production') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'npx ng build --configuration production'
+                    echo '✅ Build Angular production généré dans dist/'
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: "${SERVICE_DIR}/dist/**/*",
+                                     allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('4 — Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${IMAGE_NAME}:${COMMIT_SHA} -t ${IMAGE_NAME}:latest ."
+                    echo "✅ Image ${IMAGE_NAME}:${COMMIT_SHA} créée avec Nginx"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI frontend réussi — déclenchement CD avec tag ${COMMIT_SHA}"
+            build job: 'frontend-CD',
+                  wait: false,
+                  parameters: [string(name: 'IMAGE_TAG', value: "${COMMIT_SHA}")]
+        }
+        failure { echo '❌ CI frontend échoué' }
+    }
+}

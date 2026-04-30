@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: job-careers-service
+  namespace: argocd
+spec:
+  project: default
+
+  # Source : repo Git surveillé par Argo CD
+  source:
+    repoURL: https://github.com/sirineee22/Esprit-PiProject-4SAE8-2026-CertifyPro.git
+    targetRevision: main
+    path: k8s                          # dossier contenant les manifests
+    directory:
+      include: "job-careers-deployment.yaml"
+
+  # Destination : cluster Kubeadm local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: certifypro
+
+  # Synchronisation automatique dès que Git change
+  syncPolicy:
+    automated:
+      prune: true        # supprime les ressources supprimées dans Git
+      selfHeal: true     # corrige si quelqu'un modifie manuellement le cluster
+    syncOptions:
+      - CreateNamespace=true

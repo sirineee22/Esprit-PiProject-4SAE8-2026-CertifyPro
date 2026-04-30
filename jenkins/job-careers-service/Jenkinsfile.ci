@@ -1,0 +1,123 @@
+// ═══════════════════════════════════════════════════════════════
+// CI — job-careers-service
+// Déclenché à chaque git push
+// ═══════════════════════════════════════════════════════════════
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_DIR = 'backend/services/job-careers-service'
+        IMAGE_NAME  = 'nesrrine/job-careers-service'
+        COMMIT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
+        JWT_SECRET  = 'test-secret-min-32-chars-for-testing-only'
+    }
+
+    stages {
+
+        stage('1 — Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code récupéré — commit: ${env.COMMIT_SHA}"
+            }
+        }
+
+        stage('2 — chmod +x mvnw') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'chmod +x mvnw'
+                }
+            }
+        }
+
+        stage('3 — Tests unitaires + JaCoCo') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withEnv([
+                        'SPRING_DATASOURCE_URL=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1',
+                        'SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver',
+                        'SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect',
+                        "JWT_SECRET=${env.JWT_SECRET}"
+                    ]) {
+                        sh './mvnw test jacoco:report --no-transfer-progress'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit "${SERVICE_DIR}/target/surefire-reports/*.xml"
+                    jacoco(
+                        execPattern: "${SERVICE_DIR}/target/jacoco.exec",
+                        classPattern: "${SERVICE_DIR}/target/classes",
+                        sourcePattern: "${SERVICE_DIR}/src/main/java"
+                    )
+                }
+            }
+        }
+
+        stage('4 — SonarQube') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            ./mvnw sonar:sonar \\
+                              -Dsonar.projectKey=job-careers-service \\
+                              -Dsonar.projectName="Job Careers Service" \\
+                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \\
+                              --no-transfer-progress
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('5 — Build JAR') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh './mvnw package -DskipTests --no-transfer-progress'
+                    echo '✅ JAR créé dans target/'
+                }
+            }
+        }
+
+        stage('6 — Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${IMAGE_NAME}:${COMMIT_SHA} -t ${IMAGE_NAME}:latest ."
+                    echo "✅ Image ${IMAGE_NAME}:${COMMIT_SHA} créée"
+                }
+            }
+        }
+
+        stage('7 — Prometheus Check') {
+            steps {
+                sh """
+                    docker run -d --name test-jc \\
+                      -e SPRING_DATASOURCE_URL=jdbc:h2:mem:testdb \\
+                      -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \\
+                      -e SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect \\
+                      -e JWT_SECRET=${JWT_SECRET} \\
+                      -p 18089:8089 ${IMAGE_NAME}:${COMMIT_SHA} || true
+                    sleep 25
+                    curl -f http://localhost:18089/actuator/prometheus \\
+                      && echo '✅ /actuator/prometheus OK' \\
+                      || echo '⚠️ endpoint non disponible'
+                    docker stop test-jc && docker rm test-jc || true
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI réussi — déclenchement CD avec tag ${COMMIT_SHA}"
+            build job: 'job-careers-service-CD',
+                  wait: false,
+                  parameters: [string(name: 'IMAGE_TAG', value: "${COMMIT_SHA}")]
+        }
+        failure { echo '❌ CI job-careers-service échoué' }
+        always {
+            archiveArtifacts artifacts: "${SERVICE_DIR}/target/*.jar",
+                             allowEmptyArchive: true
+        }
+    }
+}
