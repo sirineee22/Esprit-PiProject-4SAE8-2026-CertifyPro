@@ -8,16 +8,16 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['job-careers-service:8089']
-    labels:
-      service: 'job-careers-service'
+        labels:
+          service: 'job-careers-service'
 
   # ── messaging-service ────────────────────────────────
   - job_name: 'messaging-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['messanging-service:8085']
-    labels:
-      service: 'messaging-service'
+        labels:
+          service: 'messaging-service'
 
   # ── Prometheus lui-même ──────────────────────────────
   - job_name: 'prometheus'
