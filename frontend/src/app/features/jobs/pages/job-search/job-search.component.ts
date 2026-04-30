@@ -237,12 +237,12 @@ import { API_ENDPOINTS } from '../../../../core/api/api.config';
       <!-- Header -->
       <div class="modal-header">
         <div class="modal-logo">
-          <img *ngIf="applyJob.company?.logo" [src]="applyJob.company.logo" [alt]="applyJob.company.name" />
-          <div class="logo-ph" *ngIf="!applyJob.company?.logo">{{ (applyJob.company?.name || '?')[0] }}</div>
+          <img *ngIf="applyJob.company.logo" [src]="applyJob.company.logo" [alt]="applyJob.company.name" />
+          <div class="logo-ph" *ngIf="!applyJob.company.logo">{{ (applyJob.company.name || '?')[0] }}</div>
         </div>
         <div class="modal-header-info">
           <h5 class="modal-title">Apply — {{ applyJob.title }}</h5>
-          <p class="modal-sub">{{ applyJob.company?.name }} · {{ applyJob.country }}</p>
+          <p class="modal-sub">{{ applyJob.company.name }} · {{ applyJob.country }}</p>
         </div>
         <button class="modal-close" (click)="closeApply()" title="Close">✕</button>
       </div>
@@ -259,8 +259,8 @@ import { API_ENDPOINTS } from '../../../../core/api/api.config';
           </div>
           <h5 class="success-title">Application Sent!</h5>
           <p class="success-msg">
-            Your application for <strong>{{ applyJob?.title }}</strong> at
-            <strong>{{ applyJob?.company?.name }}</strong> has been submitted successfully.
+            Your application for <strong>{{ applyJob.title }}</strong> at
+            <strong>{{ applyJob.company.name }}</strong> has been submitted successfully.
           </p>
           <p class="success-hint">The recruiter will review your profile and get back to you.</p>
           <div class="success-actions">

@@ -9,7 +9,7 @@ import { ApiResponse, PageResponse, DashboardStats } from '../models/api-respons
 })
 export class JobOfferService {
 
-    private apiUrl = 'http://localhost:8089/api';
+    private apiUrl = 'http://localhost:8081/api';
 
     constructor(private http: HttpClient) { }
 
