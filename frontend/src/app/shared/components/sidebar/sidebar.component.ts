@@ -68,14 +68,6 @@ import { User } from '../../models/user.model';
         
         <div class="nav-section">
           <span class="section-label">PLATFORM</span>
-          <a routerLink="/trainings" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-            <i class="bi bi-grid-view"></i>
-            <span>Trainings Catalog</span>
-          </a>
-          <a routerLink="/trainings/add" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-journal-plus"></i>
-            <span>Add Training</span>
-          </a>
           <a class="nav-link disabled">
             <i class="bi bi-shield-lock-fill"></i>
             <span>Certifications</span>
@@ -91,10 +83,6 @@ import { User } from '../../models/user.model';
           <a routerLink="/admin/jobs/employer/applications" routerLinkActive="active" class="nav-link">
             <i class="bi bi-people-fill"></i>
             <span>All Applications</span>
-          </a>
-          <a routerLink="/admin/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link">
-            <i class="bi bi-briefcase-fill"></i>
-            <span>Job Offers</span>
           </a>
         </div>
       </nav>
