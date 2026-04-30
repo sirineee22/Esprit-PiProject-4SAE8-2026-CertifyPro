@@ -1,21 +1,38 @@
-name: CI — Build & Test
+name: CI/CD — Build, Test, Quality & Docker
 
 on:
   push:
     branches: [ "**" ]
   pull_request:
-    branches: [ main, develop, feature/** ]
+    branches: [ main, develop ]
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 1 — job-careers-service (Spring Boot + PostgreSQL)
+  # JOB 1 — job-careers-service : Tests + Qualité + Docker
   # ─────────────────────────────────────────────────────────────────────────
-  job-careers-tests:
-    name: job-careers-service tests
+  job-careers-service:
+    name: job-careers-service — Test & Quality
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: job_db_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # requis pour SonarCloud
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -24,9 +41,27 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run tests
-        run: ./mvnw test --no-transfer-progress
+      - name: Run tests + JaCoCo coverage
+        run: ./mvnw test jacoco:report --no-transfer-progress
         working-directory: backend/services/job-careers-service
+        env:
+          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.H2Dialect
+          JWT_SECRET: test-secret-min-32-chars-for-testing-only
+
+      - name: SonarCloud analysis
+        run: >
+          ./mvnw sonar:sonar
+          -Dsonar.projectKey=certifypro_job-careers-service
+          -Dsonar.organization=certifypro
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          --no-transfer-progress
+        working-directory: backend/services/job-careers-service
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_JOBS }}
+        continue-on-error: true  # ne bloque pas si token non configuré
 
       - name: Upload test report
         if: always()
@@ -35,15 +70,30 @@ jobs:
           name: job-careers-test-report
           path: backend/services/job-careers-service/target/surefire-reports/
 
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-careers-coverage
+          path: backend/services/job-careers-service/target/site/jacoco/
+
+      - name: Build Docker image
+        run: |
+          ./mvnw package -DskipTests --no-transfer-progress
+          docker build -t job-careers-service:${{ github.sha }} .
+        working-directory: backend/services/job-careers-service
+
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 2 — messaging-service (Spring Boot + MongoDB)
+  # JOB 2 — messaging-service : Tests + Qualité + Docker
   # ─────────────────────────────────────────────────────────────────────────
-  messaging-tests:
-    name: messaging-service tests
+  messaging-service:
+    name: messaging-service — Test & Quality
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -52,9 +102,25 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run tests
-        run: ./mvnw test --no-transfer-progress
+      - name: Run tests + JaCoCo coverage
+        run: ./mvnw test jacoco:report --no-transfer-progress
         working-directory: backend/services/messanging-service
+        env:
+          JWT_SECRET: test-secret-min-32-chars-for-testing-only
+          SPRING_DATA_MONGODB_URI: mongodb://localhost:27017/test_db
+
+      - name: SonarCloud analysis
+        run: >
+          ./mvnw sonar:sonar
+          -Dsonar.projectKey=certifypro_messanging-service
+          -Dsonar.organization=certifypro
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          --no-transfer-progress
+        working-directory: backend/services/messanging-service
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_MESSAGING }}
+        continue-on-error: true
 
       - name: Upload test report
         if: always()
@@ -63,11 +129,24 @@ jobs:
           name: messaging-test-report
           path: backend/services/messanging-service/target/surefire-reports/
 
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: messaging-coverage
+          path: backend/services/messanging-service/target/site/jacoco/
+
+      - name: Build Docker image
+        run: |
+          ./mvnw package -DskipTests --no-transfer-progress
+          docker build -t messanging-service:${{ github.sha }} .
+        working-directory: backend/services/messanging-service
+
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 3 — Angular frontend build
+  # JOB 3 — Angular frontend : Build + Docker
   # ─────────────────────────────────────────────────────────────────────────
-  frontend-build:
-    name: Angular build
+  frontend:
+    name: Angular — Build & Docker
     runs-on: ubuntu-latest
 
     steps:
@@ -86,4 +165,8 @@ jobs:
 
       - name: Build (production)
         run: npx ng build --configuration production
+        working-directory: frontend
+
+      - name: Build Docker image
+        run: docker build -t frontend:${{ github.sha }} .
         working-directory: frontend
