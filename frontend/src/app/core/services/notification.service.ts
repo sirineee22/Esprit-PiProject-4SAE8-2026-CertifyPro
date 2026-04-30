@@ -1,25 +1,3 @@
-// ================================================================
-// notification.service.ts — CORRIGÉ
-//
-// Corrections vs version originale:
-// 1. ✅ CRITICAL FIX: brokerURL utilisait ws://localhost:8080/ws-chat
-//    en dur, contournant le gateway. On garde la même URL car le
-//    gateway route /ws-chat/** → MESSAGING-SERVICE via lb:ws://.
-//    C'est correct — on documente clairement pourquoi.
-//
-// 2. ✅ FIX: _initialized guard renommé en _initialized pour clarté,
-//    et on ajoute ngOnDestroy pour déconnecter le STOMP proprement.
-//
-// 3. ✅ FIX: les subscriptions WebSocket sont maintenant enregistrées
-//    dans onConnect ET rejouées après reconnexion via reconnectDelay.
-//
-// 4. ✅ FIX: incoming$ émet AVANT la mise à jour de notifs$ pour que
-//    les composants qui écoutent incoming$ (ex: bell) reçoivent la
-//    notif avant que la liste soit mise à jour ✅ (déjà correct).
-//
-// 5. ✅ FIX: ajout de connectHeaders pour authentifier la connexion WS.
-//    Sans ce header, le gateway / service peut rejeter la connexion.
-// ================================================================
 
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -28,17 +6,17 @@ import { Client, IMessage } from '@stomp/stompjs';
 
 import { AppNotification } from '../models/notification.model';
 import { AuthService }     from './auth.service';
+import { API_BASE_URL }    from '../api/api.config';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService implements OnDestroy {
 
-  private readonly BASE = 'http://localhost:8080/api/notifications';
+  private readonly BASE = `${API_BASE_URL}/api/notifications`;
   /*
-   * ✅ WebSocket URL goes through the gateway.
+   * ✅ WebSocket URL goes through the gateway (port 8081).
    * The gateway routes /ws-chat/** to lb:ws://MESSAGING-SERVICE.
-   * See corrected gateway-application.yml.
    */
-  private readonly WS = 'ws://localhost:8080/ws-chat';
+  private readonly WS = `${API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://')}/ws-chat`;
 
   private _notifs$   = new BehaviorSubject<AppNotification[]>([]);
   private _unread$   = new BehaviorSubject<number>(0);

@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { User } from '../../models/user.model';
 import { API_BASE_URL } from '../../../core/api/api.config';
-import { AppNotification, UserService } from '../../../features/users/services/users.api';
+import { NotificationService } from '../../../core/services/notification.service';
+import { AppNotification } from '../../../core/models/notification.model';
 
 @Component({
   selector: 'app-user-sidebar',
@@ -83,14 +84,17 @@ import { AppNotification, UserService } from '../../../features/users/services/u
             <i class="bi bi-calendar-event"></i>
             <span>Événements</span>
           </a>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'Messagerie' : ''">
-            <i class="bi bi-chat-dots"></i>
+          <a routerLink="/chat" routerLinkActive="active" class="nav-link chat-nav-link" [title]="isCollapsed ? 'Messagerie' : ''">
+            <span class="chat-icon-wrapper">
+              <i class="bi bi-chat-dots-fill"></i>
+              <span *ngIf="chatUnreadCount > 0" class="chat-badge">{{ chatUnreadCount > 9 ? '9+' : chatUnreadCount }}</span>
+            </span>
             <span>Messagerie</span>
-          </div>
-          <div class="nav-link disabled" [title]="isCollapsed ? 'E-commerce' : ''">
+          </a>
+          <a routerLink="/shop/productss" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'E-commerce' : ''">
             <i class="bi bi-cart"></i>
             <span>E-commerce</span>
-          </div>
+          </a>
           <a routerLink="/groups" routerLinkActive="active" class="nav-link" [title]="isCollapsed ? 'Groups' : ''">
             <i class="bi bi-people"></i>
             <span>Groups</span>
@@ -248,7 +252,7 @@ import { AppNotification, UserService } from '../../../features/users/services/u
               <div class="notif-dot" [class.unread]="!n.read"></div>
               <div class="notif-content">
                 <div class="notif-title">{{ n.title }}</div>
-                <div class="notif-message">{{ n.message }}</div>
+                <div class="notif-message">{{ n.body }}</div>
                 <div class="notif-time">{{ formatNotifDate(n.createdAt) }}</div>
               </div>
             </button>
@@ -453,6 +457,44 @@ import { AppNotification, UserService } from '../../../features/users/services/u
     .nav-link.disabled {
       opacity: 0.4;
       cursor: not-allowed;
+    }
+
+    /* Chat nav link badge */
+    .chat-nav-link {
+      position: relative;
+    }
+
+    .chat-icon-wrapper {
+      position: relative;
+      width: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .chat-icon-wrapper i {
+      font-size: 1.2rem;
+      width: auto;
+    }
+
+    .chat-badge {
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      min-width: 16px;
+      height: 16px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      line-height: 1;
+      padding: 0 2px;
     }
 
     .user-profile-section {
@@ -693,14 +735,16 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
   avatarImgError = false;
   notifications: AppNotification[] = [];
   notificationsOpen = false;
+  chatUnreadCount = 0;
   @Output() sidebarToggled = new EventEmitter<boolean>();
   private sub?: Subscription;
-  private notificationsSub?: Subscription;
+  private notifSub?: Subscription;
+  private chatUnreadSub?: Subscription;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private userService: UserService
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit() {
@@ -708,19 +752,29 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
     this.sub = this.authService.currentUser$.subscribe((u) => {
       this.currentUser = u;
       if (u) {
-        this.loadNotifications();
+        this.notificationService.init();
       }
     });
 
     if (this.currentUser) {
-      this.loadNotifications();
-      this.notificationsSub = interval(30000).subscribe(() => this.loadNotifications());
+      this.notificationService.init();
     }
+
+    // Subscribe to the shared notification stream
+    this.notifSub = this.notificationService.notifs$.subscribe(items => {
+      this.notifications = items ?? [];
+    });
+
+    // Subscribe to chat unread count
+    this.chatUnreadSub = this.notificationService.unread$.subscribe(count => {
+      this.chatUnreadCount = count;
+    });
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
-    this.notificationsSub?.unsubscribe();
+    this.notifSub?.unsubscribe();
+    this.chatUnreadSub?.unsubscribe();
   }
 
   handleAvatarError() {
@@ -766,42 +820,21 @@ export class UserSidebarComponent implements OnInit, OnDestroy {
 
   toggleNotifications() {
     this.notificationsOpen = !this.notificationsOpen;
-    if (this.notificationsOpen) {
-      this.loadNotifications();
-    }
-  }
-
-  private loadNotifications() {
-    // ✅ FIX: catch 404 silently — user-service notifications endpoint may not be available
-    this.userService.getMyNotifications().subscribe({
-      next: (items) => this.notifications = items ?? [],
-      error: () => { /* endpoint not available — ignore silently */ }
-    });
   }
 
   openNotification(n: AppNotification) {
     const targetRoute = this.resolveNotificationRoute(n);
     if (!n.read) {
-      this.userService.markNotificationAsRead(n.id).subscribe({
-        next: () => {
-          n.read = true;
-          if (targetRoute) this.router.navigate(targetRoute);
-        },
-        error: () => {
-          if (targetRoute) this.router.navigate(targetRoute);
-        }
-      });
-      return;
+      this.notificationService.markRead(n.id as any);
     }
+    this.notificationsOpen = false;
     if (targetRoute) this.router.navigate(targetRoute);
   }
 
   private resolveNotificationRoute(n: AppNotification): any[] | null {
-    if (!n.eventId) return null;
-    if (['REGISTRATION_APPROVED', 'WAITLIST_PROMOTED'].includes(n.type)) {
-      return ['/events', n.eventId, 'participants'];
-    }
-    return ['/events', n.eventId];
+    if (n.routerLink) return [n.routerLink];
+    if (n.chatRoomId) return ['/chat'];
+    return null;
   }
 
   formatNotifDate(value: string): string {
