@@ -12,8 +12,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      timeout: 1000ms
+      connect-timeout: 500ms
   cache:
-    type: simple
+    type: none
   jpa:
     hibernate:
       ddl-auto: update

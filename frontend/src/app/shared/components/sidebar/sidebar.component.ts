@@ -171,17 +171,9 @@ import { User } from '../../models/user.model';
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 2rem;
       overflow-y: auto;
-      padding-bottom: 0.5rem;
-      /* Custom scrollbar */
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.1) transparent;
     }
-
-    .nav::-webkit-scrollbar { width: 4px; }
-    .nav::-webkit-scrollbar-track { background: transparent; }
-    .nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 
     .nav-section {
       display: flex;
