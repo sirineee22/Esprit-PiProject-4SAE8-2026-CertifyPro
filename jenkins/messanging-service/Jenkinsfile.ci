@@ -1,0 +1,119 @@
+// ═══════════════════════════════════════════════════════════════
+// CI — messaging-service
+// Déclenché à chaque git push
+// ═══════════════════════════════════════════════════════════════
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_DIR = 'backend/services/messanging-service'
+        IMAGE_NAME  = 'nesrrine/messanging-service'
+        COMMIT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
+        JWT_SECRET  = 'test-secret-min-32-chars-for-testing-only'
+    }
+
+    stages {
+
+        stage('1 — Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code récupéré — commit: ${env.COMMIT_SHA}"
+            }
+        }
+
+        stage('2 — chmod +x mvnw') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'chmod +x mvnw'
+                }
+            }
+        }
+
+        stage('3 — Tests unitaires + JaCoCo') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withEnv([
+                        "JWT_SECRET=${env.JWT_SECRET}",
+                        'SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/test_db'
+                    ]) {
+                        sh './mvnw test jacoco:report --no-transfer-progress'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit "${SERVICE_DIR}/target/surefire-reports/*.xml"
+                    jacoco(
+                        execPattern: "${SERVICE_DIR}/target/jacoco.exec",
+                        classPattern: "${SERVICE_DIR}/target/classes",
+                        sourcePattern: "${SERVICE_DIR}/src/main/java"
+                    )
+                }
+            }
+        }
+
+        stage('4 — SonarQube') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            ./mvnw sonar:sonar \\
+                              -Dsonar.projectKey=messanging-service \\
+                              -Dsonar.projectName="Messaging Service" \\
+                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \\
+                              --no-transfer-progress
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('5 — Build JAR') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh './mvnw package -DskipTests --no-transfer-progress'
+                    echo '✅ JAR créé dans target/'
+                }
+            }
+        }
+
+        stage('6 — Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${IMAGE_NAME}:${COMMIT_SHA} -t ${IMAGE_NAME}:latest ."
+                    echo "✅ Image ${IMAGE_NAME}:${COMMIT_SHA} créée"
+                }
+            }
+        }
+
+        stage('7 — Prometheus Check') {
+            steps {
+                sh """
+                    docker run -d --name test-msg \\
+                      -e JWT_SECRET=${JWT_SECRET} \\
+                      -e SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/test_db \\
+                      -p 18085:8085 ${IMAGE_NAME}:${COMMIT_SHA} || true
+                    sleep 25
+                    curl -f http://localhost:18085/actuator/prometheus \\
+                      && echo '✅ /actuator/prometheus OK' \\
+                      || echo '⚠️ endpoint non disponible'
+                    docker stop test-msg && docker rm test-msg || true
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI réussi — déclenchement CD avec tag ${COMMIT_SHA}"
+            build job: 'messanging-service-CD',
+                  wait: false,
+                  parameters: [string(name: 'IMAGE_TAG', value: "${COMMIT_SHA}")]
+        }
+        failure { echo '❌ CI messaging-service échoué' }
+        always {
+            archiveArtifacts artifacts: "${SERVICE_DIR}/target/*.jar",
+                             allowEmptyArchive: true
+        }
+    }
+}

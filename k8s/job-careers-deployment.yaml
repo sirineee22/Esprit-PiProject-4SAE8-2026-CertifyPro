@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-careers-service
+  namespace: certifypro
+  labels:
+    app: job-careers-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: job-careers-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0        # zéro interruption de service
+  template:
+    metadata:
+      labels:
+        app: job-careers-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8089"
+    spec:
+      containers:
+        - name: job-careers-service
+          image: nesrrine/job-careers-service:latest   # mis à jour par Jenkins CD
+          ports:
+            - containerPort: 8089
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: job-careers-secrets
+                  key: db-url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: job-careers-secrets
+                  key: db-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: job-careers-secrets
+                  key: db-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: job-careers-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8089
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8089
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-careers-service
+  namespace: certifypro
+  labels:
+    app: job-careers-service
+spec:
+  selector:
+    app: job-careers-service
+  ports:
+    - protocol: TCP
+      port: 8089
+      targetPort: 8089
+      nodePort: 30089
+  type: NodePort

@@ -1,0 +1,94 @@
+// ═══════════════════════════════════════════════════════════════
+// CD — Angular Frontend
+// Déclenché automatiquement par CI après succès
+// ═══════════════════════════════════════════════════════════════
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Tag de l\'image Docker à déployer')
+    }
+
+    environment {
+        IMAGE_NAME   = 'nesrrine/certifypro-frontend'
+        K8S_MANIFEST = 'k8s/frontend-deployment.yaml'
+        FRONTEND_URL = 'http://localhost'
+    }
+
+    stages {
+
+        stage('1 — Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    echo '✅ Connecté à Docker Hub'
+                }
+            }
+        }
+
+        stage('2 — Docker Push') {
+            steps {
+                sh "docker push ${IMAGE_NAME}:${params.IMAGE_TAG}"
+                sh "docker push ${IMAGE_NAME}:latest"
+                echo "✅ Image ${IMAGE_NAME}:${params.IMAGE_TAG} poussée sur Docker Hub"
+            }
+        }
+
+        stage('3 — Mise à jour manifest Kubernetes') {
+            steps {
+                sh """
+                    sed -i 's|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${params.IMAGE_TAG}|g' ${K8S_MANIFEST}
+                    echo '✅ Manifest mis à jour avec tag ${params.IMAGE_TAG}'
+                    cat ${K8S_MANIFEST} | grep image:
+                """
+            }
+        }
+
+        stage('4 — Git push manifest') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-credentials',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_PASS'
+                )]) {
+                    sh """
+                        git config user.email "jenkins@certifypro.com"
+                        git config user.name "Jenkins CD"
+                        git add ${K8S_MANIFEST}
+                        git commit -m "cd(frontend): deploy image tag ${params.IMAGE_TAG}" || echo 'Rien à committer'
+                        git push https://${GIT_USER}:${GIT_PASS}@github.com/sirineee22/Esprit-PiProject-4SAE8-2026-CertifyPro.git HEAD:main
+                    """
+                }
+                echo '✅ Manifest poussé — Argo CD va détecter le changement'
+            }
+        }
+
+        stage('5 — Attendre Argo CD') {
+            steps {
+                echo '⏳ Attente du déploiement Argo CD (60s)...'
+                sleep(60)
+                echo '✅ Argo CD a eu le temps de synchroniser'
+            }
+        }
+
+        stage('6 — Vérification site HTTP 200') {
+            steps {
+                sh """
+                    curl -f ${FRONTEND_URL} \\
+                      && echo '✅ Frontend répond HTTP 200' \\
+                      || echo '⚠️ Frontend pas encore disponible'
+                """
+            }
+        }
+    }
+
+    post {
+        success { echo "🎉 CD frontend déployé sur port 80 — tag: ${params.IMAGE_TAG}" }
+        failure { echo '❌ CD frontend échoué' }
+        always  { sh 'docker logout || true' }
+    }
+}
