@@ -35,7 +35,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: frontend
-        run: npm test -- --watch=false --reporter=verbose
+        run: npm test -- --watch=false
 
       - name: Build production
         working-directory: frontend
