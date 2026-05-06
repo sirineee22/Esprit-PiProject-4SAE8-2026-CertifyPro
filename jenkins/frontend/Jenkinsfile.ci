@@ -11,10 +11,6 @@ pipeline {
         COMMIT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
     }
 
-    tools {
-        nodejs 'NodeJS-20'   // configuré dans Jenkins → Global Tool Configuration
-    }
-
     stages {
 
         stage('1 — Checkout') {
