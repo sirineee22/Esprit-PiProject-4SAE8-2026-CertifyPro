@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: messanging-service
-          image: nesrineromdhani/messanging-service:latest   # mis à jour par Jenkins CD
+          image: nesrineromdhani/messanging-service:85fe778
           ports:
             - containerPort: 8085
           env:
