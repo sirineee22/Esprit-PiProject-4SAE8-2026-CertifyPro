@@ -1,20 +1,18 @@
 name: User Service CD
 
 on:
-  workflow_run:
-    workflows:
-      - "User Service CI"
-    types:
-      - completed
+  push:
     branches:
       - sirine-devops
       - main
+    paths:
+      - 'backend/services/user-service/**'
+      - '.github/workflows/user-service-cd.yml'
 
 jobs:
   deploy:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code

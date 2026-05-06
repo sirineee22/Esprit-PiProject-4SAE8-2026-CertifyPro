@@ -1,20 +1,18 @@
 name: Event Service CD
 
 on:
-  workflow_run:
-    workflows:
-      - "Event Service CI"
-    types:
-      - completed
+  push:
     branches:
       - sirine-devops
       - main
+    paths:
+      - 'backend/services/event-service/**'
+      - '.github/workflows/event-service-cd.yml'
 
 jobs:
   deploy:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code
