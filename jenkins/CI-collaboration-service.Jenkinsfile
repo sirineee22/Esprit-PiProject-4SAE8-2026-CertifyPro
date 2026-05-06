@@ -1,0 +1,147 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'
+        jdk 'JDK-17'
+    }
+
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE           = "certifypro/collaboration-service"
+        DOCKER_TAG             = "${BUILD_NUMBER}"
+        SONAR_TOKEN            = credentials('sonarqube-token')
+        SERVICE_DIR            = "backend/services/collaboration-service"
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+
+        // =============================================
+        // Stage 1: Checkout source code from Git
+        // =============================================
+        stage('Git Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code checked out successfully"
+            }
+        }
+
+        // =============================================
+        // Stage 2: Build with Maven
+        // =============================================
+        stage('Maven Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'mvn clean compile -DskipTests -B'
+                }
+                echo "✅ Maven build completed"
+            }
+        }
+
+        // =============================================
+        // Stage 3: Run Unit Tests
+        // =============================================
+        stage('Unit Tests') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'mvn test -B'
+                }
+            }
+            post {
+                always {
+                    dir("${SERVICE_DIR}") {
+                        junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    }
+                }
+            }
+        }
+
+        // =============================================
+        // Stage 4: SonarQube Code Quality Analysis
+        // =============================================
+        stage('SonarQube Analysis') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withSonarQubeEnv('SonarQube-Server') {
+                        sh """
+                            mvn sonar:sonar \
+                                -Dsonar.projectKey=collaboration-service \
+                                -Dsonar.projectName='Collaboration Service' \
+                                -Dsonar.java.coveragePlugin=jacoco \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                                -B
+                        """
+                    }
+                }
+                echo "✅ SonarQube analysis completed"
+            }
+        }
+
+        // =============================================
+        // Stage 5: SonarQube Quality Gate
+        // =============================================
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+                echo "✅ Quality Gate passed"
+            }
+        }
+
+        // =============================================
+        // Stage 6: Build Docker Image
+        // =============================================
+        stage('Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} -t ${DOCKER_IMAGE}:latest ."
+                }
+                echo "✅ Docker image built: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            }
+        }
+
+        // =============================================
+        // Stage 7: Push Docker Image to Registry
+        // =============================================
+        stage('Docker Push') {
+            steps {
+                sh """
+                    echo \$DOCKER_HUB_CREDENTIALS_PSW | docker login -u \$DOCKER_HUB_CREDENTIALS_USR --password-stdin
+                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    docker push ${DOCKER_IMAGE}:latest
+                    docker logout
+                """
+                echo "✅ Docker image pushed to Docker Hub"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI Pipeline SUCCESS for collaboration-service (Build #${BUILD_NUMBER})"
+            // Trigger CD pipeline on success
+            build job: 'CD-collaboration-service', parameters: [
+                string(name: 'DOCKER_TAG', value: "${DOCKER_TAG}")
+            ], wait: false
+        }
+        failure {
+            echo "❌ CI Pipeline FAILED for collaboration-service (Build #${BUILD_NUMBER})"
+        }
+        always {
+            // Clean up Docker images to save disk space
+            sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            cleanWs()
+        }
+    }
+}

@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: certifypro
+
+---
+# ============================================
+# Deployment
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planned-session-service
+  namespace: certifypro
+  labels:
+    app: planned-session-service
+    version: latest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: planned-session-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: planned-session-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+        - name: planned-session-service
+          image: certifypro/planned-session-service:latest
+          ports:
+            - containerPort: 8084
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-server:8761/eureka/"
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: planned-session-db-secret
+                  key: url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: planned-session-db-secret
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: planned-session-db-secret
+                  key: password
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+---
+# ============================================
+# Service (ClusterIP)
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: planned-session-service
+  namespace: certifypro
+  labels:
+    app: planned-session-service
+spec:
+  type: ClusterIP
+  selector:
+    app: planned-session-service
+  ports:
+    - port: 8084
+      targetPort: 8084
+      protocol: TCP
+      name: http
