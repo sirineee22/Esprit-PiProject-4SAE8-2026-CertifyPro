@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: certifypro-frontend
-          image: nesrrine/certifypro-frontend:latest   # mis à jour par Jenkins CD
+          image: nesrineromdhani/certifypro-frontend:latest   # mis à jour par Jenkins CD
           ports:
             - containerPort: 80
           livenessProbe:

@@ -10,7 +10,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME   = 'nesrrine/job-careers-service'
+        IMAGE_NAME   = 'nesrineromdhani/job-careers-service'
         K8S_MANIFEST = 'k8s/job-careers-deployment.yaml'
         SERVICE_PORT = '8089'
     }

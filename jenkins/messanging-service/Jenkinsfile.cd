@@ -10,7 +10,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME   = 'nesrrine/messanging-service'
+        IMAGE_NAME   = 'nesrineromdhani/messanging-service'
         K8S_MANIFEST = 'k8s/messaging-deployment.yaml'
         SERVICE_PORT = '8085'
     }

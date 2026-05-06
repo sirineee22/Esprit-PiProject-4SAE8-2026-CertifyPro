@@ -10,7 +10,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME   = 'nesrrine/certifypro-frontend'
+        IMAGE_NAME   = 'nesrineromdhani/certifypro-frontend'
         K8S_MANIFEST = 'k8s/frontend-deployment.yaml'
         FRONTEND_URL = 'http://localhost'
     }

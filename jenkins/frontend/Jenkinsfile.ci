@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         SERVICE_DIR = 'frontend'
-        IMAGE_NAME  = 'nesrrine/certifypro-frontend'
+        IMAGE_NAME  = 'nesrineromdhani/certifypro-frontend'
         COMMIT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
     }
 
