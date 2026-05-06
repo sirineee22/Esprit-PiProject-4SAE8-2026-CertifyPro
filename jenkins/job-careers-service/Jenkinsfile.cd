@@ -58,9 +58,10 @@ pipeline {
                     sh """
                         git config user.email "jenkins@certifypro.com"
                         git config user.name "Jenkins CD"
+                        git checkout -B feature/clean-job-module
                         git add ${K8S_MANIFEST}
                         git commit -m "cd(job-careers): deploy image tag ${params.IMAGE_TAG}" || echo 'Rien à committer'
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/sirineee22/Esprit-PiProject-4SAE8-2026-CertifyPro.git HEAD:feature/clean-job-module
+                        git push https://\${GIT_USER}:\${GIT_PASS}@github.com/sirineee22/Esprit-PiProject-4SAE8-2026-CertifyPro.git feature/clean-job-module:feature/clean-job-module
                     """
                 }
                 echo '✅ Manifest poussé — Argo CD va détecter le changement'
