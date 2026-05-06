@@ -52,15 +52,8 @@ jobs:
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: backend/services/event-service
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        args: >
-          -Dsonar.projectKey=sirineee22_Esprit-PiProject-4SAE8-2026-CertifyPro
-          -Dsonar.organization=sirineee22
-          -Dsonar.sources=src/main/java
-          -Dsonar.tests=src/test/java
-          -Dsonar.java.coveragePlugin=jacoco
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        with:
+          projectBaseDir: backend/services/event-service
