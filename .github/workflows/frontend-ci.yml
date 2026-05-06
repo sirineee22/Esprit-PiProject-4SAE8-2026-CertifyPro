@@ -36,6 +36,7 @@ jobs:
       - name: Run unit tests
         working-directory: frontend
         run: npm test -- --watch=false
+        # reporter flag removed - not supported by ng test
 
       - name: Build production
         working-directory: frontend
