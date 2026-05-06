@@ -1,0 +1,45 @@
+name: API Gateway CI
+
+on:
+  push:
+    branches:
+      - sirine-devops
+      - main
+    paths:
+      - 'backend/api-gateway/**'
+      - '.github/workflows/api-gateway-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/api-gateway/**'
+      - '.github/workflows/api-gateway-ci.yml'
+
+jobs:
+  build-and-test:
+    name: Build & Test API Gateway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and test
+        working-directory: backend/api-gateway
+        run: mvn verify -Dspring.profiles.active=test
+        env:
+          JWT_SECRET: test-secret-min-32-chars-for-testing-only
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-gateway-test-results
+          path: backend/api-gateway/target/surefire-reports/
