@@ -48,18 +48,21 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run tests with coverage
+      - name: Build, test, coverage and SonarCloud analysis
         working-directory: backend/services/user-service
-        run: mvn test jacoco:report -Dspring.profiles.active=test
+        run: |
+          mvn verify sonar:sonar \
+            -Dspring.profiles.active=test \
+            -Dsonar.projectKey=sirineee22_Esprit-PiProject-4SAE8-2026-CertifyPro \
+            -Dsonar.organization=sirineee22 \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
         env:
           DB_URL: jdbc:postgresql://localhost:5432/userdb
           DB_USERNAME: postgres
           DB_PASSWORD: testpassword
           JWT_SECRET: test-secret-min-32-chars-for-testing-only
-
-      - name: Build JAR (skip tests)
-        working-directory: backend/services/user-service
-        run: mvn package -DskipTests
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -67,11 +70,3 @@ jobs:
         with:
           name: user-service-test-results
           path: backend/services/user-service/target/surefire-reports/
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: backend/services/user-service
