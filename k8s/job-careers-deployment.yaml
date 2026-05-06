@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: job-careers-service
-          image: nesrineromdhani/job-careers-service:latest   # mis à jour par Jenkins CD
+          image: nesrineromdhani/job-careers-service:latest
           ports:
             - containerPort: 8089
           env:
