@@ -4,25 +4,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.training.platform.entity.Role;
 import com.training.platform.entity.User;
 import com.training.platform.repository.UserRepository;
+import com.training.platform.security.JwtAuthenticationFilter;
 import com.training.platform.security.JwtUtil;
+import com.training.platform.service.AuthService;
+import com.training.platform.service.TwoFactorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(AuthController.class)
+@ActiveProfiles("test")
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc(addFilters = false)
 public class AuthControllerTest {
 
     @Autowired
@@ -36,6 +42,15 @@ public class AuthControllerTest {
 
     @MockBean
     private JwtUtil jwtUtil;
+
+    @MockBean
+    private TwoFactorService twoFactorService;
+
+    @MockBean
+    private AuthService authService;
+
+    @MockBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -68,13 +83,13 @@ public class AuthControllerTest {
         when(jwtUtil.generateToken("khalil@esprit.tn", 1L, "TRAINER")).thenReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("fake-jwt-token"))
                 .andExpect(jsonPath("$.user.email").value("khalil@esprit.tn"));
     }
-
     @Test
     void login_WithWrongPassword_ShouldReturn401() throws Exception {
         AuthController.LoginRequest loginRequest = new AuthController.LoginRequest();
@@ -85,6 +100,7 @@ public class AuthControllerTest {
         when(passwordEncoder.matches("wrongpass", "encodedPassword")).thenReturn(false);
 
         mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized());
@@ -99,6 +115,7 @@ public class AuthControllerTest {
         when(userRepository.findByEmailIgnoreCase("unknown@esprit.tn")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized());

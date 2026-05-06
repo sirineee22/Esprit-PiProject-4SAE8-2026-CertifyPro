@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EvaluationService } from './evaluation.service';
-import { of } from 'rxjs';
+import { of, lastValueFrom } from 'rxjs';
 import { Evaluation } from '../../../shared/models/evaluation.model';
 
 describe('EvaluationService', () => {
@@ -26,23 +26,19 @@ describe('EvaluationService', () => {
         expect(service).toBeTruthy();
     });
 
-    it('should add an evaluation', (done) => {
+    it('should add an evaluation', async () => {
         const mockEval: Evaluation = { id: 1, score: 90 } as any;
         httpClientMock.post.mockReturnValue(of(mockEval));
 
-        service.addEvaluation(mockEval).subscribe(result => {
-            expect(result).toEqual(mockEval);
-            expect(httpClientMock.post).toHaveBeenCalled();
-            done();
-        });
+        const result = await lastValueFrom(service.addEvaluation(mockEval));
+        expect(result).toEqual(mockEval);
+        expect(httpClientMock.post).toHaveBeenCalled();
     });
 
-    it('should delete an evaluation', (done) => {
+    it('should delete an evaluation', async () => {
         httpClientMock.delete.mockReturnValue(of({}));
 
-        service.deleteEvaluation(1).subscribe(() => {
-            expect(httpClientMock.delete).toHaveBeenCalled();
-            done();
-        });
+        await lastValueFrom(service.deleteEvaluation(1));
+        expect(httpClientMock.delete).toHaveBeenCalled();
     });
 });

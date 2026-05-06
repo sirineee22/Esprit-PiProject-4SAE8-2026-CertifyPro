@@ -118,6 +118,10 @@ public class AuthController {
     static class LoginRequest {
 
         @NotBlank
+        @Email
+        public String email;
+
+        @NotBlank
         public String password;
     }
 

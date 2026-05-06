@@ -28,6 +28,10 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // Specific authenticated GET paths must come BEFORE the broad permitAll
+                .requestMatchers(HttpMethod.GET, "/api/events/my").hasRole("TRAINER")
+                .requestMatchers(HttpMethod.GET, "/api/events/my-registrations").authenticated()
+                // Public GET endpoints
                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/events").hasRole("TRAINER")
                 .requestMatchers(HttpMethod.POST, "/api/events/interactions").authenticated()
@@ -35,10 +39,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/events/*").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/events/*/cancel").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/events/*").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/events/my").hasRole("TRAINER")
                 .requestMatchers(HttpMethod.POST, "/api/events/*/register").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/events/*/register").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/events/my-registrations").authenticated()
                 .requestMatchers("/api/admin/events", "/api/admin/events/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
             )
