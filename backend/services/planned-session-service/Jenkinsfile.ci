@@ -128,21 +128,16 @@ pipeline {
     }
 
     post {
-        success {
-            echo "🎉 CI Pipeline SUCCESS for planned-session-service (Build #${BUILD_NUMBER})"
-            // Trigger CD pipeline on success
-            build job: 'CD-planned-session-service', parameters: [
-                string(name: 'DOCKER_TAG', value: "${DOCKER_TAG}")
-            ], wait: false
-        }
-        failure {
-            echo "❌ CI Pipeline FAILED for planned-session-service (Build #${BUILD_NUMBER})"
-        }
-        always {
-        script {
-            sh "docker rmi ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} || true"
-            cleanWs()
-        }
-        }
+    success {
+        echo "🎉 CI SUCCESS"
     }
+
+    failure {
+        echo "❌ CI FAILED"
+    }
+
+    always {
+        cleanWs()
+    }
+}
 }
