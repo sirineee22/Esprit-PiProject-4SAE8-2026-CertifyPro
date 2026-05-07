@@ -1,6 +1,6 @@
 package com.training.platform.dto;
 
-import com.training.platform.entity.Role;
+//import com.training.platform.entity.Role;
 import com.training.platform.validation.PasswordStrength;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -23,8 +23,9 @@ public class UpdateUserRequest {
     private String phoneNumber;
 
     private Boolean active;
-
-    private Role role;
+    
+    private String role;
+    //private Role role;
 
     @Size(max = 120)
     @PasswordStrength
