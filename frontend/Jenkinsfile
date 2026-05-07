@@ -17,64 +17,44 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-            agent {
-                docker {
-                    image 'node:20-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 dir('frontend') {
-                    sh 'rm -rf node_modules package-lock.json && npm install --legacy-peer-deps'
+                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps"'
                 }
             }
         }
 
         stage('Run Tests') {
-            agent {
-                docker {
-                    image 'node:20-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 dir('frontend') {
-                    sh 'npx ng test --no-watch --coverage || true'
+                    sh 'docker run --rm -v $(pwd):/app -w /app --cap-add=SYS_ADMIN node:20 sh -c "npm install --legacy-peer-deps && npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox || true"'
                 }
             }
         }
 
         stage('SonarQube Analysis') {
-            agent {
-                docker {
-                    image 'sonarsource/sonar-scanner-cli'
-                    reuseNode true
-                }
-            }
             steps {
                 dir('frontend') {
                     sh """
-                        sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.organization=${SONAR_ORG} \
-                            -Dsonar.sources=src \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.token=${SONAR_TOKEN}
+                        docker run --rm \
+                            -v \$(pwd):/usr/src \
+                            -e SONAR_TOKEN=${SONAR_TOKEN} \
+                            sonarsource/sonar-scanner-cli \
+                            sonar-scanner \
+                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                -Dsonar.organization=${SONAR_ORG} \
+                                -Dsonar.sources=src \
+                                -Dsonar.host.url=https://sonarcloud.io \
+                                -Dsonar.token=${SONAR_TOKEN}
                     """
                 }
             }
         }
 
         stage('Build Production') {
-            agent {
-                docker {
-                    image 'node:20-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 dir('frontend') {
-                    sh 'npm run build -- --configuration production'
+                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "npm run build -- --configuration production"'
                 }
             }
         }

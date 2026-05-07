@@ -1,60 +1,44 @@
 pipeline {
     agent any
-    
+
     tools {
-        maven 'Maven-3.9'
+        maven 'Maven3'
         jdk 'JDK-17'
     }
-    
+
     environment {
-        DOCKER_IMAGE = "khalil373/training-service"
-        DOCKER_TAG = "${BUILD_NUMBER}"
-        SONAR_HOST_URL = "http://sonarqube:9000"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_PROJECT_KEY = 'sirineee22_Esprit-PiProject-4SAE8-2026-CertifyPro'
+        SONAR_ORG = 'sirineee22'
+        IMAGE_NAME = 'khalil373/training-service'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                echo '📥 Cloning repository...'
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '🔨 Building with Maven...'
                     sh 'mvn clean compile -DskipTests'
                 }
             }
         }
-        
-        stage('Unit Tests') {
+
+        stage('Test & Code Coverage') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '🧪 Running unit tests...'
-                    sh 'mvn test'
-                }
-            }
-            post {
-                always {
-                    dir('backend/services/training-service') {
-                        junit '**/target/surefire-reports/*.xml'
-                    }
-                }
-            }
-        }
-        
-        stage('Code Coverage (JaCoCo)') {
-            steps {
-                dir('backend/services/training-service') {
-                    echo '📊 Generating JaCoCo coverage report...'
                     sh 'mvn verify'
                 }
             }
             post {
                 always {
                     dir('backend/services/training-service') {
+                        junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                         jacoco(
                             execPattern: '**/target/jacoco.exec',
                             classPattern: '**/target/classes',
@@ -64,120 +48,60 @@ pipeline {
                 }
             }
         }
-        
+
         stage('SonarQube Analysis') {
-            when {
-                expression { false } // Temporarily disabled
-            }
             steps {
                 dir('backend/services/training-service') {
-                    echo '🔍 Running SonarQube analysis...'
-                    withSonarQubeEnv('SonarQube-Local') {
-                        sh '''
-                            mvn sonar:sonar \
-                              -Dsonar.projectKey=training-service \
-                              -Dsonar.projectName=training-service \
-                              -Dsonar.host.url=${SONAR_HOST_URL} \
-                              -Dsonar.login=${SONAR_AUTH_TOKEN} \
-                              -Dsonar.java.binaries=target/classes \
-                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        '''
-                    }
+                    sh """
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.token=${SONAR_TOKEN} \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    """
                 }
             }
         }
-        
-        stage('Quality Gate') {
-            when {
-                expression { false } // Temporarily disabled
-            }
-            steps {
-                echo '🚦 Waiting for Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        
+
         stage('Package') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '📦 Packaging application...'
                     sh 'mvn package -DskipTests'
                 }
             }
         }
-        
-        stage('Build Docker Image') {
+
+        stage('Build & Push Docker Image') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '🐳 Building Docker image...'
-                    script {
-                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                        docker.build("${DOCKER_IMAGE}:latest")
-                    }
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest ."
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${IMAGE_NAME}:latest"
                 }
             }
         }
-        
-        stage('Push to Docker Hub') {
-            steps {
-                echo '📤 Pushing to Docker Hub...'
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
-                        docker.image("${DOCKER_IMAGE}:latest").push()
-                    }
-                }
-            }
-        }
-        
+
         stage('Clean Docker Images') {
             steps {
-                echo '🧹 Cleaning local Docker images...'
-                sh """
-                    docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true
-                    docker rmi ${DOCKER_IMAGE}:latest || true
-                """
+                sh "docker rmi ${IMAGE_NAME}:${BUILD_NUMBER} || true"
+                sh "docker rmi ${IMAGE_NAME}:latest || true"
             }
         }
     }
-    
+
     post {
+        always {
+            sh 'docker logout || true'
+            cleanWs()
+        }
         success {
-            echo '✅ Pipeline completed successfully!'
-            emailext(
-                subject: "✅ SUCCESS: Training Service Build #${BUILD_NUMBER}",
-                body: """
-                    <h2>Build Successful</h2>
-                    <p><b>Project:</b> Training Service</p>
-                    <p><b>Build Number:</b> ${BUILD_NUMBER}</p>
-                    <p><b>Docker Image:</b> ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
-                    <p><b>SonarQube:</b> <a href="${SONAR_HOST_URL}/dashboard?id=training-service">View Report</a></p>
-                    <p><b>Jenkins:</b> <a href="${BUILD_URL}">View Build</a></p>
-                """,
-                to: 'team@certifypro.com',
-                mimeType: 'text/html'
-            )
+            echo 'Training Service pipeline succeeded!'
         }
         failure {
-            echo '❌ Pipeline failed!'
-            emailext(
-                subject: "❌ FAILED: Training Service Build #${BUILD_NUMBER}",
-                body: """
-                    <h2>Build Failed</h2>
-                    <p><b>Project:</b> Training Service</p>
-                    <p><b>Build Number:</b> ${BUILD_NUMBER}</p>
-                    <p><b>Jenkins:</b> <a href="${BUILD_URL}">View Build</a></p>
-                    <p><b>Console:</b> <a href="${BUILD_URL}console">View Console Output</a></p>
-                """,
-                to: 'team@certifypro.com',
-                mimeType: 'text/html'
-            )
-        }
-        always {
-            echo '🧹 Cleaning workspace...'
-            cleanWs()
+            echo 'Training Service pipeline failed!'
         }
     }
 }

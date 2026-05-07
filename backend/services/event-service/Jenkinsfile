@@ -52,6 +52,9 @@ pipeline {
     }
 
     post {
+        always {
+            sh 'docker logout || true'
+        }
         success {
             echo 'Event Service pipeline succeeded!'
         }

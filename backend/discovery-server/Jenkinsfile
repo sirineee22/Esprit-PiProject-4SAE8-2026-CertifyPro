@@ -39,7 +39,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'
+            sh 'docker logout || true'
         }
         success {
             echo 'Discovery Server pipeline succeeded!'

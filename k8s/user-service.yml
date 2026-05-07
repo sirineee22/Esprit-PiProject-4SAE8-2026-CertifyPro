@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: esprit-piproject-4sae8-2026-certifypro-user-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8883
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/userdb
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certifypro-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: certifypro-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: certifypro-secrets
+                  key: JWT_SECRET
+            - name: JWT_EXPIRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: certifypro-config
+                  key: JWT_EXPIRATION
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: certifypro-config
+                  key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: user-service
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: certifypro-config
+                  key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          readinessProbe:
+            tcpSocket:
+              port: 8883
+            initialDelaySeconds: 40
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: certifypro
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8883
+      targetPort: 8883
+  type: ClusterIP
