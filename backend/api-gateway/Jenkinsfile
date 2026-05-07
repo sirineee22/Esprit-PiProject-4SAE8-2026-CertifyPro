@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven3'
+    }
+
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         IMAGE_NAME = 'siriinaa2233/certifypro-api-gateway'
@@ -16,7 +20,7 @@ pipeline {
         stage('Build & Test') {
             steps {
                 dir('backend/api-gateway') {
-                    sh 'docker run --rm -v $(pwd):/app -v $HOME/.m2:/root/.m2 -w /app maven:3.9-eclipse-temurin-17 mvn verify -DskipTests'
+                    sh 'mvn verify -DskipTests --batch-mode'
                 }
             }
         }
