@@ -24,7 +24,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'rm -f package-lock.json && npm install --legacy-peer-deps'
+                    sh 'rm -rf node_modules package-lock.json && npm install --legacy-peer-deps'
                 }
             }
         }
