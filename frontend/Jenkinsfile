@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:20-alpine'
+            args '-v $HOME/.npm:/root/.npm'
+        }
+    }
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
@@ -19,11 +24,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    sh '''
-                        echo "Current directory: $PWD"
-                        ls -la
-                        docker run --rm -v "$PWD":/app:z -w /app node:20-alpine sh -c "ls -la && rm -f package-lock.json && npm install --legacy-peer-deps"
-                    '''
+                    sh 'rm -f package-lock.json && npm install --legacy-peer-deps'
                 }
             }
         }
@@ -31,15 +32,30 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v "$PWD":/app:z -w /app node:20-alpine npx ng test --no-watch --code-coverage'
+                    sh 'npx ng test --no-watch --code-coverage'
                 }
             }
         }
 
         stage('SonarQube Analysis') {
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli'
+                    args '-v $PWD:/usr/src'
+                    reuseNode true
+                }
+            }
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v "$PWD":/app:z -w /app -e SONAR_TOKEN=${SONAR_TOKEN} sonarsource/sonar-scanner-cli -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.organization=${SONAR_ORG} -Dsonar.sources=src -Dsonar.host.url=https://sonarcloud.io -Dsonar.javascript.lcov.reportPaths=coverage/frontend/lcov.info'
+                    sh '''
+                        sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.sources=src \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.token=${SONAR_TOKEN} \
+                            -Dsonar.javascript.lcov.reportPaths=coverage/frontend/lcov.info
+                    '''
                 }
             }
         }
@@ -47,12 +63,13 @@ pipeline {
         stage('Build Production') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v "$PWD":/app:z -w /app node:20-alpine npm run build -- --configuration production'
+                    sh 'npm run build -- --configuration production'
                 }
             }
         }
 
         stage('Build & Push Docker Image') {
+            agent any
             steps {
                 dir('frontend') {
                     sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest ."
