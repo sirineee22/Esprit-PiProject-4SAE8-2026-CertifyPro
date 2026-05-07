@@ -1,0 +1,300 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: certifypro-user:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8883
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/userdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: certifypro
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8883
+      targetPort: 8883
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-service
+  template:
+    metadata:
+      labels:
+        app: training-service
+    spec:
+      containers:
+        - name: training-service
+          image: certifypro-training:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/userdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-service
+  namespace: certifypro
+spec:
+  selector:
+    app: training-service
+  ports:
+    - port: 8086
+      targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-service
+  template:
+    metadata:
+      labels:
+        app: event-service
+    spec:
+      containers:
+        - name: event-service
+          image: certifypro-event:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8884
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/eventdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-service
+  namespace: certifypro
+spec:
+  selector:
+    app: event-service
+  ports:
+    - port: 8884
+      targetPort: 8884
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-service
+  template:
+    metadata:
+      labels:
+        app: ecommerce-service
+    spec:
+      containers:
+        - name: ecommerce-service
+          image: certifypro-ecommerce:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/ecommerce_db
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-service
+  namespace: certifypro
+spec:
+  selector:
+    app: ecommerce-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forum-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forum-service
+  template:
+    metadata:
+      labels:
+        app: forum-service
+    spec:
+      containers:
+        - name: forum-service
+          image: certifypro-forum:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/forumdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forum-service
+  namespace: certifypro
+spec:
+  selector:
+    app: forum-service
+  ports:
+    - port: 8086
+      targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collaboration-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collaboration-service
+  template:
+    metadata:
+      labels:
+        app: collaboration-service
+    spec:
+      containers:
+        - name: collaboration-service
+          image: certifypro-collab:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/userdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collaboration-service
+  namespace: certifypro
+spec:
+  selector:
+    app: collaboration-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planned-session-service
+  namespace: certifypro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: planned-session-service
+  template:
+    metadata:
+      labels:
+        app: planned-session-service
+    spec:
+      containers:
+        - name: planned-session-service
+          image: certifypro-planned:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/userdb
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://discovery-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: planned-session-service
+  namespace: certifypro
+spec:
+  selector:
+    app: planned-session-service
+  ports:
+    - port: 8084
+      targetPort: 8084
