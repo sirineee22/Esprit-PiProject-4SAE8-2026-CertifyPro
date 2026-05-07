@@ -39,9 +39,9 @@ export class TrainingService {
         if (url.startsWith('/api')) {
             return `${API_BASE_URL}${url}`;
         }
-        // If it's an absolute URL but points to an old service port (8083 or 8084), redirect to Gateway (8082)
+        // If it's an absolute URL but points to an old service port, redirect to the gateway.
         if (url.includes('localhost:8083') || url.includes('localhost:8084')) {
-            return url.replace(/localhost:8083|localhost:8084/i, 'localhost:8082');
+            return url.replace(/localhost:8083|localhost:8084/i, 'localhost:8081');
         }
         return url;
     }

@@ -41,6 +41,8 @@ class OrderServiceTest {
         Product product = new Product();
         product.setId(1L);
         product.setPrice(100);
+        product.setStock(10);
+        product.setName("test-product");
 
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
@@ -63,9 +65,7 @@ class OrderServiceTest {
         assertEquals(200, result.getTotalPrice());
 
         verify(emailService).sendOrderConfirmation(
-                anyString(),
-                any(),
-                anyString()
+            any(Order.class)
         );
     }
 

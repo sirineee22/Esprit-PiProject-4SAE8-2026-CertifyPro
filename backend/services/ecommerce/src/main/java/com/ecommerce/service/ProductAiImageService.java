@@ -1,4 +1,4 @@
-/* package com.ecommerce.service;
+package com.ecommerce.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -128,4 +128,4 @@ clean composition
     private String safe(String v){
         return v == null ? "" : v.trim();
     }
-} */
+}

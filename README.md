@@ -134,6 +134,24 @@ The Angular app calls the gateway only (see `frontend/src/app/core/api/api.confi
 
 ---
 
+## 🧪 CI/CD Roadmap
+
+The project is already containerized for both frontend and backend. The next DevOps layer is automated in the repository root with a Jenkins pipeline that:
+
+1. Runs backend verification service by service.
+2. Runs frontend unit tests and a production build.
+3. Triggers SonarQube analysis for backend and frontend.
+4. Builds Docker images through `backend/docker-compose.yml`.
+5. Deploys the stack with Docker Compose on protected branches.
+
+Key files:
+- [Jenkinsfile](Jenkinsfile)
+- [backend/sonar-project.properties](backend/sonar-project.properties)
+- [frontend/sonar-project.properties](frontend/sonar-project.properties)
+- [backend/docker-compose.yml](backend/docker-compose.yml)
+
+---
+
 ## 🎓 Academic Context
 
 - **Developed at:** Esprit School of Engineering – Tunisia
