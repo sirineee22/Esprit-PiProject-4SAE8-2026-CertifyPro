@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        SONAR_TOKEN = credentials('sonar-token')
         SONAR_PROJECT_KEY = 'sirineee22_Esprit-PiProject-4SAE8-2026-CertifyPro'
         SONAR_ORG = 'sirineee22'
         IMAGE_NAME = 'siriinaa2233/certifypro-user-service'
@@ -20,25 +21,24 @@ pipeline {
         }
 
         stage('Build, Test & SonarQube Analysis') {
-            steps {
-                dir('backend/services/user-service') {
-                    withSonarQubeEnv('SonarCloud') {
-                        sh """
-                            mvn verify sonar:sonar \
-                                -Dspring.profiles.active=test \
-                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                -Dsonar.organization=${SONAR_ORG} \
-                                -Dsonar.host.url=https://sonarcloud.io \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
-                    }
-                }
-            }
             environment {
                 DB_URL = 'jdbc:h2:mem:testdb'
                 DB_USERNAME = 'sa'
                 DB_PASSWORD = ''
                 JWT_SECRET = 'test-secret-min-32-chars-for-testing-only'
+            }
+            steps {
+                dir('backend/services/user-service') {
+                    sh """
+                        mvn verify sonar:sonar \
+                            -Dspring.profiles.active=test \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.token=${SONAR_TOKEN} \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    """
+                }
             }
         }
 
@@ -56,7 +56,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'
+            sh 'docker logout || true'
         }
         success {
             echo 'User Service pipeline succeeded!'
