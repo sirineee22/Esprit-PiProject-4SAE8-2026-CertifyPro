@@ -73,15 +73,17 @@ pipeline {
             steps {
                 dir("${SERVICE_DIR}") {
                     withSonarQubeEnv('SonarQube-Server') {
-                        sh """
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=planned-session-service \
-                                -Dsonar.projectName='Planned Session Service' \
-                               -Dsonar.java.coveragePlugin=jacoco \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                                -B
-                        """
-                    }
+    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+        sh """
+        mvn sonar:sonar \
+        -Dsonar.projectKey=planned-session-service \
+        -Dsonar.projectName="Planned Session Service" \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.login=$SONAR_TOKEN \
+        -B
+        """
+    }
+}
                 }
                 echo "✅ SonarQube analysis completed"
             }
