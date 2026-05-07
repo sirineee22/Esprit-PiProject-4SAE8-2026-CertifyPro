@@ -144,6 +144,8 @@ The project is already containerized for both frontend and backend. The next Dev
 4. Builds Docker images through `backend/docker-compose.yml`.
 5. Deploys the stack with Docker Compose on protected branches.
 
+To complete SonarQube integration in Jenkins, create a Secret Text credential named `sonarqube-token` and configure the SonarQube webhook to point at `http://<jenkins-host>/sonarqube-webhook/` so the quality gate stage can receive analysis results.
+
 Key files:
 - [Jenkinsfile](Jenkinsfile)
 - [backend/sonar-project.properties](backend/sonar-project.properties)

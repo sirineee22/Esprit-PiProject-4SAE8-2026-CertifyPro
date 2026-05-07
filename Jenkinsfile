@@ -11,6 +11,7 @@ pipeline {
         FRONTEND_DIR = 'frontend'
         BACKEND_SONAR_CONFIG = 'backend/sonar-project.properties'
         FRONTEND_SONAR_CONFIG = 'frontend/sonar-project.properties'
+        SONARQUBE_TOKEN_CREDENTIALS_ID = 'sonarqube-token'
     }
 
     stages {
@@ -100,7 +101,7 @@ pipeline {
             steps {
                 dir(FRONTEND_DIR) {
                     sh 'npm ci'
-                    sh 'npm test -- --watch=false --code-coverage'
+                    sh 'npm test -- --watch=false --coverage'
                     sh 'npm run build'
                 }
             }
@@ -109,10 +110,20 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner -Dproject.settings=${BACKEND_SONAR_CONFIG}
-                        sonar-scanner -Dproject.settings=${FRONTEND_SONAR_CONFIG}
-                    '''
+                    withCredentials([string(credentialsId: SONARQUBE_TOKEN_CREDENTIALS_ID, variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            sonar-scanner -Dproject.settings=${BACKEND_SONAR_CONFIG} -Dsonar.login=${SONAR_TOKEN}
+                            sonar-scanner -Dproject.settings=${FRONTEND_SONAR_CONFIG} -Dsonar.login=${SONAR_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
