@@ -1,0 +1,603 @@
+<!-- ULTRA PREMIUM CART PAGE -->
+
+<div class="cart-container">
+
+  <!-- HEADER -->
+  <div class="cart-header">
+
+    <div class="header-left">
+      <h1>Shopping Cart</h1>
+      <p>{{ itemCount }} item(s) selected</p>
+    </div>
+
+    <button
+      class="btn-continue"
+      (click)="continueShopping()">
+
+      <i class="bi bi-arrow-left"></i>
+      Continue Shopping
+
+    </button>
+
+  </div>
+
+  <!-- EMPTY -->
+  <div
+    *ngIf="items.length === 0; else cartContent"
+    class="empty-cart">
+
+    <div class="empty-icon">
+      <i class="bi bi-cart-x"></i>
+    </div>
+
+    <h2>Your cart is empty</h2>
+
+    <p>Add premium products and come back here.</p>
+
+    <button
+      class="btn-shop"
+      (click)="continueShopping()">
+
+      Start Shopping
+
+    </button>
+
+  </div>
+
+  <!-- CONTENT -->
+  <ng-template #cartContent>
+
+    <div
+      class="cart-content"
+      [class.checkout-mode]="showCheckoutForm">
+
+      <!-- LEFT SIDE -->
+      <div class="cart-main">
+
+        <!-- CART ITEMS -->
+        <div
+          *ngIf="!showCheckoutForm"
+          class="cart-items-section">
+
+          <div class="section-title">
+            <h2>Your Items</h2>
+          </div>
+
+          <div
+            class="cart-item"
+            *ngFor="let item of items">
+
+            <!-- IMAGE -->
+            <div class="item-image">
+
+              <img
+                [src]="item.product.imageUrl ? item.product.imageUrl + '?v=' + item.product.id : 'https://via.placeholder.com/400x400?text=No+Image'"
+                [alt]="item.product.name"
+                loading="lazy"
+                (error)="onImageError($event)"
+              />
+
+            </div>
+
+            <!-- DETAILS -->
+            <div class="item-details">
+
+              <h3>{{ item.product.name }}</h3>
+
+              <p>
+                {{ item.product.description | slice:0:100 }}
+                <span *ngIf="item.product.description.length > 100">
+                  ...
+                </span>
+              </p>
+
+              <div class="item-meta">
+
+                <span class="price">
+                  {{ item.product.price | number:'1.2-2' }} €
+                </span>
+
+                <span class="stock">
+                  Stock: {{ item.product.stock }}
+                </span>
+
+              </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="item-actions">
+
+              <div class="qty-box">
+
+                <button
+                  (click)="updateQuantity(item.product.id!, item.quantity - 1)"
+                  [disabled]="item.quantity <= 1">
+
+                  <i class="bi bi-dash"></i>
+
+                </button>
+
+                <span>{{ item.quantity }}</span>
+
+                <button
+                  (click)="updateQuantity(item.product.id!, item.quantity + 1)"
+                  [disabled]="item.quantity >= item.product.stock">
+
+                  <i class="bi bi-plus"></i>
+
+                </button>
+
+              </div>
+
+              <div class="line-total">
+                {{ item.product.price * item.quantity | number:'1.2-2' }} €
+              </div>
+
+              <button
+                class="btn-remove"
+                (click)="removeItem(item.product.id!)">
+
+                <i class="bi bi-trash"></i>
+
+              </button>
+
+            </div>
+
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="cart-tools">
+
+            <button
+              class="btn-clear"
+              (click)="clearCart()">
+
+              <i class="bi bi-cart-x"></i>
+              Clear Cart
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- CHECKOUT FORM -->
+        <div
+          *ngIf="showCheckoutForm"
+          class="checkout-section">
+
+          <div class="checkout-header">
+
+            <h2>Checkout Information</h2>
+
+            <button
+              class="btn-back"
+              (click)="backToCart()">
+
+              <i class="bi bi-arrow-left"></i>
+              Back
+
+            </button>
+
+          </div>
+
+          <form
+            [formGroup]="checkoutForm"
+            class="checkout-form">
+
+            <!-- PERSONAL -->
+            <div class="form-card">
+
+              <h3>Personal Information</h3>
+
+              <!-- FULL NAME -->
+              <div class="form-group">
+
+                <label>Full Name *</label>
+
+                <input
+                  type="text"
+                  formControlName="fullName"
+                  placeholder="John Doe">
+
+                <small class="help">
+                  Letters only, minimum 3 characters
+                </small>
+
+                <div
+                  class="error-message"
+                  *ngIf="checkoutForm.get('fullName')?.touched &&
+                         checkoutForm.get('fullName')?.invalid">
+
+                  Please enter a valid full name.
+
+                </div>
+
+              </div>
+
+              <!-- EMAIL -->
+              <div class="form-group">
+
+                <label>Email *</label>
+
+                <input
+                  type="email"
+                  formControlName="email"
+                  placeholder="john@email.com">
+
+                <small class="help">
+                  We send confirmation here
+                </small>
+
+                <div
+                  class="error-message"
+                  *ngIf="checkoutForm.get('email')?.touched &&
+                         checkoutForm.get('email')?.invalid">
+
+                  Enter a valid email address.
+
+                </div>
+
+              </div>
+
+              <!-- PHONE -->
+              <div class="form-group">
+
+                <label>Phone *</label>
+
+                <input
+                  type="text"
+                  formControlName="phone"
+                  placeholder="21612345678">
+
+                <small class="help">
+                  Tunisia: 8 digits or international format
+                </small>
+
+                <div
+                  class="error-message"
+                  *ngIf="checkoutForm.get('phone')?.touched &&
+                         checkoutForm.get('phone')?.invalid">
+
+                  Invalid phone number.
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- ADDRESS -->
+            <div class="form-card">
+
+              <h3>Shipping Address</h3>
+
+              <!-- ADDRESS -->
+              <div class="form-group">
+
+                <label>Address *</label>
+
+                <input
+                  type="text"
+                  formControlName="address"
+                  placeholder="Street / House Number">
+
+                <div
+                  class="error-message"
+                  *ngIf="checkoutForm.get('address')?.touched &&
+                         checkoutForm.get('address')?.invalid">
+
+                  Address too short.
+
+                </div>
+
+              </div>
+
+              <div class="form-row">
+
+                <!-- CITY -->
+                <div class="form-group">
+
+                  <label>City *</label>
+
+                  <input
+                    type="text"
+                    formControlName="city">
+
+                  <div
+                    class="error-message"
+                    *ngIf="checkoutForm.get('city')?.touched &&
+                           checkoutForm.get('city')?.invalid">
+
+                    Enter city name.
+
+                  </div>
+
+                </div>
+
+                <!-- POSTAL -->
+                <div class="form-group">
+
+                  <label>Postal Code *</label>
+
+                  <input
+                    type="text"
+                    formControlName="postalCode">
+
+                  <div
+                    class="error-message"
+                    *ngIf="checkoutForm.get('postalCode')?.touched &&
+                           checkoutForm.get('postalCode')?.invalid">
+
+                    Invalid postal code.
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <!-- COUNTRY -->
+              <div class="form-group">
+
+                <label>Country *</label>
+
+                <select formControlName="country">
+
+                  <option value="Tunisia">Tunisia</option>
+                  <option value="France">France</option>
+                  <option value="Belgium">Belgium</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="Luxembourg">Luxembourg</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Italy">Italy</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+            <!-- PAYMENT -->
+            <div class="form-card">
+
+              <h3>Payment Method</h3>
+
+              <div class="payment-methods">
+
+                <!-- CASH -->
+                <label class="payment-option">
+
+                  <input
+                    type="radio"
+                    value="cash"
+                    formControlName="paymentMethod">
+
+                  <i class="bi bi-cash-stack"></i>
+                  Cash on Delivery
+
+                </label>
+
+                <!-- CARD -->
+                <label class="payment-option">
+
+                  <input
+                    type="radio"
+                    value="card"
+                    formControlName="paymentMethod">
+
+                  <i class="bi bi-credit-card"></i>
+                  Credit Card
+
+                </label>
+
+                <!-- PAYPAL -->
+                <label class="payment-option">
+
+                  <input
+                    type="radio"
+                    value="paypal"
+                    formControlName="paymentMethod">
+
+                  <i class="bi bi-paypal"></i>
+                  PayPal
+
+                </label>
+
+              </div>
+
+              <!-- CARD FIELDS -->
+              <div
+                *ngIf="checkoutForm.get('paymentMethod')?.value === 'card'">
+
+                <!-- CARD NUMBER -->
+                <div class="form-group">
+
+                  <label>Card Number *</label>
+
+                  <input
+                    type="text"
+                    maxlength="16"
+                    formControlName="cardNumber"
+                    placeholder="1234123412341234">
+
+                  <div
+                    class="error-message"
+                    *ngIf="checkoutForm.get('cardNumber')?.touched &&
+                           checkoutForm.get('cardNumber')?.invalid">
+
+                    16 digits required.
+
+                  </div>
+
+                </div>
+
+                <div class="form-row">
+
+                  <!-- EXPIRY -->
+                  <div class="form-group">
+
+                    <label>Expiry *</label>
+
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      formControlName="cardExpiry">
+
+                    <div
+                      class="error-message"
+                      *ngIf="checkoutForm.get('cardExpiry')?.touched &&
+                             checkoutForm.get('cardExpiry')?.invalid">
+
+                      Valid future date required.
+
+                    </div>
+
+                  </div>
+
+                  <!-- CVV -->
+                  <div class="form-group">
+
+                    <label>CVV *</label>
+
+                    <input
+                      type="password"
+                      maxlength="4"
+                      formControlName="cardCvv">
+
+                    <div
+                      class="error-message"
+                      *ngIf="checkoutForm.get('cardCvv')?.touched &&
+                             checkoutForm.get('cardCvv')?.invalid">
+
+                      3 or 4 digits.
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </form>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="order-summary">
+
+        <h2>Order Summary</h2>
+
+        <div class="summary-list">
+
+          <div
+            class="summary-item"
+            *ngFor="let item of items">
+
+            <span>
+              {{ item.product.name }} x {{ item.quantity }}
+            </span>
+
+            <span>
+              {{ item.product.price * item.quantity | number:'1.2-2' }} €
+            </span>
+
+          </div>
+
+        </div>
+
+        <div class="summary-details">
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>{{ subtotal | number:'1.2-2' }} €</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Tax</span>
+            <span>{{ tax | number:'1.2-2' }} €</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Shipping</span>
+
+            <span>
+              <span *ngIf="shipping === 0" class="free">
+                FREE
+              </span>
+
+              <span *ngIf="shipping > 0">
+                {{ shipping | number:'1.2-2' }} €
+              </span>
+            </span>
+
+          </div>
+
+          <div class="summary-row total">
+            <span>Total</span>
+            <span>{{ total | number:'1.2-2' }} €</span>
+          </div>
+
+        </div>
+
+        <!-- CTA -->
+        <button
+          *ngIf="!showCheckoutForm"
+          class="btn-checkout"
+          [disabled]="items.length === 0"
+          (click)="proceedToCheckout()">
+
+          Proceed to Checkout
+
+        </button>
+
+        <button
+          *ngIf="showCheckoutForm"
+          class="btn-place-order"
+          [disabled]="loading || checkoutForm.invalid"
+          (click)="placeOrder()">
+
+          <span *ngIf="!loading">
+            Place Order
+          </span>
+
+          <span *ngIf="loading">
+            <span class="spinner-small"></span>
+            Processing...
+          </span>
+
+        </button>
+
+        <!-- SUCCESS -->
+        <div
+          *ngIf="success"
+          class="success-message">
+
+          <i class="bi bi-check-circle-fill"></i>
+          <div>Order #{{ success }} confirmed</div>
+
+        </div>
+
+        <!-- ERROR -->
+        <div
+          *ngIf="error"
+          class="error-message">
+
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <div>{{ error }}</div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </ng-template>
+
+</div>

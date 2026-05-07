@@ -1,0 +1,501 @@
+<!-- orders-list.component.html -->
+<div class="orders-container">
+
+  <!-- HEADER -->
+  <div class="orders-header">
+
+    <div>
+      <h1>Order Management</h1>
+      <p class="orders-count">
+        {{ filteredOrders.length }} orders found
+      </p>
+    </div>
+
+    <div class="header-actions">
+
+      <button
+        class="btn-export pdf"
+        (click)="exportToPDF()"
+        [disabled]="isLoadingExport || filteredOrders.length === 0">
+
+        <i class="bi bi-file-earmark-pdf"></i>
+        PDF
+
+      </button>
+
+      <button
+        class="btn-export excel"
+        (click)="exportToExcel()"
+        [disabled]="isLoadingExport || filteredOrders.length === 0">
+
+        <i class="bi bi-file-earmark-excel"></i>
+        Excel
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+
+    <div class="stat-card">
+      <span class="icon blue">
+        <i class="bi bi-cart3"></i>
+      </span>
+
+      <div>
+        <small>Total Orders</small>
+        <h3>{{ stats.totalOrders }}</h3>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <span class="icon green">
+        <i class="bi bi-currency-euro"></i>
+      </span>
+
+      <div>
+        <small>Revenue</small>
+        <h3>{{ stats.totalRevenue | number:'1.2-2' }} €</h3>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <span class="icon orange">
+        <i class="bi bi-graph-up-arrow"></i>
+      </span>
+
+      <div>
+        <small>Average</small>
+        <h3>{{ stats.averageOrderValue | number:'1.2-2' }} €</h3>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <span class="icon purple">
+        <i class="bi bi-hourglass-split"></i>
+      </span>
+
+      <div>
+        <small>Pending</small>
+        <h3>{{ stats.pendingOrders }}</h3>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-section">
+
+    <div
+      class="filters-header"
+      (click)="showFilters = !showFilters">
+
+      <h3>
+        <i class="bi bi-funnel"></i>
+        Filters
+      </h3>
+
+      <i
+        class="bi"
+        [class.bi-chevron-down]="!showFilters"
+        [class.bi-chevron-up]="showFilters">
+      </i>
+
+    </div>
+
+    <div
+      class="filters-content"
+      *ngIf="showFilters">
+
+      <!-- SEARCH -->
+      <div class="search-box">
+
+        <i class="bi bi-search"></i>
+
+        <input
+          type="text"
+          placeholder="Search order / customer / email..."
+          [(ngModel)]="filters.search"
+          (ngModelChange)="applyFilters()">
+
+      </div>
+
+      <!-- FILTER GRID -->
+      <div class="filter-grid">
+
+        <div class="filter-item">
+          <label>From</label>
+
+          <input
+            type="date"
+            [(ngModel)]="filters.dateFrom"
+            (ngModelChange)="applyFilters()">
+        </div>
+
+        <div class="filter-item">
+          <label>To</label>
+
+          <input
+            type="date"
+            [(ngModel)]="filters.dateTo"
+            (ngModelChange)="applyFilters()">
+        </div>
+
+        <div class="filter-item">
+          <label>Min €</label>
+
+          <input
+            type="number"
+            [(ngModel)]="filters.minAmount"
+            (ngModelChange)="applyFilters()">
+        </div>
+
+        <div class="filter-item">
+          <label>Max €</label>
+
+          <input
+            type="number"
+            [(ngModel)]="filters.maxAmount"
+            (ngModelChange)="applyFilters()">
+        </div>
+
+        <div class="filter-item">
+          <label>Country</label>
+
+          <select
+            [(ngModel)]="filters.country"
+            (ngModelChange)="applyFilters()">
+
+            <option
+              *ngFor="let country of countries"
+              [value]="country">
+
+              {{ country === 'all' ? 'All Countries' : country }}
+
+            </option>
+
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label>Payment</label>
+
+          <select
+            [(ngModel)]="filters.paymentMethod"
+            (ngModelChange)="applyFilters()">
+
+            <option
+              *ngFor="let method of paymentMethods"
+              [value]="method">
+
+              {{ method === 'all'
+              ? 'All Methods'
+              : (method | titlecase) }}
+
+            </option>
+
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label>Status</label>
+
+          <select
+            [(ngModel)]="filters.status"
+            (ngModelChange)="applyFilters()">
+
+            <option
+              *ngFor="let status of statuses"
+              [value]="status">
+
+              {{ status === 'all'
+              ? 'All'
+              : (status | titlecase) }}
+
+            </option>
+
+          </select>
+        </div>
+
+      </div>
+
+      <div class="filter-actions">
+
+        <button
+          class="btn-reset"
+          (click)="resetFilters()">
+
+          <i class="bi bi-arrow-clockwise"></i>
+          Reset
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- LOADING -->
+  <div
+    class="loading-container"
+    *ngIf="isLoading">
+
+    <div class="spinner"></div>
+    <p>Loading orders...</p>
+
+  </div>
+
+  <!-- TABLE -->
+  <div
+    class="table-wrapper"
+    *ngIf="!isLoading">
+
+    <table class="orders-table">
+
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Email</th>
+          <th>Location</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr
+          *ngFor="let order of paginatedOrders">
+
+          <td class="id-cell">
+            #{{ order.id }}
+          </td>
+
+          <td>
+            {{ formatDate(order.orderDate) }}
+          </td>
+
+          <td>
+            <div class="user-box">
+              <strong>{{ order.fullName || '-' }}</strong>
+              <small>{{ order.address || '-' }}</small>
+            </div>
+          </td>
+
+          <td>
+            {{ order.email || '-' }}
+          </td>
+
+          <td>
+            <div class="user-box">
+              <strong>{{ order.city || '-' }}</strong>
+              <small>{{ order.country || '-' }}</small>
+            </div>
+          </td>
+
+          <td class="price">
+            {{ order.totalPrice | number:'1.2-2' }} €
+          </td>
+
+          <td>
+
+            <span
+              class="payment-badge"
+              [ngClass]="'payment-' + (order.paymentMethod || 'unknown')">
+
+              {{
+                order.paymentMethod === 'card'
+                ? '💳 Card'
+                : order.paymentMethod === 'paypal'
+                ? '🅿️ PayPal'
+                : order.paymentMethod === 'cash'
+                ? '💵 Cash'
+                : (order.paymentMethod || '-')
+              }}
+
+            </span>
+
+          </td>
+
+          <td>
+
+            <span
+              class="status-badge"
+              [ngClass]="getStatusClass(order.status || '')">
+
+              <i
+                class="bi"
+                [ngClass]="getStatusIcon(order.status || '')">
+              </i>
+
+              {{ (order.status || 'pending') | titlecase }}
+
+            </span>
+
+          </td>
+
+          <td class="actions">
+
+            <button
+              class="btn-view"
+              (click)="viewOrderDetails(order)">
+
+              <i class="bi bi-eye"></i>
+
+            </button>
+
+          </td>
+
+        </tr>
+
+        <!-- EMPTY -->
+        <tr *ngIf="paginatedOrders.length === 0">
+
+          <td colspan="9" class="empty-state">
+
+            <i class="bi bi-inbox"></i>
+
+            <h3>No orders found</h3>
+
+            <button
+              class="btn-reset"
+              (click)="resetFilters()">
+
+              Reset Filters
+
+            </button>
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <!-- PAGINATION -->
+  <div
+    class="pagination"
+    *ngIf="totalPages > 1">
+
+    <button
+      class="page-btn"
+      (click)="changePage(currentPage - 1)"
+      [disabled]="currentPage === 1">
+
+      <i class="bi bi-chevron-left"></i>
+
+    </button>
+
+    <button
+      *ngFor="let page of pageNumbers()"
+      class="page-btn"
+      [class.active]="page === currentPage"
+      (click)="changePage(page)">
+
+      {{ page }}
+
+    </button>
+
+    <button
+      class="page-btn"
+      (click)="changePage(currentPage + 1)"
+      [disabled]="currentPage === totalPages">
+
+      <i class="bi bi-chevron-right"></i>
+
+    </button>
+
+  </div>
+
+  <!-- MODAL -->
+  <div
+    class="modal-overlay"
+    *ngIf="showOrderDetails">
+
+    <div class="modal-box">
+
+      <div class="modal-header">
+
+        <h2>
+          Order #{{ selectedOrder?.id }}
+        </h2>
+
+        <button
+          class="btn-close"
+          (click)="closeOrderDetails()">
+
+          ×
+
+        </button>
+
+      </div>
+
+      <div
+        class="modal-body"
+        *ngIf="selectedOrder">
+
+        <div class="detail-grid">
+
+          <div class="detail-card">
+            <h4>Customer</h4>
+            <p>{{ selectedOrder.fullName }}</p>
+            <p>{{ selectedOrder.email }}</p>
+          </div>
+
+          <div class="detail-card">
+            <h4>Shipping</h4>
+            <p>{{ selectedOrder.address }}</p>
+            <p>
+              {{ selectedOrder.city }},
+              {{ selectedOrder.country }}
+            </p>
+          </div>
+
+          <div class="detail-card">
+            <h4>Payment</h4>
+            <p>{{ selectedOrder.paymentMethod }}</p>
+            <p class="price">
+              {{ selectedOrder.totalPrice | number:'1.2-2' }} €
+            </p>
+          </div>
+
+        </div>
+
+        <div class="status-update">
+
+          <label>Status</label>
+
+          <select
+            [value]="selectedOrder.status"
+            (change)="updateOrderStatus(selectedOrder.id, $any($event.target).value)">
+
+            <option
+              *ngFor="let status of statuses.slice(1)"
+              [value]="status">
+
+              {{ status | titlecase }}
+
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,40 @@
+<div class="events-page">
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1>Events</h1>
+        <p>Discover webinars, workshops, and meetups to boost your career</p>
+      </div>
+      @if (isTrainer) {
+      <button type="button" class="btn-create" (click)="openCreate()">
+        <i class="bi bi-plus-lg"></i> Create Event
+      </button>
+      }
+    </div>
+  </header>
+
+  <div class="page-container">
+    <nav class="tabs-container">
+      @for (tab of tabs; track tab.id) {
+      <button type="button" class="tab" [class.active]="activeTab === tab.id" (click)="activeTab = tab.id">
+        {{ tab.label }}
+      </button>
+      }
+    </nav>
+
+    <div class="tab-content">
+      @switch (activeTab) {
+      @case ('explorer') {
+      <app-events-explorer-tab [isLearner]="isLearner" />
+      }
+      @case ('agenda') {
+      <app-events-agenda-tab [isLearner]="isLearner" [viewMode]="agendaView" (viewModeChange)="agendaView = $event" />
+      }
+      @case ('my-events') {
+      <app-events-trainer-tab (edit)="openEdit($event)" />
+      }
+      }
+    </div>
+  </div>
+
+</div>

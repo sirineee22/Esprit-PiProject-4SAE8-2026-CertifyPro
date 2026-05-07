@@ -1,0 +1,92 @@
+{
+  "examples": {
+    "createPost": {
+      "description": "Créer un nouveau post",
+      "method": "POST",
+      "url": "http://localhost:8084/api/forum/posts",
+      "body": {
+        "userId": 1,
+        "title": "Comment bien démarrer avec Spring Boot ?",
+        "content": "Je cherche des conseils pour bien commencer avec Spring Boot. Quels sont les meilleures pratiques ?"
+      }
+    },
+    "updatePost": {
+      "description": "Mettre à jour un post existant",
+      "method": "PUT",
+      "url": "http://localhost:8084/api/forum/posts/1",
+      "body": {
+        "title": "Comment bien démarrer avec Spring Boot ? (Mis à jour)",
+        "content": "J'ai trouvé de bonnes ressources. Voici ce que j'ai appris..."
+      }
+    },
+    "createComment": {
+      "description": "Créer un commentaire sur un post",
+      "method": "POST",
+      "url": "http://localhost:8084/api/forum/posts/1/comments",
+      "body": {
+        "userId": 2,
+        "content": "Excellent post ! Je recommande de commencer par la documentation officielle de Spring Boot."
+      }
+    },
+    "updateComment": {
+      "description": "Mettre à jour un commentaire",
+      "method": "PUT",
+      "url": "http://localhost:8084/api/forum/comments/1",
+      "body": {
+        "content": "Excellent post ! Je recommande de commencer par la documentation officielle de Spring Boot. Voici le lien: https://spring.io/projects/spring-boot"
+      }
+    },
+    "getAllPosts": {
+      "description": "Récupérer tous les posts",
+      "method": "GET",
+      "url": "http://localhost:8084/api/forum/posts"
+    },
+    "getPostById": {
+      "description": "Récupérer un post par ID",
+      "method": "GET",
+      "url": "http://localhost:8084/api/forum/posts/1"
+    },
+    "getCommentsByPost": {
+      "description": "Récupérer tous les commentaires d'un post",
+      "method": "GET",
+      "url": "http://localhost:8084/api/forum/posts/1/comments"
+    },
+    "getCommentById": {
+      "description": "Récupérer un commentaire par ID",
+      "method": "GET",
+      "url": "http://localhost:8084/api/forum/comments/1"
+    },
+    "deletePost": {
+      "description": "Supprimer un post (supprime aussi tous ses commentaires)",
+      "method": "DELETE",
+      "url": "http://localhost:8084/api/forum/posts/1"
+    },
+    "deleteComment": {
+      "description": "Supprimer un commentaire",
+      "method": "DELETE",
+      "url": "http://localhost:8084/api/forum/comments/1"
+    }
+  },
+  "validationErrors": {
+    "postWithoutTitle": {
+      "description": "Test de validation - Post sans titre (doit échouer)",
+      "method": "POST",
+      "url": "http://localhost:8084/api/forum/posts",
+      "body": {
+        "userId": 1,
+        "content": "Contenu sans titre"
+      },
+      "expectedError": "400 Bad Request"
+    },
+    "commentWithoutContent": {
+      "description": "Test de validation - Commentaire sans contenu (doit échouer)",
+      "method": "POST",
+      "url": "http://localhost:8084/api/forum/posts/1/comments",
+      "body": {
+        "userId": 2
+      },
+      "expectedError": "400 Bad Request"
+    }
+  }
+}
+

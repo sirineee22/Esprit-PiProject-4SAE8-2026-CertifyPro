@@ -1,0 +1,34 @@
+<div class="container">
+
+  <h2>Products</h2>
+
+  <div class="grid">
+
+    <div class="card" *ngFor="let p of products">
+
+      <h3>{{ p.name }}</h3>
+
+      <p class="muted">
+        {{ p.description }}
+      </p>
+
+      <div class="row">
+        <strong>{{ p.price | number:'1.2-2' }} €</strong>
+        <span class="muted">Stock: {{ p.stock }}</span>
+      </div>
+
+      <div class="actions">
+        <a [routerLink]="['/shop/products', p.id]">Details</a>
+
+        <button
+          (click)="addToCart(p)"
+          [disabled]="p.stock <= 0">
+          Add
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

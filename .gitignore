@@ -1,0 +1,24 @@
+# MAVEN
+**/target/
+
+# IDE
+.idea/
+.vscode/
+
+# LOGS
+*.log
+
+# ANGULAR
+**/node_modules/
+dist/
+.angular/
+
+# ENV
+.env
+
+# Uploaded files (e.g. profile images)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db

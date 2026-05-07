@@ -1,0 +1,70 @@
+<div class="sessions-container">
+    <div class="page-header">
+        <h1 class="page-title">Mes Sessions</h1>
+    </div>
+
+    <div *ngIf="loading" class="empty-state">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading && error" class="empty-state">
+        <i class="bi bi-exclamation-triangle empty-icon text-danger"></i>
+        <p>{{ error }}</p>
+        <button class="btn btn-primary" (click)="loadSessions()">Réessayer</button>
+    </div>
+
+    <div *ngIf="!loading && !error && sessions.length === 0" class="empty-state">
+        <i class="bi bi-calendar-x empty-icon"></i>
+        <p>Vous n'avez aucune session réservée.</p>
+        <a routerLink="/book-session" class="btn btn-primary">Réserver une Session</a>
+    </div>
+
+    <div *ngIf="!loading && !error && sessions.length > 0" class="table-container">
+        <table class="sessions-table">
+            <thead>
+                <tr>
+                    <th>Sujet</th>
+                    <th>Salle</th>
+                    <th>Date & Heure</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let session of sessions">
+                    <td data-label="Sujet">{{ session.topic }}</td>
+                    <td data-label="Salle">Session Physique</td>
+                    <td data-label="Date & Heure">
+                        {{ session.startTime | date:'mediumDate' }}<br>
+                        <small class="text-muted">{{ session.startTime | date:'shortTime' }} - {{ session.endTime |
+                            date:'shortTime' }}</small>
+                    </td>
+                    <td data-label="Statut">
+                        <span class="status-badge" [ngClass]="getStatusClass(session.status)">
+                            {{ session.status }}
+                        </span>
+                    </td>
+                    <td data-label="Actions">
+                        <ng-container *ngIf="isFuture(session.startTime)">
+                            <button *ngIf="session.status === 'SCHEDULED'" class="action-btn btn-cancel"
+                                (click)="toggleStatus(session)">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </button>
+                            <button *ngIf="session.status === 'CANCELLED'" class="action-btn btn-schedule"
+                                (click)="toggleStatus(session)">
+                                <i class="bi bi-check-circle"></i> Reprogrammer
+                            </button>
+                        </ng-container>
+                        <span
+                            *ngIf="!isFuture(session.startTime) && (session.status === 'SCHEDULED' || session.status === 'CANCELLED')"
+                            class="text-muted small">
+                            Passée
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

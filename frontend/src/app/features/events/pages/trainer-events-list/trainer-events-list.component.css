@@ -1,0 +1,45 @@
+.container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.container h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: hsl(222, 47%, 20%);
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.btn.primary {
+  background: hsl(222, 47%, 20%);
+  color: white;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 1.25rem;
+}
+
+.card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.meta, .date { color: #64748b; font-size: 0.9rem; margin: 0.25rem 0; }
+.actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+.actions a { font-size: 0.9rem; color: hsl(222, 47%, 40%); }
+.error { color: #dc2626; }
+.empty { color: #64748b; margin: 1rem 0; }

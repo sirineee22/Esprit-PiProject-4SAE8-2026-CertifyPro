@@ -1,0 +1,146 @@
+<div class="trainings-page">
+    <div class="bg-gradient"></div>
+
+    <div class="container py-5">
+        <!-- Header Section -->
+        <header class="header mb-5">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <h6 class="text-primary fw-bold text-uppercase ls-1">Learning Hub</h6>
+                    <h1 class="display-4 fw-bold text-slate-900 mb-3">Explore Our <span
+                            class="text-gradient">Trainings</span></h1>
+                    <p class="lead text-muted mb-4">Unlock your potential with expert-led courses designed for your
+                        career growth. Start your journey today.</p>
+                    <div *ngIf="isTrainer || isAdmin" class="trainer-actions animate-fade-in">
+                        <a routerLink="/trainings/add" class="btn-add-premium">
+                            <i class="bi bi-plus-lg"></i>
+                            Post New Training
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <div class="header-stats d-flex justify-content-end gap-4">
+                        <div class="stat-card">
+                            <span class="number">24+</span>
+                            <span class="label">Expert Instructors</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="number">1.2k+</span>
+                            <span class="label">Active Students</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading()"
+            class="loading-state h-400 d-flex flex-column align-items-center justify-content-center">
+            <div class="spinner-modern mb-3"></div>
+            <p class="text-muted animate-pulse">Curating the best content for you...</p>
+        </div>
+
+        <!-- Grid of Training Cards -->
+        <div *ngIf="!isLoading()" class="row g-4">
+            <div class="col-md-6 col-lg-4 animate-slide-up" *ngFor="let training of trainings(); let i = index"
+                [style.animation-delay]="(i * 0.1) + 's'">
+                <div class="training-card">
+                    <!-- Updated Actions: Combined and non-overlapping -->
+                    <div class="card-actions" [class.student-actions]="isStudent()">
+                        <button *ngIf="isAdmin || isTrainer" class="btn-action btn-edit"
+                            (click)="onEditTraining($event, training)" title="Edit">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button *ngIf="isAdmin || isTrainer" class="btn-action btn-delete"
+                            (click)="onDeleteTraining($event, training)" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <button *ngIf="isStudent()" class="btn-action btn-favorite" [class.active]="training.isFavorite"
+                            (click)="onToggleFavorite($event, training)"
+                            [title]="training.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'">
+                            <i class="bi" [ngClass]="training.isFavorite ? 'bi-heart-fill' : 'bi-heart'"></i>
+                        </button>
+                    </div>
+
+                    <div class="card-image-wrapper">
+                        <div class="card-overlay">
+                            <div class="badge-type" [class.video]="training.trainingType === 'VIDEO'">
+                                <i class="bi"
+                                    [ngClass]="training.trainingType === 'VIDEO' ? 'bi-play-fill' : 'bi-file-earmark-text-fill'"></i>
+                                {{ training.trainingType }}
+                            </div>
+                        </div>
+                        <div class="card-image-placeholder">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body-premium">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="level-badge" [ngClass]="training.level.toLowerCase()">{{ training.level
+                                }}</span>
+                            <!-- Progression Badge for Students & Trainers -->
+                            <span *ngIf="isStudent()" class="progression-badge"
+                                [ngClass]="training.progression ? training.progression.status.toLowerCase() : 'to_do'">
+                                <i class="bi" [ngClass]="{
+                                    'bi-circle': !training.progression || training.progression.status === 'TO_DO',
+                                    'bi-play-circle': training.progression?.status === 'IN_PROGRESS',
+                                    'bi-check-circle-fill': training.progression?.status === 'COMPLETED'
+                                }"></i>
+                                {{ !training.progression || training.progression.status === 'TO_DO' ? 'To Do' :
+                                (training.progression.status === 'IN_PROGRESS' ? 'In Progress' : 'Completed') }}
+                            </span>
+                            <span class="duration-tag"><i class="bi bi-clock me-1"></i>{{ training.duration }}</span>
+                        </div>
+
+                        <h3 class="card-title-modern">{{ training.title }}</h3>
+
+                        <!-- Status Selector for Students & Trainers -->
+                        <div *ngIf="isStudent()" class="status-selector-wrapper mb-3"
+                            (click)="$event.stopPropagation()">
+                            <label class="small text-muted mb-1 d-block">My Progress:</label>
+                            <select class="form-select status-select" [value]="training.progression?.status || 'TO_DO'"
+                                (change)="onStatusChange($event, training)">
+                                <option value="TO_DO">To Do</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="COMPLETED">Completed</option>
+                            </select>
+                        </div>
+                        <p class="card-description-modern text-muted">{{ training.description }}</p>
+
+                        <div class="card-footer-modern mt-auto">
+                            <button class="btn-join-modern w-100" (click)="joinTraining(training)">
+                                <span>Open Training</span>
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div *ngIf="!isLoading() && pagination().totalPages > 1" class="pagination-wrapper mt-5 animate-fade-in">
+            <div class="pagination-container">
+                <button class="btn-pagination" [disabled]="pagination().currentPage === 0" (click)="onPreviousPage()">
+                    <i class="bi bi-chevron-left"></i>
+                    <span>Previous</span>
+                </button>
+
+                <div class="page-numbers">
+                    <span class="page-info">
+                        Page <strong>{{ pagination().currentPage + 1 }}</strong> of <strong>{{ pagination().totalPages
+                            }}</strong>
+                    </span>
+                    <span class="total-count">({{ pagination().totalElements }} total)</span>
+                </div>
+
+                <button class="btn-pagination" [disabled]="pagination().currentPage >= pagination().totalPages - 1"
+                    (click)="onNextPage()">
+                    <span>Next</span>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

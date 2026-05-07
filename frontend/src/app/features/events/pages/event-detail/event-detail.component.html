@@ -1,0 +1,278 @@
+<div class="detail-container py-4">
+  @if (loading) {
+  <div class="loading-state">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p>Loading event...</p>
+  </div>
+  } @else if (error && !event) {
+  <div class="error-state">
+    <i class="bi bi-exclamation-octagon fs-1 text-danger"></i>
+    <h3>Oops!</h3>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" routerLink="/events">Back to list</button>
+  </div>
+  } @else if (event) {
+  <div class="detail-grid">
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="event-header">
+        <div class="header-top">
+          <span class="type-badge">{{ typeLabel(event.type) }}</span>
+          <span class="type-badge">{{ event.learningLevel || 'BEGINNER' }}</span>
+          <span class="mode-badge" [class.online]="event.mode === 'ONLINE'">
+            <i class="bi bi-{{ event.mode === 'ONLINE' ? 'broadcast' : 'geo-alt' }}"></i>
+            {{ event.mode === 'ONLINE' ? 'En ligne — Zoom' : ('Présentiel — ' + (event.location || 'Tunis, Lac 2')) }}
+          </span>
+          @if (event.status === 'CANCELLED') {
+          <span class="status-badge cancelled">CANCELLED</span>
+          } @else if ((event.participantCount || 0) >= event.maxParticipants) {
+          <span class="status-badge full">FULL</span>
+          } @else {
+          <span class="status-badge open">OPEN</span>
+          }
+        </div>
+        <h1 class="event-title">{{ event.title }}</h1>
+        <div class="event-quick-info">
+          <div class="info-item">
+            <i class="bi bi-calendar-check"></i>
+            <span>{{ formatDate(event.dateStart) }}</span>
+          </div>
+          <div class="info-item">
+            <i class="bi bi-people"></i>
+            <span>{{ event.maxParticipants }} maximum participants</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-section">
+        <h3>Description</h3>
+        <p class="description-text">{{ event.description || 'No description provided.' }}</p>
+      </section>
+
+      <section class="content-section">
+        <h3>Location</h3>
+        @if (event.mode === 'ONLINE') {
+        <div class="online-box p-4 bg-light rounded-3 text-center border">
+          <i class="bi bi-broadcast fs-1 mb-3 d-block text-primary"></i>
+          <p>This event takes place entirely <strong>online</strong>.</p>
+          @if (registrationStatus === 'REGISTERED') {
+          <div class="alert alert-info py-2 m-0">
+            <i class="bi bi-info-circle me-2"></i>
+            The connection link (Zoom/Meet) is available in the sidebar.
+          </div>
+          } @else if (registrationStatus === 'WAITLISTED') {
+          <div class="alert alert-warning py-2 m-0">
+            <i class="bi bi-hourglass-split me-2"></i>
+            You are on the waitlist. The link will appear if a spot becomes available.
+          </div>
+          } @else {
+          <p class="text-muted m-0">Register to get the confidential access link.</p>
+          }
+        </div>
+        } @else {
+        <div class="location-details">
+          <p class="mb-3">
+            <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+            <strong>Location:</strong> {{ event.location || 'Tunis, Lac 2' }}
+          </p>
+          <div class="map-wrapper shadow-sm rounded-3 overflow-hidden border">
+            <div id="map" style="height: 350px; width: 100%; border-radius: 12px; z-index: 1;"></div>
+          </div>
+        </div>
+        }
+      </section>
+
+      <section class="content-section">
+        <h3>Program</h3>
+        <div class="program-list">
+          @for (item of event.program; track $index) {
+          <div class="program-item">
+            <span class="time">{{ item.time }}</span>
+            <span class="activity">{{ item.activity }}</span>
+          </div>
+          }
+        </div>
+      </section>
+
+      @if (canSubmitFeedback) {
+      <section class="content-section feedback-section">
+        <h3>Mini feedback</h3>
+        <div class="feedback-box">
+          <div class="mb-3">
+            <label class="form-label">Was it easy / medium / hard?</label>
+            <select class="form-select" [(ngModel)]="feedback.difficulty">
+              <option value="EASY">Easy</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HARD">Hard</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Did you understand the content?</label>
+            <select class="form-select" [(ngModel)]="feedback.understood">
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">Not really</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rate the event (1-5)</label>
+            <input class="form-control" type="number" min="1" max="5" [(ngModel)]="feedback.rating" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">What do you want next?</label>
+            <input class="form-control" type="text" [(ngModel)]="feedback.whatNext" placeholder="ex: more SQL and dashboards" />
+          </div>
+          <button class="btn btn-primary" (click)="submitFeedback()" [disabled]="feedbackSubmitting">
+            {{ feedbackSubmitting ? 'Submitting...' : 'Submit feedback' }}
+          </button>
+          @if (feedbackError) {
+          <div class="alert alert-danger mt-3 mb-0">{{ feedbackError }}</div>
+          }
+        </div>
+
+        @if (nextSuggestion) {
+        <div class="suggestion-box mt-3">
+          <p class="mb-2"><strong>{{ nextSuggestion.message }}</strong></p>
+          <p class="mb-2">Target level: <span class="type-badge">{{ nextSuggestion.targetLevel }}</span></p>
+          @if (nextSuggestion.suggestedEvent) {
+          <div class="suggested-card">
+            <div class="fw-bold">{{ nextSuggestion.suggestedEvent.title }}</div>
+            <div class="text-muted small">{{ nextSuggestion.suggestedEvent.category || 'General' }} - {{ formatDate(nextSuggestion.suggestedEvent.dateStart) }}</div>
+            <a class="btn btn-sm btn-outline-primary mt-2" [routerLink]="['/events', nextSuggestion.suggestedEvent.id]">Open suggested event</a>
+          </div>
+          } @else {
+          <div class="text-muted">No matching event yet. Try again after new events are added.</div>
+          }
+        </div>
+        }
+      </section>
+      }
+
+    </div>
+
+    <!-- Sidebar Actions & Chat -->
+    <aside class="sidebar">
+      <div class="action-card">
+        @if (canManageEvent) {
+        <div class="manage-box mb-3">
+          <div class="manage-title">Trainer actions</div>
+          <button class="btn btn-outline-secondary w-100 mb-2" (click)="editEvent()" [disabled]="event.status !== 'UPCOMING'">
+            <i class="bi bi-pencil me-2"></i> Edit event
+          </button>
+          <button class="btn btn-danger w-100" (click)="deleteEvent()" [disabled]="deleting">
+            <i class="bi bi-trash me-2"></i> {{ deleting ? 'Deleting...' : 'Delete event' }}
+          </button>
+        </div>
+        }
+        @if (event.status === 'CANCELLED') {
+        <div class="cancelled-banner">
+          <i class="bi bi-x-circle-fill"></i>
+          This event has been cancelled
+        </div>
+        } @else if (isLearner && (registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED')) {
+        <div class="registered-banner"
+          [style.background-color]="registrationStatus === 'ATTENDED' ? '#e0f2fe' : '#ecfdf5'"
+          [style.color]="registrationStatus === 'ATTENDED' ? '#0369a1' : '#065f46'">
+          <i class="bi bi-{{ registrationStatus === 'ATTENDED' ? 'patch-check' : 'check-circle-fill' }}"></i>
+          {{ registrationStatus === 'ATTENDED' ? 'You have participated' : 'You are registered!' }}
+        </div>
+        @if (registrationStatus === 'REGISTERED') {
+        <button class="btn btn-join w-100 mb-3" (click)="joinMeeting()"
+          [title]="event.meetingLink || 'Link coming soon'">
+          <i class="bi bi-camera-video me-2"></i> Join meeting
+        </button>
+        }
+        <button class="btn btn-outline-danger w-100" (click)="unregister()"
+          [disabled]="unregistering || registrationStatus === 'ATTENDED'">
+          Unregister
+        </button>
+        } @else if (isLearner && registrationStatus === 'PENDING') {
+        <div class="registration-pending-banner">
+          <i class="bi bi-hourglass-top"></i>
+          Inscription en attente d'approbation
+        </div>
+        <button class="btn btn-outline-danger w-100 mt-3" (click)="unregister()" [disabled]="unregistering">
+          Annuler ma demande
+        </button>
+        } @else if (isLearner && registrationStatus === 'WAITLISTED') {
+        <div class="waitlist-banner">
+          <i class="bi bi-hourglass-split"></i>
+          Sur liste d'attente
+        </div>
+        <button class="btn btn-outline-danger w-100 mt-3" (click)="unregister()" [disabled]="unregistering">
+          Quitter la liste d'attente
+        </button>
+        } @else if (isLearner && isPastEvent) {
+        <div class="finished-banner">
+          <i class="bi bi-calendar-x"></i>
+          This event is over
+        </div>
+        } @else if (isLearner) {
+        @if ((event.participantCount || 0) >= event.maxParticipants) {
+        <button class="btn btn-warning w-100 btn-lg btn-waitlist" (click)="register()" [disabled]="registering">
+          Join waitlist
+        </button>
+        } @else {
+        <button class="btn btn-primary w-100 btn-lg" (click)="register()" [disabled]="registering">
+          Register for the event
+        </button>
+        }
+        }
+
+        <button class="btn btn-outline-success w-100 mt-3" (click)="shareOnWhatsApp()">
+          <i class="bi bi-whatsapp me-2"></i> Share on WhatsApp
+        </button>
+        <button class="btn btn-outline-primary w-100 mt-2" (click)="downloadEventPdf()">
+          <i class="bi bi-file-earmark-pdf me-2"></i> Download event PDF
+        </button>
+        <button class="btn btn-indigo w-100 mt-3" (click)="chatbot.toggleChat()">
+          <i class="bi bi-robot me-2"></i> Chat with AI Assistant
+        </button>
+      </div>
+
+      @if ((registrationStatus === 'REGISTERED' || registrationStatus === 'ATTENDED' || registrationStatus === 'PENDING') && isLearner && user) {
+      <div class="event-pass shadow-lg mt-3">
+        <div class="pass-header">
+          <div class="pass-logo">Certify<span>Pro</span></div>
+          <div class="pass-label">Official Pass</div>
+        </div>
+
+        <div class="pass-body">
+          <div class="pass-event-info">
+            <span class="small-label">Event</span>
+            <div class="pass-title">{{ event.title }}</div>
+            <span class="small-label mt-2">Holder</span>
+            <div class="pass-user">{{ user.firstName }} {{ user.lastName }}</div>
+          </div>
+
+          <div class="pass-qr-section">
+            <div class="qr-box">
+              <img [src]="qrCodeUrl" alt="Verification QR" />
+              <div class="qr-scan-line"></div>
+            </div>
+            <div class="pass-code">{{ verificationCode }}</div>
+          </div>
+        </div>
+
+        <div class="pass-footer">
+          <i class="bi bi-shield-check me-2"></i>
+          Guaranteed & Verified by CertifyPro
+        </div>
+      </div>
+      }
+
+      <div class="trainer-card shadow-sm">
+        <div class="trainer-avatar">{{ (event.trainerFirstName?.charAt(0) || '') + (event.trainerLastName?.charAt(0)
+          ||
+          '') }}</div>
+        <div class="trainer-meta">
+          <span class="label">Hosted by</span>
+          <span class="name">{{ event.trainerFirstName }} {{ event.trainerLastName }}</span>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+  
+  <app-event-chatbot #chatbot [eventId]="event.id" [eventTitle]="event.title"></app-event-chatbot>
+  }
+</div>

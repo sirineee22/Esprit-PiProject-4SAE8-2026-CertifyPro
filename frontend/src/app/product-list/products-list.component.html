@@ -1,0 +1,281 @@
+<!-- products-list.component.html -->
+<div class="shop-container">
+
+  <!-- HEADER -->
+  <div class="shop-header">
+
+    <div class="header-left">
+      <h1>Our Products</h1>
+      <p class="product-count">
+        {{ filteredProducts.length }} products available
+      </p>
+    </div>
+
+    <div class="header-actions">
+
+      <button
+        type="button"
+        class="btn-cart"
+        routerLink="/shop/cart">
+
+        <i class="bi bi-cart"></i>
+
+        <span
+          class="cart-badge"
+          *ngIf="(cartService.items$ | async)?.length as count">
+
+          {{ count }}
+
+        </span>
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filters-bar">
+
+    <div class="search-box">
+
+      <i class="bi bi-search"></i>
+
+      <input
+        type="text"
+        placeholder="Search products..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+      />
+
+    </div>
+
+    <div class="filter-group">
+
+      <select
+        [(ngModel)]="selectedCategory"
+        (ngModelChange)="applyFilters()">
+
+        <option
+          *ngFor="let cat of categories"
+          [value]="cat">
+
+          {{ cat }}
+
+        </option>
+
+      </select>
+
+      <select
+        [(ngModel)]="sortBy"
+        (ngModelChange)="applyFilters()">
+
+        <option value="name">Sort by Name</option>
+        <option value="price">Sort by Price</option>
+        <option value="stock">Sort by Stock</option>
+
+      </select>
+
+      <button
+        type="button"
+        class="btn-sort-order"
+        (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; applyFilters()">
+
+        <i
+          class="bi"
+          [class.bi-sort-up]="sortOrder === 'asc'"
+          [class.bi-sort-down]="sortOrder === 'desc'">
+        </i>
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- LOADING -->
+  <div
+    *ngIf="isLoading"
+    class="loading-container">
+
+    <div class="spinner"></div>
+    <p>Loading amazing products...</p>
+
+  </div>
+
+  <!-- PRODUCTS -->
+  <div
+    class="products-grid"
+    *ngIf="!isLoading">
+
+    <div
+      class="product-card"
+      *ngFor="let product of filteredProducts">
+ 
+      
+      <!-- PRODUCT CARD IMAGE -->
+      <div class="product-image">
+      
+        <img
+          [src]="product.imageUrl ? product.imageUrl + '?v=' + product.id : 'https://via.placeholder.com/500x500?text=No+Image'"
+          [alt]="product.name"
+          loading="lazy"
+          (click)="openProductPopup(product)"
+          (error)="onImageError($event)"
+        />
+      
+        <span
+          class="stock-badge"
+          [ngClass]="getStockStatus(product.stock).class">
+      
+          {{ getStockStatus(product.stock).text }}
+      
+        </span>
+      
+      </div>
+      
+      
+      <!-- =====================================================
+      POPUP MODAL
+      PUT AT END OF PAGE
+      ===================================================== -->
+      
+      <div
+        class="image-popup-overlay"
+        *ngIf="selectedProduct"
+        (click)="closeProductPopup()">
+      
+        <div
+          class="image-popup-box"
+          (click)="$event.stopPropagation()">
+      
+          <!-- CLOSE -->
+          <button
+            class="popup-close"
+            (click)="closeProductPopup()">
+      
+            &times;
+      
+          </button>
+      
+          <!-- IMAGE -->
+          <div class="popup-image">
+      
+            <img
+              [src]="selectedProduct.imageUrl ? selectedProduct.imageUrl + '?v=' + selectedProduct.id : 'https://via.placeholder.com/800x600'"
+              [alt]="selectedProduct.name"
+            />
+      
+          </div>
+      
+          <!-- DETAILS -->
+          <div class="popup-content">
+      
+            <h2>{{ selectedProduct.name }}</h2>
+      
+            <p class="popup-category">
+              {{ selectedProduct.category }}
+            </p>
+      
+            <p class="popup-description">
+              {{ selectedProduct.description }}
+            </p>
+      
+            <div class="popup-price">
+              {{ selectedProduct.price | number:'1.2-2' }} €
+            </div>
+      
+            <div class="popup-stock">
+              {{ getStockStatus(selectedProduct.stock).text }}
+            </div>
+       
+      
+          </div>
+      
+        </div>
+      
+      </div>
+
+      <!-- INFO -->
+      <div class="product-info">
+
+        <h3 class="product-title">
+          {{ product.name }}
+        </h3>
+
+        <p class="product-description">
+
+          {{ product.description | slice:0:100 }}
+
+          <span *ngIf="product.description.length > 100">
+            ...
+          </span>
+
+        </p>
+
+        <div class="product-details">
+
+          <span
+            class="product-category"
+            *ngIf="product.category">
+
+            {{ product.category }}
+
+          </span>
+
+          <span class="product-price">
+            {{ product.price | number:'1.2-2' }} €
+          </span>
+
+        </div>
+
+        <div class="product-stock">
+
+          <span class="stock-quantity">
+            Stock: {{ product.stock }} units
+          </span>
+
+        </div>
+
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="product-actions">
+
+        <button
+          type="button"
+          class="btn-add-to-cart"
+          (click)="addToCart(product, $event)"
+          [disabled]="product.stock === 0"
+          [class.added]="addedToCart[product.id!]">
+
+          <i
+            class="bi"
+            [class.bi-cart-plus]="!addedToCart[product.id!]"
+            [class.bi-check2]="addedToCart[product.id!]">
+          </i>
+
+          {{ addedToCart[product.id!] ? 'Added!' : 'Add to Cart' }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- EMPTY -->
+    <div
+      class="empty-state"
+      *ngIf="filteredProducts.length === 0">
+
+      <i class="bi bi-box"></i>
+
+      <h3>No products found</h3>
+
+      <p>Try adjusting your search or filter criteria</p>
+
+    </div>
+
+  </div>
+
+</div>

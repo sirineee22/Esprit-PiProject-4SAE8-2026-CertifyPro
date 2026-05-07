@@ -1,0 +1,477 @@
+<!-- ULTRA PREMIUM PRODUCTS ADMIN -->
+<div class="shop-container">
+
+  <!-- HEADER -->
+  <div class="shop-header">
+
+    <div class="header-left">
+      <h1>Product Management</h1>
+      <p class="product-count">
+        {{ filteredProducts.length }} products available
+      </p>
+    </div>
+
+    <div class="header-actions">
+
+      <button
+        type="button"
+        class="btn-refresh"
+        [disabled]="isLoading"
+        (click)="loadProducts()">
+
+        <span *ngIf="!isLoading">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </span>
+
+        <span *ngIf="isLoading">
+          <span class="mini-spinner"></span>
+          Loading...
+        </span>
+
+      </button>
+
+      <button
+        type="button"
+        class="btn-add-product"
+        (click)="openAddModal()">
+
+        <i class="bi bi-plus-circle"></i>
+        Add Product
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+
+    <div class="search-box">
+
+      <i class="bi bi-search"></i>
+
+      <input
+        type="text"
+        placeholder="Search by name or description..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+      />
+
+    </div>
+
+    <div class="filter-group">
+
+      <select
+        [(ngModel)]="selectedCategory"
+        (ngModelChange)="applyFilters()">
+
+        <option
+          *ngFor="let cat of categories"
+          [value]="cat">
+
+          {{ cat }}
+
+        </option>
+
+      </select>
+
+      <select
+        [(ngModel)]="sortBy"
+        (ngModelChange)="applyFilters()">
+
+        <option value="name">Sort Name</option>
+        <option value="price">Sort Price</option>
+        <option value="stock">Sort Stock</option>
+
+      </select>
+
+      <button
+        type="button"
+        class="btn-sort-order"
+        (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; applyFilters()">
+
+        <i
+          class="bi"
+          [class.bi-sort-up]="sortOrder === 'asc'"
+          [class.bi-sort-down]="sortOrder === 'desc'">
+        </i>
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- LOADING -->
+  <div
+    *ngIf="isLoading"
+    class="loading-container">
+
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+
+  </div>
+
+  <!-- PRODUCTS -->
+  <div
+    class="products-grid"
+    *ngIf="!isLoading">
+
+    <div
+      class="product-card"
+      *ngFor="let product of filteredProducts">
+
+      <!-- IMAGE -->
+      <div class="product-image">
+
+        <img
+        [src]="product.imageUrl ? product.imageUrl + '?v=' + product.id : 'https://via.placeholder.com/500x500?text=No+Image'"
+        [alt]="product.name"
+        loading="lazy"
+        (error)="onImageError($event)"
+      />
+        <span class="stock-badge">
+          {{ getStockStatus(product.stock) }}
+        </span>
+
+      </div>
+
+      <!-- INFO -->
+      <div class="product-info">
+
+        <h3 class="product-title">
+          {{ product.name }}
+        </h3>
+
+        <p class="product-description">
+
+          {{ product.description | slice:0:100 }}
+
+          <span *ngIf="product.description.length > 100">
+            ...
+          </span>
+
+        </p>
+
+        <div class="product-details">
+
+          <span class="product-category">
+            {{ product.category }}
+          </span>
+
+          <span class="product-price">
+            {{ product.price | number:'1.2-2' }} €
+          </span>
+
+        </div>
+
+        <div class="product-stock">
+          Stock: {{ product.stock }}
+        </div>
+
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="product-actions">
+
+        <button
+          type="button"
+          class="btn-edit"
+          (click)="openEditModal(product)">
+
+          <i class="bi bi-pencil"></i>
+
+        </button>
+
+        <button
+          type="button"
+          class="btn-delete"
+          (click)="deleteProduct(product)">
+
+          <i class="bi bi-trash"></i>
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- EMPTY -->
+    <div
+      class="empty-state"
+      *ngIf="filteredProducts.length === 0">
+
+      <i class="bi bi-box-seam"></i>
+
+      <h3>No products found</h3>
+      <p>Try another filter</p>
+
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div
+    class="modal-overlay"
+    *ngIf="isEditModalOpen">
+
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header">
+
+        <h2>
+          {{ isAddMode ? 'Create Product' : 'Edit Product' }}
+        </h2>
+
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeEditModal()">
+
+          &times;
+
+        </button>
+
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <!-- NAME -->
+        <div class="form-group">
+
+          <label>Product Name</label>
+
+          <div class="input-mic">
+
+            <input
+              type="text"
+              [(ngModel)]="editedProduct.name"
+              placeholder="Product name"
+            />
+
+            <button
+              type="button"
+              class="mic-btn"
+              (click)="startVoice('name')">
+
+              🎤
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- DESCRIPTION -->
+        <div class="form-group">
+
+          <label>Description</label>
+
+          <div class="input-mic">
+
+            <textarea
+              rows="4"
+              [(ngModel)]="editedProduct.description"
+              placeholder="Description">
+            </textarea>
+
+            <button
+              type="button"
+              class="mic-btn"
+              (click)="startVoice('description')">
+
+              🎤
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- PRICE + STOCK -->
+        <div class="form-row">
+
+          <div class="form-group">
+
+            <label>Price (€)</label>
+
+            <input
+              type="number"
+              step="0.01"
+              [(ngModel)]="editedProduct.price"
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>Stock</label>
+
+            <input
+              type="number"
+              [(ngModel)]="editedProduct.stock"
+            />
+
+          </div>
+
+        </div>
+
+        <!-- CATEGORY -->
+        <div class="form-group">
+
+          <label>Category</label>
+
+          <select
+            [(ngModel)]="editedProduct.category"
+            (change)="onCategoryChange()">
+
+            <option
+              *ngFor="let cat of categories.slice(1)"
+              [value]="cat">
+
+              {{ cat }}
+
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- CUSTOM CATEGORY -->
+        <div
+          class="form-group"
+          *ngIf="editedProduct.category === 'Other'">
+
+          <label>Custom Category</label>
+
+          <input
+            type="text"
+            [(ngModel)]="customCategory"
+            placeholder="Type new category"
+          />
+
+        </div>
+
+        <!-- IMAGE URL -->
+        <div class="form-group">
+
+          <label>Image URL</label>
+
+          <input
+            type="text"
+            [(ngModel)]="editedProduct.imageUrl"
+            placeholder="https://..."
+          />
+
+        </div>
+
+        <!-- AI -->
+        <div class="form-group">
+
+          <button
+            type="button"
+            class="btn-ai"
+            [disabled]="aiLoading"
+            (click)="generateAiImage()">
+
+            <span *ngIf="!aiLoading">
+              ✨ Generate AI Product Image
+            </span>
+
+            <span *ngIf="aiLoading">
+              <span class="mini-spinner"></span>
+              Generating...
+            </span>
+
+          </button>
+
+        </div>
+
+        <!-- ACTIONS AFTER AI -->
+        <div
+          class="form-group"
+          *ngIf="generatedImageUrl && !aiLoading">
+
+          <button
+            type="button"
+            class="btn-preview"
+            (click)="showPreview()">
+
+            👁 Show Generated Image
+
+          </button>
+
+          <button
+            type="button"
+            class="btn-use"
+            (click)="useGeneratedImage()">
+
+            ✔ Use This Image
+
+          </button>
+
+        </div>
+
+        <!-- PREVIEW -->
+        <div
+          class="preview-zone"
+          *ngIf="showGeneratedPreview && generatedImageUrl">
+
+          <img
+            [src]="generatedImageUrl + '?t=' + (editedProduct.id || 0)"
+            alt="Generated preview"
+          />
+
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn-cancel"
+          (click)="closeEditModal()">
+
+          Cancel
+
+        </button>
+
+        <button
+          type="button"
+          class="btn-save"
+          [disabled]="isSaving"
+          (click)="saveProduct()">
+
+          <span *ngIf="!isSaving">
+            {{ isAddMode ? 'Create Product' : 'Save Product' }}
+          </span>
+
+          <span *ngIf="isSaving">
+            <span class="mini-spinner"></span>
+            Saving...
+          </span>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- TOAST -->
+  <div
+    class="toast-box"
+    *ngIf="showToast">
+
+    {{ toastMessage }}
+
+  </div>
+
+</div>

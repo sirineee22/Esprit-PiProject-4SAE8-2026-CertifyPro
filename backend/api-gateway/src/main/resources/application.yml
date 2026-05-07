@@ -1,0 +1,98 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      discovery:
+        locator:
+          enabled: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_FIRST
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**,/api/roles/**,/api/admin/audit/**
+        - id: auth-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/auth/**
+        - id: trainer-requests-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/trainer-requests/**
+        - id: forum-service
+          uri: lb://FORUM-SERVICE
+          predicates:
+            - Path=/api/forum/**,/uploads/posts/**
+        - id: ecommerce-service
+          uri: lb://ECOMMERCE-SERVICE
+          predicates:
+            - Path=/api/products/**,/api/orders/**
+        - id: event-service
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/api/events/**,/api/admin/events/**
+        - id: evaluations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/evaluations/**,/api/evaluations
+        - id: formations-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/formations/**,/api/formations
+        - id: quizzes-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/quizzes/**,/api/quizzes
+        - id: progression-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/progression/**,/api/progression
+        - id: favorites-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/favorites/**,/api/favorites
+        - id: stats-service
+          uri: lb://TRAINING-SERVICE
+          predicates:
+            - Path=/api/stats/**,/api/stats
+        - id: planned-session-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/schedules/**
+        - id: room-service
+          uri: lb://PLANNED-SESSION-SERVICE
+          predicates:
+            - Path=/api/rooms/**
+        - id: collaboration-service
+          uri: lb://COLLABORATION-SERVICE
+          predicates:
+            - Path=/api/groups/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 5
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10

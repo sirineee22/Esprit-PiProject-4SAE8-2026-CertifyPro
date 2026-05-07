@@ -1,0 +1,61 @@
+<div class="viewer-container" *ngIf="training() as t">
+    <div class="viewer-header">
+        <div class="header-left">
+            <button (click)="goBack()" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <div class="title-section">
+                <span class="type-badge" [class.video]="t.trainingType === 'VIDEO'">
+                    <i class="bi"
+                        [ngClass]="t.trainingType === 'VIDEO' ? 'bi-play-fill' : 'bi-file-earmark-text-fill'"></i>
+                    {{ t.trainingType }}
+                </span>
+                <h1>{{ t.title }}</h1>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="meta-item">
+                <i class="bi bi-clock"></i>
+                <span>{{ t.duration }}</span>
+            </div>
+            <div class="meta-item ml-3">
+                <i class="bi bi-graph-up"></i>
+                <span class="level-badge" [ngClass]="t.level.toLowerCase()">{{ t.level }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="viewer-content">
+        <div class="content-wrapper shadow-2xl">
+            <!-- PDF Viewer -->
+            <ng-container *ngIf="t.trainingType === 'PDF'">
+                <iframe *ngIf="safeUrl()" [src]="safeUrl()" class="full-viewer"></iframe>
+                <div *ngIf="!safeUrl()" class="no-content">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <p>No document available for this training.</p>
+                </div>
+            </ng-container>
+
+            <!-- Video Viewer -->
+            <ng-container *ngIf="t.trainingType === 'VIDEO'">
+                <video *ngIf="safeUrl()" [src]="safeUrl()" controls class="full-viewer video-player"
+                    controlsList="nodownload"></video>
+                <div *ngIf="!safeUrl()" class="no-content">
+                    <i class="bi bi-camera-video"></i>
+                    <p>No video available for this training.</p>
+                </div>
+            </ng-container>
+        </div>
+
+        <aside class="content-description">
+            <div class="desc-card">
+                <h3>About this lesson</h3>
+                <p>{{ t.description }}</p>
+                <div class="premium-notice">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Verified Content by CertifyPro</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
