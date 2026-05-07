@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+    }
+
+    environment {
+        DOCKER_IMAGE = "certifypro/frontend"
+        KUBE_CONFIG  = credentials('kubeconfig-credentials')
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        timeout(time: 15, unit: 'MINUTES')
+    }
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Kubernetes manifests checked out"
+            }
+        }
+
+        stage('Pull Docker Image') {
+            steps {
+                sh "docker pull ${DOCKER_IMAGE}:${params.DOCKER_TAG}"
+                echo "✅ Docker image pulled: ${DOCKER_IMAGE}:${params.DOCKER_TAG}"
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
+                    sh """
+                        sed -i 's|image:.*|image: ${DOCKER_IMAGE}:${params.DOCKER_TAG}|g' frontend/k8s/deployment.yaml
+                        kubectl apply -f frontend/k8s/deployment.yaml --kubeconfig=\$KUBECONFIG
+                    """
+                }
+                echo "✅ Deployment applied to Kubernetes"
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
+                    sh """
+                        kubectl rollout status deployment/frontend \
+                            --namespace=certifypro \
+                            --timeout=120s \
+                            --kubeconfig=\$KUBECONFIG
+                    """
+                }
+                echo "✅ Deployment rollout verified"
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
+                    sh """
+                        kubectl get pods -l app=frontend \
+                            --namespace=certifypro \
+                            --kubeconfig=\$KUBECONFIG
+                    """
+                }
+                echo "✅ Health check passed"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CD Pipeline SUCCESS — frontend deployed (Tag: ${params.DOCKER_TAG})"
+        }
+        failure {
+            echo "❌ CD Pipeline FAILED — frontend deployment failed (Tag: ${params.DOCKER_TAG})"
+            withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
+                sh """
+                    kubectl rollout undo deployment/frontend \
+                        --namespace=certifypro \
+                        --kubeconfig=\$KUBECONFIG || true
+                """
+            }
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
