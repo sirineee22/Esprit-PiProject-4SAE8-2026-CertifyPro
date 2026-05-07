@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: job-careers-service
-          image: nesrineromdhani/job-careers-service:dc7ec3d
+          image: nesrineromdhani/job-careers-service:73ac193
           ports:
             - containerPort: 8089
           env:
