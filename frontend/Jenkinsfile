@@ -1,0 +1,95 @@
+pipeline {
+    agent {
+        docker {
+            image 'node:20-alpine'
+            args '-v $HOME/.npm:/root/.npm'
+        }
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_PROJECT_KEY = 'sirineee22_Esprit-PiProject-4SAE8-2026-CertifyPro'
+        SONAR_ORG = 'sirineee22'
+        IMAGE_NAME = 'siriinaa2233/certifypro-frontend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('frontend') {
+                    sh 'rm -f package-lock.json && npm install --legacy-peer-deps'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('frontend') {
+                    sh 'npx ng test --no-watch --code-coverage'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli'
+                    args '-v $PWD:/usr/src'
+                    reuseNode true
+                }
+            }
+            steps {
+                dir('frontend') {
+                    sh '''
+                        sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.sources=src \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.token=${SONAR_TOKEN} \
+                            -Dsonar.javascript.lcov.reportPaths=coverage/frontend/lcov.info
+                    '''
+                }
+            }
+        }
+
+        stage('Build Production') {
+            steps {
+                dir('frontend') {
+                    sh 'npm run build -- --configuration production'
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            agent any
+            steps {
+                dir('frontend') {
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest ."
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${IMAGE_NAME}:latest"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout || true'
+        }
+        success {
+            echo 'Frontend pipeline succeeded!'
+        }
+        failure {
+            echo 'Frontend pipeline failed!'
+        }
+    }
+}

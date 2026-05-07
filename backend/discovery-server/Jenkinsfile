@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven3'
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        IMAGE_NAME = 'siriinaa2233/certifypro-discovery-server'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                dir('backend/discovery-server') {
+                    sh 'mvn verify -DskipTests'
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                dir('backend/discovery-server') {
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest ."
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${IMAGE_NAME}:latest"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+        success {
+            echo 'Discovery Server pipeline succeeded!'
+        }
+        failure {
+            echo 'Discovery Server pipeline failed!'
+        }
+    }
+}
