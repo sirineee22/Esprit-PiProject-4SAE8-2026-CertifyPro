@@ -139,9 +139,10 @@ pipeline {
             echo "❌ CI Pipeline FAILED for planned-session-service (Build #${BUILD_NUMBER})"
         }
         always {
-            // Clean up Docker images to save disk space
+        script {
             sh "docker rmi ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} || true"
             cleanWs()
+        }
         }
     }
 }
