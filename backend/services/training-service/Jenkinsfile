@@ -29,32 +29,17 @@ pipeline {
             }
         }
         
-        stage('Unit Tests') {
+        stage('Unit Tests & Coverage (JaCoCo)') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '🧪 Running unit tests...'
-                    sh 'mvn test'
+                    echo '🧪 Running unit tests with JaCoCo coverage...'
+                    sh 'mvn verify -DskipTests=false'
                 }
             }
             post {
                 always {
                     dir('backend/services/training-service') {
                         junit '**/target/surefire-reports/*.xml'
-                    }
-                }
-            }
-        }
-        
-        stage('Code Coverage (JaCoCo)') {
-            steps {
-                dir('backend/services/training-service') {
-                    echo '📊 Generating JaCoCo coverage report...'
-                    sh 'mvn verify'
-                }
-            }
-            post {
-                always {
-                    dir('backend/services/training-service') {
                         jacoco(
                             execPattern: '**/target/jacoco.exec',
                             classPattern: '**/target/classes',
@@ -102,7 +87,7 @@ pipeline {
         stage('Package') {
             steps {
                 dir('backend/services/training-service') {
-                    echo '📦 Packaging application...'
+                    echo '📦 Packaging application (already done by verify)...'
                     sh 'mvn package -DskipTests'
                 }
             }
@@ -113,8 +98,8 @@ pipeline {
                 dir('backend/services/training-service') {
                     echo '🐳 Building Docker image...'
                     script {
-                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                        docker.build("${DOCKER_IMAGE}:latest")
+                        def img = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                        img.tag("latest")
                     }
                 }
             }
