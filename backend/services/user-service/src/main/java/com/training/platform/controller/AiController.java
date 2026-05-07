@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.frontend-origin}")
 public class AiController {
 
     @Value("${openai.api.key}")

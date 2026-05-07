@@ -1,7 +1,9 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.AuditLogRequest;
 import com.training.platform.entity.AuditLog;
 import com.training.platform.repository.AuditLogRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -22,7 +24,15 @@ public class AuditLogController {
     }
 
     @PostMapping
-    public ResponseEntity<AuditLog> addLog(@RequestBody AuditLog log) {
+    public ResponseEntity<AuditLog> addLog(@Valid @RequestBody AuditLogRequest request) {
+        AuditLog log = new AuditLog(
+                request.action,
+                request.actorId,
+                request.actorEmail,
+                request.targetType,
+                request.targetId,
+                request.details
+        );
         return ResponseEntity.ok(auditLogRepository.save(log));
     }
 }

@@ -1,7 +1,9 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.RoleRequest;
 import com.training.platform.entity.Role;
 import com.training.platform.repository.RoleRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,15 +30,16 @@ public class RoleController {
     }
 
     @PostMapping
-    public Role createRole(@RequestBody Role role) {
+    public Role createRole(@Valid @RequestBody RoleRequest request) {
+        Role role = new Role(null, request.name.trim().toUpperCase());
         return roleRepository.save(role);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody Role roleDetails) {
+    public ResponseEntity<Role> updateRole(@PathVariable Long id, @Valid @RequestBody RoleRequest request) {
         return roleRepository.findById(id)
                 .map(role -> {
-                    role.setName(roleDetails.getName());
+                    role.setName(request.name.trim().toUpperCase());
                     return ResponseEntity.ok(roleRepository.save(role));
                 })
                 .orElse(ResponseEntity.notFound().build());

@@ -58,6 +58,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // Actuator endpoints for Prometheus
+                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/verify-2fa").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()

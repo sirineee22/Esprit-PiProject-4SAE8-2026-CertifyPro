@@ -28,6 +28,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // Actuator endpoints for Prometheus
+                .requestMatchers("/actuator/**").permitAll()
                 // Specific authenticated GET paths must come BEFORE the broad permitAll
                 .requestMatchers(HttpMethod.GET, "/api/events/my").hasRole("TRAINER")
                 .requestMatchers(HttpMethod.GET, "/api/events/my-registrations").authenticated()

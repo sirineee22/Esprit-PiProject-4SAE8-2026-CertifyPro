@@ -1,5 +1,6 @@
 package com.training.platform.controller;
 
+import com.training.platform.dto.RegisterRequest;
 import com.training.platform.dto.UpdateUserRequest;
 import com.training.platform.entity.User;
 import com.training.platform.entity.AuditLog;
@@ -234,23 +235,25 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody User user) {
-        String email = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : null;
+    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest request) {
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body("Email is required");
         }
-        user.setEmail(email);
         if (userRepository.existsByEmailIgnoreCase(email)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
         try {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            if (user.getRole() == null) {
-                user.setRole(roleRepository.findByName("LEARNER")
-                        .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
-            }
+            User user = new User();
+            user.setEmail(email);
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setRole(roleRepository.findByName("LEARNER")
+                    .orElseThrow(() -> new RuntimeException("Default role LEARNER not found")));
             User created = userRepository.save(user);
-            
+
             getCurrentUserDetails().ifPresent(actor -> {
                 auditLogRepository.save(new AuditLog("USER_CREATE", actor.userId, actor.email, "USER", String.valueOf(created.getId()), "Created new user: " + created.getEmail()));
             });

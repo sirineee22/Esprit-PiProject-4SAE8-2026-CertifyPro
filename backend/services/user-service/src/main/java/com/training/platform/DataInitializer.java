@@ -4,6 +4,7 @@ import com.training.platform.entity.Role;
 import com.training.platform.entity.User;
 import com.training.platform.repository.RoleRepository;
 import com.training.platform.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,12 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.init.admin-password:#{null}}")
+    private String adminPassword;
+
+    @Value("${app.init.trainer-password:#{null}}")
+    private String trainerPassword;
+
     public DataInitializer(RoleRepository roleRepository, UserRepository userRepository,
             PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
@@ -27,6 +34,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        if (adminPassword == null || adminPassword.isBlank()) {
+            throw new IllegalStateException("app.init.admin-password must be set via environment variable ADMIN_INIT_PASSWORD");
+        }
+        if (trainerPassword == null || trainerPassword.isBlank()) {
+            throw new IllegalStateException("app.init.trainer-password must be set via environment variable TRAINER_INIT_PASSWORD");
+        }
+
         // Init Roles
         List<String> roles = Arrays.asList("ADMIN", "TRAINER", "LEARNER");
         for (String roleName : roles) {
@@ -45,11 +59,11 @@ public class DataInitializer implements CommandLineRunner {
             admin.setFirstName("Admin");
             admin.setLastName("User");
             admin.setEmail("admin@platform.com");
-            admin.setPassword(passwordEncoder.encode("Admin123!"));
+            admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setRole(adminRole);
             admin.setActive(true);
             userRepository.save(admin);
-            System.out.println(">>> Admin user created. Login: admin@platform.com / Admin123!");
+            System.out.println(">>> Admin user created.");
         }
 
         // Demo trainer (create or repair password/role/active for this email)
@@ -57,7 +71,6 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private static final String DEMO_TRAINER_EMAIL = "trainer@platform.com";
-    private static final String DEMO_TRAINER_PASSWORD = "Trainer123!";
 
     private void ensureDemoTrainerAccount() {
         Role trainerRole = roleRepository.findByName("TRAINER").orElseThrow();
@@ -68,8 +81,8 @@ public class DataInitializer implements CommandLineRunner {
                         user.setRole(trainerRole);
                         needsSave = true;
                     }
-                    if (!passwordEncoder.matches(DEMO_TRAINER_PASSWORD, user.getPassword())) {
-                        user.setPassword(passwordEncoder.encode(DEMO_TRAINER_PASSWORD));
+                    if (!passwordEncoder.matches(trainerPassword, user.getPassword())) {
+                        user.setPassword(passwordEncoder.encode(trainerPassword));
                         needsSave = true;
                     }
                     if (!user.isActive()) {
@@ -78,7 +91,7 @@ public class DataInitializer implements CommandLineRunner {
                     }
                     if (needsSave) {
                         userRepository.save(user);
-                        System.out.println(">>> Demo trainer repaired: " + DEMO_TRAINER_EMAIL + " / " + DEMO_TRAINER_PASSWORD);
+                        System.out.println(">>> Demo trainer repaired: " + DEMO_TRAINER_EMAIL);
                     }
                 },
                 () -> {
@@ -86,11 +99,11 @@ public class DataInitializer implements CommandLineRunner {
                     trainer.setFirstName("Demo");
                     trainer.setLastName("Trainer");
                     trainer.setEmail(DEMO_TRAINER_EMAIL);
-                    trainer.setPassword(passwordEncoder.encode(DEMO_TRAINER_PASSWORD));
+                    trainer.setPassword(passwordEncoder.encode(trainerPassword));
                     trainer.setRole(trainerRole);
                     trainer.setActive(true);
                     userRepository.save(trainer);
-                    System.out.println(">>> Demo trainer created: " + DEMO_TRAINER_EMAIL + " / " + DEMO_TRAINER_PASSWORD);
+                    System.out.println(">>> Demo trainer created: " + DEMO_TRAINER_EMAIL);
                 });
     }
 }

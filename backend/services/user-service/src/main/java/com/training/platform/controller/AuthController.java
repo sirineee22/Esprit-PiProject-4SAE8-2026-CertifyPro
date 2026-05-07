@@ -46,25 +46,26 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             String email = request.email.trim().toLowerCase();
+            String safeEmail = email.replaceAll("[\r\n]", "_");
             Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
             if (userOpt.isEmpty()) {
-                log.warn("Login 401: no user found for email={}", email);
+                log.warn("Login 401: no user found for email={}", safeEmail);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
             }
             User user = userOpt.get();
             if (!passwordEncoder.matches(request.password, user.getPassword())) {
-                log.warn("Login 401: wrong password for email={}", email);
+                log.warn("Login 401: wrong password for email={}", safeEmail);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
             }
             if (user.getRole() == null) {
-                log.error("Login 500: user role is null for email={}", email);
+                log.error("Login 500: user role is null for email={}", safeEmail);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("User role not set. Please contact support.");
             }
 
             // Check if 2FA is enabled
             if (user.isTwoFactorEnabled()) {
-                log.info("Login: MFA Required for email={}", email);
+                log.info("Login: MFA Required for email={}", safeEmail);
                 return ResponseEntity.ok(java.util.Map.of(
                     "mfaRequired", true,
                     "email", email
@@ -73,7 +74,8 @@ public class AuthController {
 
             return finalizeLogin(user);
         } catch (Exception e) {
-            log.error("Login 500 for email={}. Error: {}", request != null ? request.email : "?", e.getMessage(), e);
+            String safeEmail = request != null ? request.email.replaceAll("[\r\n]", "_") : "?";
+            log.error("Login 500 for email={}. Error: {}", safeEmail, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Login failed: " + e.getMessage());
         }
@@ -83,6 +85,7 @@ public class AuthController {
     public ResponseEntity<?> verify2fa(@Valid @RequestBody Verify2faRequest request) {
         try {
             String email = request.email.trim().toLowerCase();
+            String safeEmail = email.replaceAll("[\r\n]", "_");
             Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
@@ -90,7 +93,7 @@ public class AuthController {
             User user = userOpt.get();
             
             if (!twoFactorService.isCodeValid(user.getTwoFactorSecret(), request.code)) {
-                log.warn("MFA 401: Invalid code for email={}", email);
+                log.warn("MFA 401: Invalid code for email={}", safeEmail);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code invalide");
             }
 

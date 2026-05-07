@@ -166,3 +166,19 @@ logging:
     reactor.netty: WARN
     io.netty: WARN
     org.springframework.cloud.gateway: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

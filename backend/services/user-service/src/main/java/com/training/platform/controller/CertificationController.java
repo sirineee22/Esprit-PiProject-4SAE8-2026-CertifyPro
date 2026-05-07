@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/certifications")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.frontend-origin}")
 public class CertificationController {
 
     private final CertificationRepository certificationRepository;

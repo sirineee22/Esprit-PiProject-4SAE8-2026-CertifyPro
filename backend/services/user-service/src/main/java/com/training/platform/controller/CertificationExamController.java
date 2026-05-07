@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/certification-exams")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.frontend-origin}")
 public class CertificationExamController {
 
     private final CertificationExamRepository examRepository;
