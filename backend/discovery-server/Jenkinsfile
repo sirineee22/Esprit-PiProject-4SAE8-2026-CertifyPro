@@ -8,6 +8,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         IMAGE_NAME = 'siriinaa2233/certifypro-discovery-server'
+        MAVEN_OPTS = '-Dmaven.repo.local=/var/jenkins_home/.m2/repository'
     }
 
     stages {
@@ -17,10 +18,10 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build') {
             steps {
                 dir('backend/discovery-server') {
-                    sh 'mvn verify -DskipTests'
+                    sh 'mvn package -DskipTests -B'
                 }
             }
         }

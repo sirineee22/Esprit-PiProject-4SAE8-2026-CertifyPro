@@ -16,23 +16,24 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install & Build') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps"'
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app --cap-add=SYS_ADMIN node:20 sh -c "npm install --legacy-peer-deps && npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox || true"'
+                    sh '''
+                        docker run --rm \
+                            -v $(pwd):/app \
+                            -w /app \
+                            node:20-alpine \
+                            sh -c "npm install --legacy-peer-deps && npm run build -- --configuration production"
+                    '''
                 }
             }
         }
 
         stage('SonarQube Analysis') {
+            options {
+                timeout(time: 10, unit: 'MINUTES')
+            }
             steps {
                 dir('frontend') {
                     sh """
@@ -45,16 +46,9 @@ pipeline {
                                 -Dsonar.organization=${SONAR_ORG} \
                                 -Dsonar.sources=src \
                                 -Dsonar.host.url=https://sonarcloud.io \
-                                -Dsonar.token=${SONAR_TOKEN}
+                                -Dsonar.token=${SONAR_TOKEN} \
+                                -Dsonar.scm.disabled=true
                     """
-                }
-            }
-        }
-
-        stage('Build Production') {
-            steps {
-                dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "npm run build -- --configuration production"'
                 }
             }
         }

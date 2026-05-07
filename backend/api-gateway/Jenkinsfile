@@ -8,6 +8,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         IMAGE_NAME = 'siriinaa2233/certifypro-api-gateway'
+        MAVEN_OPTS = '-Dmaven.repo.local=/var/jenkins_home/.m2/repository'
     }
 
     stages {
@@ -17,10 +18,10 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build') {
             steps {
                 dir('backend/api-gateway') {
-                    sh 'mvn verify -DskipTests --batch-mode'
+                    sh 'mvn package -DskipTests -B'
                 }
             }
         }
@@ -39,9 +40,7 @@ pipeline {
 
     post {
         always {
-            script {
-                sh 'docker logout || true'
-            }
+            sh 'docker logout || true'
         }
         success {
             echo 'API Gateway pipeline succeeded!'
