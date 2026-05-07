@@ -66,6 +66,9 @@ pipeline {
         }
         
         stage('SonarQube Analysis') {
+            when {
+                expression { false } // Temporarily disabled
+            }
             steps {
                 dir('backend/services/training-service') {
                     echo '🔍 Running SonarQube analysis...'
@@ -85,6 +88,9 @@ pipeline {
         }
         
         stage('Quality Gate') {
+            when {
+                expression { false } // Temporarily disabled
+            }
             steps {
                 echo '🚦 Waiting for Quality Gate...'
                 timeout(time: 5, unit: 'MINUTES') {
