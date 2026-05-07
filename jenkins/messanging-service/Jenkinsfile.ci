@@ -41,8 +41,8 @@ pipeline {
             }
             post {
                 always {
-                    junit allowEmptyResults: true,
-                          testResults: "${SERVICE_DIR}/target/surefire-reports/*.xml"
+                    archiveArtifacts artifacts: "${SERVICE_DIR}/target/surefire-reports/*.xml",
+                                     allowEmptyArchive: true
                 }
             }
         }
