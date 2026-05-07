@@ -1,0 +1,176 @@
+pipeline {
+    agent any
+    
+    tools {
+        maven 'Maven-3.9'
+        jdk 'JDK-17'
+    }
+    
+    environment {
+        DOCKER_IMAGE = "khalil373/training-service"
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        SONAR_HOST_URL = "http://sonarqube:9000"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '📥 Cloning repository...'
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '🔨 Building with Maven...'
+                    sh 'mvn clean compile -DskipTests'
+                }
+            }
+        }
+        
+        stage('Unit Tests') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '🧪 Running unit tests...'
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    dir('backend/services/training-service') {
+                        junit '**/target/surefire-reports/*.xml'
+                    }
+                }
+            }
+        }
+        
+        stage('Code Coverage (JaCoCo)') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '📊 Generating JaCoCo coverage report...'
+                    sh 'mvn jacoco:report'
+                }
+            }
+            post {
+                always {
+                    dir('backend/services/training-service') {
+                        jacoco(
+                            execPattern: '**/target/jacoco.exec',
+                            classPattern: '**/target/classes',
+                            sourcePattern: '**/src/main/java'
+                        )
+                    }
+                }
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '🔍 Running SonarQube analysis...'
+                    withSonarQubeEnv('SonarQube-Local') {
+                        sh '''
+                            mvn sonar:sonar \
+                              -Dsonar.projectKey=training-service \
+                              -Dsonar.projectName=training-service \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.java.binaries=target/classes \
+                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Waiting for Quality Gate...'
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+        
+        stage('Package') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '📦 Packaging application...'
+                    sh 'mvn package -DskipTests'
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                dir('backend/services/training-service') {
+                    echo '🐳 Building Docker image...'
+                    script {
+                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                        docker.build("${DOCKER_IMAGE}:latest")
+                    }
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                echo '📤 Pushing to Docker Hub...'
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
+                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                        docker.image("${DOCKER_IMAGE}:latest").push()
+                    }
+                }
+            }
+        }
+        
+        stage('Clean Docker Images') {
+            steps {
+                echo '🧹 Cleaning local Docker images...'
+                sh """
+                    docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true
+                    docker rmi ${DOCKER_IMAGE}:latest || true
+                """
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+            emailext(
+                subject: "✅ SUCCESS: Training Service Build #${BUILD_NUMBER}",
+                body: """
+                    <h2>Build Successful</h2>
+                    <p><b>Project:</b> Training Service</p>
+                    <p><b>Build Number:</b> ${BUILD_NUMBER}</p>
+                    <p><b>Docker Image:</b> ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
+                    <p><b>SonarQube:</b> <a href="${SONAR_HOST_URL}/dashboard?id=training-service">View Report</a></p>
+                    <p><b>Jenkins:</b> <a href="${BUILD_URL}">View Build</a></p>
+                """,
+                to: 'team@certifypro.com',
+                mimeType: 'text/html'
+            )
+        }
+        failure {
+            echo '❌ Pipeline failed!'
+            emailext(
+                subject: "❌ FAILED: Training Service Build #${BUILD_NUMBER}",
+                body: """
+                    <h2>Build Failed</h2>
+                    <p><b>Project:</b> Training Service</p>
+                    <p><b>Build Number:</b> ${BUILD_NUMBER}</p>
+                    <p><b>Jenkins:</b> <a href="${BUILD_URL}">View Build</a></p>
+                    <p><b>Console:</b> <a href="${BUILD_URL}console">View Console Output</a></p>
+                """,
+                to: 'team@certifypro.com',
+                mimeType: 'text/html'
+            )
+        }
+        always {
+            echo '🧹 Cleaning workspace...'
+            cleanWs()
+        }
+    }
+}
