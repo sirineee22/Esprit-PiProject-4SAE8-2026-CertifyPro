@@ -21,6 +21,9 @@ pipeline {
         }
 
         stage('Build, Test & SonarQube Analysis') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
             environment {
                 DB_URL = 'jdbc:h2:mem:testdb'
                 DB_USERNAME = 'sa'

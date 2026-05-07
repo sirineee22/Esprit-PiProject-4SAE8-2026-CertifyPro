@@ -21,6 +21,9 @@ pipeline {
         }
 
         stage('Build, Test & SonarQube Analysis') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
             environment {
                 JWT_SECRET = 'test-secret-min-32-chars-for-testing-only'
             }
