@@ -100,6 +100,6 @@ pipeline {
     post {
         success { echo "🎉 CD job-careers-service déployé — tag: ${params.IMAGE_TAG}" }
         failure { echo '❌ CD job-careers-service échoué' }
-        always  { sh 'docker logout || true' }
+        always  { sh 'docker logout 2>/dev/null || true' }
     }
 }
