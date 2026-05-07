@@ -49,7 +49,7 @@ pipeline {
             steps {
                 dir('backend/services/training-service') {
                     echo '📊 Generating JaCoCo coverage report...'
-                    sh 'mvn jacoco:report'
+                    sh 'mvn verify'
                 }
             }
             post {
