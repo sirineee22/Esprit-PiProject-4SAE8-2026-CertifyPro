@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_IMAGE           = "certifypro/planned-session-service"
+        DOCKER_IMAGE           = "ammar2050/planned-session-service"
         DOCKER_TAG             = "${BUILD_NUMBER}"
         SONAR_TOKEN            = credentials('sonarqube-token')
         SERVICE_DIR            = "backend/services/planned-session-service"
