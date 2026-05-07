@@ -19,7 +19,9 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "rm -f package-lock.json && npm install --legacy-peer-deps"'
+                    sh '''
+                        docker run --rm -v "$(pwd)":/app -w /app node:20-alpine sh -c "rm -f package-lock.json && npm install --legacy-peer-deps"
+                    '''
                 }
             }
         }
@@ -27,7 +29,9 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine npx ng test --no-watch --code-coverage'
+                    sh '''
+                        docker run --rm -v "$(pwd)":/app -w /app node:20-alpine npx ng test --no-watch --code-coverage
+                    '''
                 }
             }
         }
@@ -35,8 +39,8 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('frontend') {
-                    sh """
-                        docker run --rm -v \$(pwd):/app -w /app \
+                    sh '''
+                        docker run --rm -v "$(pwd)":/app -w /app \
                             -e SONAR_TOKEN=${SONAR_TOKEN} \
                             sonarsource/sonar-scanner-cli \
                             -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -44,7 +48,7 @@ pipeline {
                             -Dsonar.sources=src \
                             -Dsonar.host.url=https://sonarcloud.io \
                             -Dsonar.javascript.lcov.reportPaths=coverage/frontend/lcov.info
-                    """
+                    '''
                 }
             }
         }
@@ -52,7 +56,9 @@ pipeline {
         stage('Build Production') {
             steps {
                 dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine npm run build -- --configuration production'
+                    sh '''
+                        docker run --rm -v "$(pwd)":/app -w /app node:20-alpine npm run build -- --configuration production
+                    '''
                 }
             }
         }
