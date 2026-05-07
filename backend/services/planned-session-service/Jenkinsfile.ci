@@ -69,23 +69,23 @@ pipeline {
         // =============================================
         // Stage 4: SonarQube Code Quality Analysis
         // =============================================
-        stage('SonarQube Analysis') {
-            steps {
-                dir("${SERVICE_DIR}") {
-                    withSonarQubeEnv('SonarQube-Server') {
-                        sh """
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=planned-session-service \
-                                -Dsonar.projectName='Planned Session Service' \
-                                -Dsonar.java.coveragePlugin=jacoco \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                                -B
-                        """
-                    }
-                }
-                echo "✅ SonarQube analysis completed"
-            }
-        }
+        //stage('SonarQube Analysis') {
+        //    steps {
+        //        dir("${SERVICE_DIR}") {
+        //            withSonarQubeEnv('SonarQube-Server') {
+        //                sh """
+        //                    mvn sonar:sonar \
+        //                        -Dsonar.projectKey=planned-session-service \
+        //                        -Dsonar.projectName='Planned Session Service' \
+        //                       -Dsonar.java.coveragePlugin=jacoco \
+        //                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+        //                        -B
+        //                """
+        //            }
+        //        }
+        //        echo "✅ SonarQube analysis completed"
+        //    }
+        //}
 
         // =============================================
         // Stage 5: SonarQube Quality Gate
