@@ -1,0 +1,62 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'certifypro-monitor'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files: []
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'discovery-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['discovery-server:8761']
+
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8081']
+
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service:8883']
+
+  - job_name: 'training-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['training-service:8086']
+
+  - job_name: 'event-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['event-service:8884']
+
+  - job_name: 'ecommerce-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ecommerce-service:8085']
+
+  - job_name: 'forum-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['forum-service:8087']
+
+  - job_name: 'collaboration-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['collaboration-service:8088']
+
+  - job_name: 'planned-session-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['planned-session-service:8084']

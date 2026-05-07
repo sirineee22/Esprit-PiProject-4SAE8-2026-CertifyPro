@@ -2,3 +2,4 @@ CREATE DATABASE userdb;
 CREATE DATABASE forumdb;
 CREATE DATABASE ecommerce_db;
 CREATE DATABASE eventdb;
+CREATE DATABASE sonardb;

@@ -1,6 +1,19 @@
 server:
   port: 8761
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,info,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    prometheus:
+      enabled: true
+
 eureka:
   client:
     register-with-eureka: false
